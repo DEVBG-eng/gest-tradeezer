@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import {
   Calendar as CalendarIcon,
@@ -52,7 +52,7 @@ import { cn } from '@/lib/utils'
 export default function CreateProject() {
   const navigate = useNavigate()
   const { addProject } = useProjectStore()
-  const { activeCloudProvider } = useSettingsStore()
+  const { activeCloudProvider, oneDriveNetworkLink } = useSettingsStore()
   const { toast } = useToast()
 
   const [reference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
@@ -70,14 +70,16 @@ export default function CreateProject() {
     activeCloudProvider === 'google_drive'
       ? `https://drive.google.com/drive/folders/${reference}`
       : activeCloudProvider === 'onedrive'
-        ? `https://onedrive.live.com/?id=root/Projetos/${reference}`
+        ? oneDriveNetworkLink
+          ? `${oneDriveNetworkLink.replace(/\/$/, '')}/${reference}`
+          : `https://onedrive.live.com/?id=root/Projetos/${reference}`
         : `https://www.dropbox.com/sh/${reference}`
 
   const providerName =
     activeCloudProvider === 'google_drive'
       ? 'Google Drive'
       : activeCloudProvider === 'onedrive'
-        ? 'Microsoft OneDrive'
+        ? 'Microsoft OneDrive / SharePoint'
         : 'Dropbox'
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +97,9 @@ export default function CreateProject() {
             activeCloudProvider === 'google_drive'
               ? `https://drive.google.com/file/d/${id}/view`
               : activeCloudProvider === 'onedrive'
-                ? `https://onedrive.live.com/view.aspx?resid=${id}`
+                ? folderUrl
+                  ? `${folderUrl}/${f.name}`
+                  : `https://onedrive.live.com/view.aspx?resid=${id}`
                 : `https://www.dropbox.com/s/${id}/${f.name}`,
         }
       })
@@ -106,8 +110,9 @@ export default function CreateProject() {
       newCloudFiles.forEach((cf) => {
         setTimeout(
           () => {
-            // Simulate a chance of error for OneDrive to show error handling capabilities
-            const isError = activeCloudProvider === 'onedrive' && Math.random() > 0.8
+            const isMissingLink = activeCloudProvider === 'onedrive' && !oneDriveNetworkLink
+            const isError = isMissingLink ? true : Math.random() > 0.85
+
             setCloudFiles((prev) =>
               prev.map((p) =>
                 p.id === cf.id ? { ...p, status: isError ? 'error' : 'synced' } : p,
@@ -117,7 +122,9 @@ export default function CreateProject() {
             if (isError) {
               toast({
                 title: 'Erro de Sincronização',
-                description: `Falha ao transferir ${cf.name} para o OneDrive. Verifique os limites de armazenamento ou permissões.`,
+                description: isMissingLink
+                  ? `Falha ao transferir ${cf.name}. Link de rede Microsoft ausente ou inválido.`
+                  : `Falha ao transferir ${cf.name}. Verifique a estabilidade da rede.`,
                 variant: 'destructive',
               })
             }
@@ -323,23 +330,40 @@ export default function CreateProject() {
               </TabsContent>
 
               <TabsContent value="docs" className="space-y-6">
+                {activeCloudProvider === 'onedrive' && !oneDriveNetworkLink && (
+                  <Alert variant="destructive" className="bg-destructive/5">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Configuração Pendente</AlertTitle>
+                    <AlertDescription className="flex items-center justify-between mt-2">
+                      <span className="text-sm">
+                        Link de rede do Microsoft SharePoint/OneDrive não configurado. As
+                        sincronizações podem falhar.
+                      </span>
+                      <Button variant="destructive" size="sm" asChild className="h-8 shrink-0">
+                        <Link to="/settings">Configurar Link</Link>
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {activeCloudProvider && (
                   <Alert className="bg-primary/5 border-primary/20">
                     <Cloud className="h-4 w-4 text-primary" />
                     <AlertTitle>Sincronização em Nuvem Ativa</AlertTitle>
-                    <AlertDescription className="flex items-center justify-between mt-2">
-                      <span className="text-sm">
-                        Pasta criada no <strong>{providerName}</strong>:{' '}
-                        {activeCloudProvider === 'onedrive'
-                          ? `/Projetos/${reference}`
+                    <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between mt-2 gap-2">
+                      <span className="text-sm truncate max-w-[400px]">
+                        Pasta mapeada no <strong>{providerName}</strong>:{' '}
+                        {activeCloudProvider === 'onedrive' && oneDriveNetworkLink
+                          ? `.../${reference}`
                           : `/${reference}`}
                       </span>
-                      <Button variant="outline" size="sm" asChild className="h-8">
-                        <a href={folderUrl} target="_blank" rel="noreferrer">
-                          <FolderOpen className="h-3 w-3 mr-2" />
-                          Abrir Pasta
-                        </a>
-                      </Button>
+                      {!(activeCloudProvider === 'onedrive' && !oneDriveNetworkLink) && (
+                        <Button variant="outline" size="sm" asChild className="h-8 shrink-0">
+                          <a href={folderUrl} target="_blank" rel="noreferrer">
+                            <FolderOpen className="h-3 w-3 mr-2" /> Abrir Diretório
+                          </a>
+                        </Button>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -358,7 +382,6 @@ export default function CreateProject() {
                     id="file-upload"
                     className="hidden"
                     multiple
-                    accept=".pdf,.doc,.docx,.zip"
                     onChange={handleFiles}
                   />
                   <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -383,29 +406,31 @@ export default function CreateProject() {
                         {cloudFiles.map((f) => (
                           <TableRow key={f.id}>
                             <TableCell className="font-medium flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span className="truncate max-w-[200px]">{f.name}</span>
+                              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="truncate max-w-[200px]" title={f.name}>
+                                {f.name}
+                              </span>
                             </TableCell>
                             <TableCell>{(f.size / 1024).toFixed(1)} KB</TableCell>
                             <TableCell>
                               {f.status === 'uploading' ? (
                                 <Badge
                                   variant="outline"
-                                  className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1"
+                                  className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1 whitespace-nowrap"
                                 >
                                   <Loader2 className="h-3 w-3 animate-spin" /> Sincronizando
                                 </Badge>
                               ) : f.status === 'error' ? (
                                 <Badge
                                   variant="outline"
-                                  className="text-destructive border-destructive/30 bg-destructive/10 gap-1"
+                                  className="text-destructive border-destructive/30 bg-destructive/10 gap-1 whitespace-nowrap"
                                 >
-                                  <AlertCircle className="h-3 w-3" /> Erro Sync
+                                  <AlertCircle className="h-3 w-3" /> Falha
                                 </Badge>
                               ) : (
                                 <Badge
                                   variant="outline"
-                                  className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1"
+                                  className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1 whitespace-nowrap"
                                 >
                                   <CheckCircle2 className="h-3 w-3" /> Sincronizado
                                 </Badge>

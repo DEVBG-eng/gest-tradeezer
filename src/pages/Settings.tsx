@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import useSettingsStore, { CloudProvider } from '@/stores/useSettingsStore'
-import { Cloud, HardDrive, Loader2, Link as LinkIcon } from 'lucide-react'
+import { Cloud, HardDrive, Loader2, Link as LinkIcon, CheckCircle2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Settings() {
@@ -16,29 +16,60 @@ export default function Settings() {
     connectedProviders,
     toggleProviderConnection,
     providerEmails,
+    oneDriveNetworkLink,
+    setOneDriveNetworkLink,
   } = useSettingsStore()
   const { toast } = useToast()
 
   const [connecting, setConnecting] = useState<CloudProvider>(null)
+  const [linkInput, setLinkInput] = useState(oneDriveNetworkLink)
+  const [isValidatingLink, setIsValidatingLink] = useState(false)
+
+  useEffect(() => {
+    setLinkInput(oneDriveNetworkLink)
+  }, [oneDriveNetworkLink])
 
   const handleConnect = (provider: NonNullable<CloudProvider>) => {
     setConnecting(provider)
-    // Simulate OAuth flow
     setTimeout(() => {
       toggleProviderConnection(provider)
       if (!activeCloudProvider) setActiveCloudProvider(provider)
       setConnecting(null)
       toast({
         title: 'Conta Conectada',
-        description: `Integração com ${
-          provider === 'google_drive'
-            ? 'Google Drive'
-            : provider === 'dropbox'
-              ? 'Dropbox'
-              : 'Microsoft OneDrive'
-        } concluída com sucesso.`,
+        description: `Integração concluída com sucesso.`,
       })
     }, 1500)
+  }
+
+  const handleValidateAndSaveLink = () => {
+    if (!linkInput) {
+      return toast({
+        title: 'Aviso',
+        description: 'Insira um link válido.',
+        variant: 'destructive',
+      })
+    }
+    setIsValidatingLink(true)
+    setTimeout(() => {
+      setIsValidatingLink(false)
+      const isValid =
+        /^https?:\/\//.test(linkInput) &&
+        /(sharepoint\.com|onedrive\.live\.com|microsoft\.com)/.test(linkInput)
+      if (isValid) {
+        setOneDriveNetworkLink(linkInput)
+        toast({
+          title: 'Link Validado',
+          description: 'Diretório Microsoft mapeado com sucesso para novos projetos.',
+        })
+      } else {
+        toast({
+          title: 'Link Inválido',
+          description: 'Insira um URL válido do SharePoint ou OneDrive.',
+          variant: 'destructive',
+        })
+      }
+    }, 1200)
   }
 
   const renderProvider = (
@@ -54,75 +85,106 @@ export default function Settings() {
     const isConnecting = connecting === id
 
     return (
-      <div className="flex items-center justify-between border-b last:border-0 pb-6 last:pb-0 pt-6 first:pt-0">
-        <div className="flex items-center gap-4">
-          <div className={`${colorClass} ${iconColorClass} p-3 rounded-xl`}>
-            <Icon size={24} />
-          </div>
-          <div>
-            <p className="font-semibold text-sm flex items-center gap-2">
-              {name}
-              {isActive && (
-                <Badge variant="secondary" className="text-xs">
-                  Padrão Ativo
-                </Badge>
-              )}
-            </p>
-            {isConnected ? (
-              <p className="text-xs text-muted-foreground mt-1">
-                Conectado como: <span className="font-medium">{providerEmails[id]}</span>
+      <div key={id} className="border-b last:border-0 pb-6 last:pb-0 pt-6 first:pt-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`${colorClass} ${iconColorClass} p-3 rounded-xl`}>
+              <Icon size={24} />
+            </div>
+            <div>
+              <p className="font-semibold text-sm flex items-center gap-2">
+                {name}
+                {isActive && (
+                  <Badge variant="secondary" className="text-xs">
+                    Padrão Ativo
+                  </Badge>
+                )}
               </p>
+              {isConnected ? (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Conectado como: <span className="font-medium">{providerEmails[id]}</span>
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">{desc}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+            {isConnected ? (
+              <>
+                <Button
+                  variant={isActive ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveCloudProvider(id)}
+                  disabled={isActive}
+                >
+                  {isActive ? 'Padrão' : 'Tornar Padrão'}
+                </Button>
+                <div className="flex items-center gap-2 sm:border-l sm:pl-4">
+                  <Label
+                    className="text-xs text-muted-foreground cursor-pointer"
+                    onClick={() => toggleProviderConnection(id)}
+                  >
+                    Desconectar
+                  </Label>
+                  <Switch
+                    checked={isConnected}
+                    onCheckedChange={() => toggleProviderConnection(id)}
+                  />
+                </div>
+              </>
             ) : (
-              <p className="text-xs text-muted-foreground mt-1">{desc}</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleConnect(id)}
+                disabled={isConnecting}
+              >
+                {isConnecting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                )}{' '}
+                Conectar {name}
+              </Button>
             )}
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-          {isConnected ? (
-            <>
-              <Button
-                variant={isActive ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveCloudProvider(id)}
-                disabled={isActive}
-              >
-                {isActive ? 'Padrão' : 'Tornar Padrão'}
+
+        {id === 'onedrive' && isConnected && (
+          <div className="mt-4 ml-16 p-4 bg-muted/30 border rounded-lg space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <LinkIcon className="h-4 w-4 text-muted-foreground" />
+              Mapeamento de Diretório Microsoft
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Insira o link de rede do SharePoint ou OneDrive for Business raiz para mapeamento
+              automático.
+            </p>
+            <div className="flex items-center gap-3">
+              <Input
+                value={linkInput}
+                onChange={(e) => setLinkInput(e.target.value)}
+                placeholder="Ex: https://empresa.sharepoint.com/personal/..."
+                className="flex-1"
+              />
+              <Button onClick={handleValidateAndSaveLink} disabled={isValidatingLink || !linkInput}>
+                {isValidatingLink ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                )}{' '}
+                Validar
               </Button>
-              <div className="flex items-center gap-2 sm:border-l sm:pl-4">
-                <Label
-                  className="text-xs text-muted-foreground cursor-pointer"
-                  onClick={() => {
-                    toggleProviderConnection(id)
-                    toast({ description: `Conta do ${name} desconectada.` })
-                  }}
-                >
-                  Desconectar
-                </Label>
-                <Switch
-                  checked={isConnected}
-                  onCheckedChange={() => {
-                    toggleProviderConnection(id)
-                    toast({ description: `Conta do ${name} desconectada.` })
-                  }}
-                />
+            </div>
+            {oneDriveNetworkLink && (
+              <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-500 mt-2 bg-emerald-50 dark:bg-emerald-500/10 p-2 rounded border border-emerald-100 dark:border-emerald-500/20">
+                <CheckCircle2 className="h-3 w-3" />
+                Link de rede ativo e validado.
               </div>
-            </>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleConnect(id)}
-              disabled={isConnecting}
-            >
-              {isConnecting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <LinkIcon className="mr-2 h-4 w-4" />
-              )}
-              Conectar {name}
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -169,24 +231,6 @@ export default function Settings() {
             'bg-sky-50',
             'text-sky-600',
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Perfil do Usuário</CardTitle>
-          <CardDescription>Informações da sua conta no Tradeezer Hub.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Nome Completo</Label>
-            <Input defaultValue="Admin Tradeezer" />
-          </div>
-          <div className="space-y-2">
-            <Label>E-mail Corporativo</Label>
-            <Input defaultValue="admin@tradeezer.com" readOnly className="bg-muted" />
-          </div>
-          <Button>Salvar Alterações</Button>
         </CardContent>
       </Card>
     </div>

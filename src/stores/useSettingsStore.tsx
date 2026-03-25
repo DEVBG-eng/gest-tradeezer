@@ -8,6 +8,8 @@ interface SettingsStoreContext {
   connectedProviders: NonNullable<CloudProvider>[]
   toggleProviderConnection: (provider: NonNullable<CloudProvider>) => void
   providerEmails: Record<string, string>
+  oneDriveNetworkLink: string
+  setOneDriveNetworkLink: (link: string) => void
 }
 
 const StoreContext = createContext<SettingsStoreContext | null>(null)
@@ -17,6 +19,8 @@ export const SettingsStoreProvider = ({ children }: { children: ReactNode }) => 
   const [connectedProviders, setConnectedProviders] = useState<NonNullable<CloudProvider>[]>([
     'google_drive',
   ])
+
+  const [oneDriveNetworkLink, setOneDriveNetworkLink] = useState('')
 
   const [providerEmails] = useState<Record<string, string>>({
     google_drive: 'admin@tradeezer.com',
@@ -47,6 +51,8 @@ export const SettingsStoreProvider = ({ children }: { children: ReactNode }) => 
         connectedProviders,
         toggleProviderConnection,
         providerEmails,
+        oneDriveNetworkLink,
+        setOneDriveNetworkLink,
       }}
     >
       {children}
