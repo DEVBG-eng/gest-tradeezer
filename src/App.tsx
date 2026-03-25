@@ -6,6 +6,7 @@ import Layout from './components/Layout'
 import Index from './pages/Index'
 import Intake from './pages/Intake'
 import Projects from './pages/Projects'
+import CreateProject from './pages/CreateProject'
 import Logistics from './pages/Logistics'
 import Notary from './pages/Notary'
 import Settings from './pages/Settings'
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/intake" element={<Intake />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/new" element={<CreateProject />} />
             <Route path="/logistics" element={<Logistics />} />
             <Route path="/notary" element={<Notary />} />
             <Route path="/settings" element={<Settings />} />

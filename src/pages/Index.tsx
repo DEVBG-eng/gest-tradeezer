@@ -1,5 +1,14 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, AlertCircle, Clock, CheckCircle2, Truck, FileText } from 'lucide-react'
+import {
+  ArrowRight,
+  AlertCircle,
+  Clock,
+  CheckCircle2,
+  Truck,
+  FileText,
+  Plus,
+  UploadCloud,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts'
@@ -116,9 +125,15 @@ export default function Index() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button asChild className="w-full justify-between" variant="default">
+                <Link to="/projects/new">
+                  Criar Novo Projeto Manual
+                  <Plus className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+              <Button asChild className="w-full justify-between" variant="secondary">
                 <Link to="/intake">
-                  Novo Intake de Documentos
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  Intake de Documentos (OCR)
+                  <UploadCloud className="h-4 w-4 ml-2" />
                 </Link>
               </Button>
               <Button asChild className="w-full justify-between" variant="outline">
