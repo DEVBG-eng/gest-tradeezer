@@ -56,14 +56,6 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-sidebar-border group-data-[collapsible=icon]:hidden">
-        <div className="text-xs text-sidebar-foreground/50 truncate">
-          Tradeezer Operations Hub
-          <br />
-          Versão 1.0.0
-        </div>
-      </SidebarFooter>
     </Sidebar>
   )
 }
