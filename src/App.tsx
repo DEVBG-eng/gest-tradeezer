@@ -1,10 +1,9 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Layout from './components/Layout'
 import Index from './pages/Index'
-import Intake from './pages/Intake'
 import Projects from './pages/Projects'
 import CreateProject from './pages/CreateProject'
 import Logistics from './pages/Logistics'
@@ -22,7 +21,8 @@ const App = () => (
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
-            <Route path="/intake" element={<Intake />} />
+            {/* Redirect legacy route to dashboard */}
+            <Route path="/intake" element={<Navigate to="/" replace />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/new" element={<CreateProject />} />
             <Route path="/logistics" element={<Logistics />} />

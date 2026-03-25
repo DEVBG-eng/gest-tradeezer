@@ -1,14 +1,5 @@
 import { Link } from 'react-router-dom'
-import {
-  ArrowRight,
-  AlertCircle,
-  Clock,
-  CheckCircle2,
-  Truck,
-  FileText,
-  Plus,
-  UploadCloud,
-} from 'lucide-react'
+import { ArrowRight, AlertCircle, Clock, CheckCircle2, Truck, FileText, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts'
@@ -130,12 +121,6 @@ export default function Index() {
                   <Plus className="h-4 w-4 ml-2" />
                 </Link>
               </Button>
-              <Button asChild className="w-full justify-between" variant="secondary">
-                <Link to="/intake">
-                  Intake de Documentos (OCR)
-                  <UploadCloud className="h-4 w-4 ml-2" />
-                </Link>
-              </Button>
               <Button asChild className="w-full justify-between" variant="outline">
                 <Link to="/projects">
                   Ir para Quadro de Projetos
@@ -155,7 +140,7 @@ export default function Index() {
                   <CheckCircle2 className="h-4 w-4 text-success" />
                 </div>
                 <div>
-                  <p className="font-medium">OCR Concluído - PRJ-1005</p>
+                  <p className="font-medium">Projeto Criado - PRJ-1005</p>
                   <p className="text-muted-foreground text-xs">
                     Estatuto Global Invest - 45 laudas
                   </p>

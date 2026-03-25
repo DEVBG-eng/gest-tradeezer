@@ -1,13 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  UploadCloud,
-  Kanban,
-  Truck,
-  Scale,
-  Settings,
-  PlusSquare,
-} from 'lucide-react'
+import { LayoutDashboard, Kanban, Truck, Scale, Settings, PlusSquare } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -21,7 +13,6 @@ import {
 const items = [
   { title: 'Dashboard', icon: LayoutDashboard, url: '/' },
   { title: 'Novo Projeto', icon: PlusSquare, url: '/projects/new' },
-  { title: 'Intake & OCR', icon: UploadCloud, url: '/intake' },
   { title: 'Quadro de Projetos', icon: Kanban, url: '/projects' },
   { title: 'Logística', icon: Truck, url: '/logistics' },
   { title: 'Gestão de Cartório', icon: Scale, url: '/notary' },

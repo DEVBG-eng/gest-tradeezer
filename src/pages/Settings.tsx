@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 
 export default function Settings() {
   return (
@@ -38,16 +37,6 @@ export default function Settings() {
           <CardDescription>Conecte serviços externos para automação.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-sm">Adobe Services (OCR)</p>
-              <p className="text-xs text-muted-foreground">Chave de API ativa</p>
-            </div>
-            <Button variant="outline" size="sm">
-              Configurar
-            </Button>
-          </div>
-          <Separator />
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-sm">DHL Express API</p>
