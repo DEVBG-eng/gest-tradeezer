@@ -92,14 +92,14 @@ export default function Settings() {
               <Icon size={24} />
             </div>
             <div>
-              <p className="font-semibold text-sm flex items-center gap-2">
+              <div className="font-semibold text-sm flex items-center gap-2">
                 {name}
                 {isActive && (
                   <Badge variant="secondary" className="text-xs">
                     Padrão Ativo
                   </Badge>
                 )}
-              </p>
+              </div>
               {isConnected ? (
                 <p className="text-xs text-muted-foreground mt-1">
                   Conectado como: <span className="font-medium">{providerEmails[id]}</span>
