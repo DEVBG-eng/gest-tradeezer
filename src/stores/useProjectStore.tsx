@@ -31,6 +31,8 @@ export interface Project {
   cloudProvider?: string | null
   cloudFolderUrl?: string
   files?: CloudFile[]
+  sourceLang?: string
+  targetLang?: string
 }
 
 interface ProjectStoreContext {
@@ -56,6 +58,8 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       laudas: 15,
       value: 0,
       documents: 2,
+      sourceLang: 'pt',
+      targetLang: 'en',
     },
     {
       id: 'PRJ-1002',
@@ -69,6 +73,8 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       laudas: 3,
       value: 450,
       documents: 1,
+      sourceLang: 'pt',
+      targetLang: 'es',
     },
     {
       id: 'PRJ-1003',
@@ -82,6 +88,8 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       laudas: 120,
       value: 8400,
       documents: 5,
+      sourceLang: 'de',
+      targetLang: 'pt',
     },
     {
       id: 'PRJ-1004',
@@ -95,6 +103,8 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       laudas: 1,
       value: 300,
       documents: 1,
+      sourceLang: 'pt',
+      targetLang: 'it',
     },
     {
       id: 'PRJ-1005',
@@ -108,6 +118,8 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       laudas: 45,
       value: 0,
       documents: 1,
+      sourceLang: 'en',
+      targetLang: 'pt',
     },
   ])
 

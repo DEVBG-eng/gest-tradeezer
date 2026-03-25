@@ -25,13 +25,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
@@ -48,6 +41,7 @@ import { useToast } from '@/hooks/use-toast'
 import useProjectStore, { CloudFile } from '@/stores/useProjectStore'
 import useSettingsStore from '@/stores/useSettingsStore'
 import { cn } from '@/lib/utils'
+import { LanguageCombobox } from '@/components/LanguageCombobox'
 
 export default function CreateProject() {
   const navigate = useNavigate()
@@ -160,7 +154,7 @@ export default function CreateProject() {
       client: clientName,
       status: 'Orçamento',
       urgent: false,
-      international: targetLang !== 'pt',
+      international: sourceLang !== 'pt' || targetLang !== 'pt',
       physicalCopy: deliveryFormat === 'fisico',
       dueDate: deadline.toISOString(),
       laudas: Number(laudas) || 0,
@@ -169,6 +163,8 @@ export default function CreateProject() {
       cloudProvider: activeCloudProvider,
       cloudFolderUrl: folderUrl,
       files: cloudFiles,
+      sourceLang,
+      targetLang,
     })
 
     toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
@@ -256,32 +252,16 @@ export default function CreateProject() {
 
               <TabsContent value="specs" className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Idioma de Origem</Label>
-                    <Select value={sourceLang} onValueChange={setSourceLang}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pt">Português (BR)</SelectItem>
-                        <SelectItem value="en">Inglês</SelectItem>
-                        <SelectItem value="es">Espanhol</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Idioma de Destino</Label>
-                    <Select value={targetLang} onValueChange={setTargetLang}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">Inglês</SelectItem>
-                        <SelectItem value="pt">Português (BR)</SelectItem>
-                        <SelectItem value="es">Espanhol</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <LanguageCombobox
+                    label="Idioma de Origem"
+                    value={sourceLang}
+                    onChange={setSourceLang}
+                  />
+                  <LanguageCombobox
+                    label="Idioma de Destino"
+                    value={targetLang}
+                    onChange={setTargetLang}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
