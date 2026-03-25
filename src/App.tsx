@@ -11,29 +11,31 @@ import Notary from './pages/Notary'
 import Settings from './pages/Settings'
 import NotFound from './pages/NotFound'
 import { ProjectStoreProvider } from './stores/useProjectStore'
+import { SettingsStoreProvider } from './stores/useSettingsStore'
 
 const App = () => (
-  <ProjectStoreProvider>
-    <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            {/* Redirect legacy route to dashboard */}
-            <Route path="/intake" element={<Navigate to="/" replace />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/projects/new" element={<CreateProject />} />
-            <Route path="/logistics" element={<Logistics />} />
-            <Route path="/notary" element={<Notary />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </BrowserRouter>
-  </ProjectStoreProvider>
+  <SettingsStoreProvider>
+    <ProjectStoreProvider>
+      <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/intake" element={<Navigate to="/" replace />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/new" element={<CreateProject />} />
+              <Route path="/logistics" element={<Logistics />} />
+              <Route path="/notary" element={<Notary />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </BrowserRouter>
+    </ProjectStoreProvider>
+  </SettingsStoreProvider>
 )
 
 export default App

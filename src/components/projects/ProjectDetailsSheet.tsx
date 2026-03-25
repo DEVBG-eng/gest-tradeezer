@@ -5,7 +5,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetClose,
 } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
@@ -18,7 +17,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { FileText, Download, X } from 'lucide-react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import {
+  FileText,
+  Download,
+  Cloud,
+  FolderOpen,
+  ExternalLink,
+  CheckCircle2,
+  Loader2,
+} from 'lucide-react'
 import useProjectStore from '@/stores/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
 
@@ -119,12 +135,90 @@ export function ProjectDetailsSheet({
             </div>
           </TabsContent>
 
-          <TabsContent value="docs" className="py-4 h-[500px] animate-fade-in">
-            <div className="w-full h-full bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-border/60 flex flex-col items-center justify-center text-muted-foreground shadow-inner">
-              <FileText size={64} className="mb-4 opacity-40" />
-              <p className="font-medium text-slate-500">Visualizador Integrado</p>
-              <p className="text-sm opacity-70">(Simulação Adobe Services)</p>
-            </div>
+          <TabsContent value="docs" className="py-4 h-[500px] overflow-y-auto animate-fade-in">
+            {project.files && project.files.length > 0 ? (
+              <div className="space-y-4">
+                {project.cloudFolderUrl && (
+                  <div className="flex items-center justify-between bg-primary/5 p-4 rounded-xl border border-primary/10">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-background p-2 rounded-lg shadow-sm">
+                        <Cloud className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Pasta Sincronizada</p>
+                        <p className="text-xs text-muted-foreground">
+                          Via{' '}
+                          {project.cloudProvider === 'google_drive' ? 'Google Drive' : 'Dropbox'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={project.cloudFolderUrl} target="_blank" rel="noreferrer">
+                        <FolderOpen className="h-4 w-4 mr-2" />
+                        Acessar Pasta
+                      </a>
+                    </Button>
+                  </div>
+                )}
+
+                <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead>Documento</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {project.files.map((f) => (
+                        <TableRow key={f.id}>
+                          <TableCell className="font-medium flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="truncate max-w-[180px]">{f.name}</span>
+                          </TableCell>
+                          <TableCell>
+                            {f.status === 'uploading' ? (
+                              <Badge
+                                variant="outline"
+                                className="text-amber-500 border-amber-500/30 bg-amber-500/10"
+                              >
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enviando
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10"
+                              >
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Sincronizado
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              asChild
+                              disabled={f.status !== 'synced'}
+                            >
+                              <a href={f.url} target="_blank" rel="noreferrer">
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full h-full bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-border/60 flex flex-col items-center justify-center text-muted-foreground shadow-inner">
+                <FileText size={64} className="mb-4 opacity-40" />
+                <p className="font-medium text-slate-500">Nenhum documento na nuvem</p>
+                <p className="text-sm opacity-70">Os arquivos sincronizados aparecerão aqui</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="history" className="py-4 animate-fade-in">

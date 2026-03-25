@@ -1,7 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, UploadCloud, FileArchive, CheckCircle2 } from 'lucide-react'
+import {
+  Calendar as CalendarIcon,
+  UploadCloud,
+  CheckCircle2,
+  Cloud,
+  FolderOpen,
+  Loader2,
+  ExternalLink,
+  FileText,
+} from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Card,
@@ -24,13 +33,25 @@ import {
 } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import useProjectStore from '@/stores/useProjectStore'
+import useProjectStore, { CloudFile } from '@/stores/useProjectStore'
+import useSettingsStore from '@/stores/useSettingsStore'
 import { cn } from '@/lib/utils'
 
 export default function CreateProject() {
   const navigate = useNavigate()
   const { addProject } = useProjectStore()
+  const { activeCloudProvider } = useSettingsStore()
   const { toast } = useToast()
 
   const [reference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
@@ -42,13 +63,44 @@ export default function CreateProject() {
   const [laudas, setLaudas] = useState('')
   const [deliveryFormat, setDeliveryFormat] = useState('digital')
   const [docCount, setDocCount] = useState('0')
-  const [files, setFiles] = useState<File[]>([])
+  const [cloudFiles, setCloudFiles] = useState<CloudFile[]>([])
+
+  const folderUrl =
+    activeCloudProvider === 'google_drive'
+      ? `https://drive.google.com/drive/folders/${reference}`
+      : `https://www.dropbox.com/sh/${reference}`
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files)
-      setFiles((prev) => [...prev, ...newFiles])
+
+      const newCloudFiles = newFiles.map((f) => {
+        const id = Math.random().toString(36).substr(2, 9)
+        return {
+          id,
+          name: f.name,
+          size: f.size,
+          status: 'uploading' as const,
+          url:
+            activeCloudProvider === 'google_drive'
+              ? `https://drive.google.com/file/d/${id}/view`
+              : `https://www.dropbox.com/s/${id}/${f.name}`,
+        }
+      })
+
+      setCloudFiles((prev) => [...prev, ...newCloudFiles])
       setDocCount((prev) => (Number(prev) + newFiles.length).toString())
+
+      newCloudFiles.forEach((cf) => {
+        setTimeout(
+          () => {
+            setCloudFiles((prev) =>
+              prev.map((p) => (p.id === cf.id ? { ...p, status: 'synced' } : p)),
+            )
+          },
+          1500 + Math.random() * 2000,
+        )
+      })
     }
   }
 
@@ -73,7 +125,10 @@ export default function CreateProject() {
       dueDate: deadline.toISOString(),
       laudas: Number(laudas) || 0,
       value: 0,
-      documents: Number(docCount) || files.length || 1,
+      documents: Number(docCount) || cloudFiles.length || 1,
+      cloudProvider: activeCloudProvider,
+      cloudFolderUrl: folderUrl,
+      files: cloudFiles,
     })
 
     toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
@@ -233,17 +288,39 @@ export default function CreateProject() {
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="digital" id="digital" />
-                      <Label htmlFor="digital">Apenas Digital (E-mail / Portal)</Label>
+                      <Label htmlFor="digital">Apenas Digital</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="fisico" id="fisico" />
-                      <Label htmlFor="fisico">Via Física (Cartório / DHL / Motoboy)</Label>
+                      <Label htmlFor="fisico">Via Física</Label>
                     </div>
                   </RadioGroup>
                 </div>
               </TabsContent>
 
               <TabsContent value="docs" className="space-y-6">
+                {activeCloudProvider && (
+                  <Alert className="bg-primary/5 border-primary/20">
+                    <Cloud className="h-4 w-4 text-primary" />
+                    <AlertTitle>Sincronização em Nuvem Ativa</AlertTitle>
+                    <AlertDescription className="flex items-center justify-between mt-2">
+                      <span className="text-sm">
+                        Pasta criada no{' '}
+                        <strong>
+                          {activeCloudProvider === 'google_drive' ? 'Google Drive' : 'Dropbox'}
+                        </strong>
+                        : /{reference}
+                      </span>
+                      <Button variant="outline" size="sm" asChild className="h-8">
+                        <a href={folderUrl} target="_blank" rel="noreferrer">
+                          <FolderOpen className="h-3 w-3 mr-2" />
+                          Abrir Pasta
+                        </a>
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div
                   className="border-2 border-dashed border-border hover:border-primary/50 transition-colors rounded-xl p-10 text-center cursor-pointer bg-slate-50/30 dark:bg-slate-900/30"
                   onClick={() => document.getElementById('file-upload')?.click()}
@@ -262,44 +339,66 @@ export default function CreateProject() {
                     onChange={handleFiles}
                   />
                   <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="font-medium text-lg mb-1">Upload de Arquivos ou ZIP</h3>
+                  <h3 className="font-medium text-lg mb-1">Upload de Arquivos</h3>
                   <p className="text-sm text-muted-foreground">
-                    Arraste os documentos aqui ou clique para selecionar.
+                    Arraste os documentos aqui para sincronizar direto com a nuvem.
                   </p>
                 </div>
 
-                {files.length > 0 && (
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-success" /> {files.length} arquivo(s)
-                      selecionado(s)
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {files.map((f, i) => (
-                        <span
-                          key={i}
-                          className="text-xs bg-background border px-2 py-1 rounded flex items-center gap-1"
-                        >
-                          <FileArchive className="h-3 w-3" /> {f.name}
-                        </span>
-                      ))}
-                    </div>
+                {cloudFiles.length > 0 && (
+                  <div className="bg-card border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Arquivo</TableHead>
+                          <TableHead>Tamanho</TableHead>
+                          <TableHead>Status Nuvem</TableHead>
+                          <TableHead className="text-right">Ação</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {cloudFiles.map((f) => (
+                          <TableRow key={f.id}>
+                            <TableCell className="font-medium flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="truncate max-w-[200px]">{f.name}</span>
+                            </TableCell>
+                            <TableCell>{(f.size / 1024).toFixed(1)} KB</TableCell>
+                            <TableCell>
+                              {f.status === 'uploading' ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1"
+                                >
+                                  <Loader2 className="h-3 w-3 animate-spin" /> Sincronizando
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" /> Sincronizado
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                disabled={f.status !== 'synced'}
+                              >
+                                <a href={f.url} target="_blank" rel="noreferrer">
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
-
-                <div className="space-y-2">
-                  <Label>Contagem Final de Documentos</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={docCount}
-                    onChange={(e) => setDocCount(e.target.value)}
-                    className="w-48 font-mono"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    O número de itens que precisarão de processamento individual.
-                  </p>
-                </div>
               </TabsContent>
             </Tabs>
           </CardContent>

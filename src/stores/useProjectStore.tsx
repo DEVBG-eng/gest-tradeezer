@@ -8,6 +8,14 @@ export type ProjectStatus =
   | 'Logística'
   | 'Concluído'
 
+export interface CloudFile {
+  id: string
+  name: string
+  status: 'uploading' | 'synced' | 'error'
+  url: string
+  size: number
+}
+
 export interface Project {
   id: string
   title: string
@@ -20,6 +28,9 @@ export interface Project {
   laudas: number
   value: number
   documents: number
+  cloudProvider?: string | null
+  cloudFolderUrl?: string
+  files?: CloudFile[]
 }
 
 interface ProjectStoreContext {
