@@ -37,6 +37,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import useProjectStore, { CloudFile } from '@/stores/useProjectStore'
 import useSettingsStore from '@/stores/useSettingsStore'
@@ -54,11 +55,22 @@ export default function CreateProject() {
   const [clientName, setClientName] = useState('')
   const [sourceLang, setSourceLang] = useState('pt')
   const [targetLang, setTargetLang] = useState('en')
+
+  const [startDate, setStartDate] = useState<Date>()
   const [deadline, setDeadline] = useState<Date>()
+
   const [laudas, setLaudas] = useState('')
-  const [deliveryFormat, setDeliveryFormat] = useState('digital')
   const [docCount, setDocCount] = useState('0')
   const [cloudFiles, setCloudFiles] = useState<CloudFile[]>([])
+
+  const [services, setServices] = useState({
+    digital: true,
+    fisico: false,
+    apostilamento: false,
+    reconhecimentoFirma: false,
+    frete: false,
+    dhl: false,
+  })
 
   const folderUrl =
     activeCloudProvider === 'google_drive'
@@ -145,8 +157,19 @@ export default function CreateProject() {
         variant: 'destructive',
       })
     }
+    if (!startDate) {
+      return toast({
+        title: 'Erro',
+        description: 'Data de Entrada é obrigatória.',
+        variant: 'destructive',
+      })
+    }
     if (!deadline) {
-      return toast({ title: 'Erro', description: 'Prazo é obrigatório.', variant: 'destructive' })
+      return toast({
+        title: 'Erro',
+        description: 'Prazo de Entrega é obrigatório.',
+        variant: 'destructive',
+      })
     }
 
     addProject({
@@ -155,7 +178,7 @@ export default function CreateProject() {
       status: 'Orçamento',
       urgent: false,
       international: sourceLang !== 'pt' || targetLang !== 'pt',
-      physicalCopy: deliveryFormat === 'fisico',
+      physicalCopy: services.fisico,
       dueDate: deadline.toISOString(),
       laudas: Number(laudas) || 0,
       value: 0,
@@ -267,7 +290,38 @@ export default function CreateProject() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2 flex flex-col">
                     <Label>
-                      Prazo Esperado <span className="text-destructive">*</span>
+                      Data de Entrada <span className="text-destructive">*</span>
+                    </Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !startDate && 'text-muted-foreground',
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDate ? (
+                            format(startDate, 'dd/MM/yyyy')
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={setStartDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-2 flex flex-col">
+                    <Label>
+                      Prazo de Entrega <span className="text-destructive">*</span>
                     </Label>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -296,33 +350,99 @@ export default function CreateProject() {
                       </PopoverContent>
                     </Popover>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Quantidade de Laudas Estimada</Label>
+                    <Label>Quantidade de Documentos</Label>
+                    <Input
+                      type="number"
+                      placeholder="Ex: 1"
+                      value={docCount}
+                      onChange={(e) => setDocCount(e.target.value)}
+                      min="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Quantidade de Laudas</Label>
                     <Input
                       type="number"
                       placeholder="Opcional"
                       value={laudas}
                       onChange={(e) => setLaudas(e.target.value)}
+                      min="0"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-4 pt-2">
-                  <Label className="text-base font-semibold">Formato de Entrega Logística</Label>
-                  <RadioGroup
-                    value={deliveryFormat}
-                    onValueChange={setDeliveryFormat}
-                    className="flex gap-6"
-                  >
+                  <Label className="text-base font-semibold">Serviços e Logística</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border rounded-lg p-4 bg-slate-50/50 dark:bg-slate-900/50">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="digital" id="digital" />
-                      <Label htmlFor="digital">Apenas Digital</Label>
+                      <Checkbox
+                        id="digital"
+                        checked={services.digital}
+                        onCheckedChange={(c) => setServices((prev) => ({ ...prev, digital: !!c }))}
+                      />
+                      <Label htmlFor="digital" className="font-normal cursor-pointer">
+                        Via Digital
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="fisico" id="fisico" />
-                      <Label htmlFor="fisico">Via Física</Label>
+                      <Checkbox
+                        id="fisico"
+                        checked={services.fisico}
+                        onCheckedChange={(c) => setServices((prev) => ({ ...prev, fisico: !!c }))}
+                      />
+                      <Label htmlFor="fisico" className="font-normal cursor-pointer">
+                        Via Física
+                      </Label>
                     </div>
-                  </RadioGroup>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="apostilamento"
+                        checked={services.apostilamento}
+                        onCheckedChange={(c) =>
+                          setServices((prev) => ({ ...prev, apostilamento: !!c }))
+                        }
+                      />
+                      <Label htmlFor="apostilamento" className="font-normal cursor-pointer">
+                        Apostilamento de Haia
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="reconhecimento"
+                        checked={services.reconhecimentoFirma}
+                        onCheckedChange={(c) =>
+                          setServices((prev) => ({ ...prev, reconhecimentoFirma: !!c }))
+                        }
+                      />
+                      <Label htmlFor="reconhecimento" className="font-normal cursor-pointer">
+                        Reconhecimento de Firma
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="frete"
+                        checked={services.frete}
+                        onCheckedChange={(c) => setServices((prev) => ({ ...prev, frete: !!c }))}
+                      />
+                      <Label htmlFor="frete" className="font-normal cursor-pointer">
+                        Frete
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="dhl"
+                        checked={services.dhl}
+                        onCheckedChange={(c) => setServices((prev) => ({ ...prev, dhl: !!c }))}
+                      />
+                      <Label htmlFor="dhl" className="font-normal cursor-pointer">
+                        DHL (envio para fora do Brasil)
+                      </Label>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
