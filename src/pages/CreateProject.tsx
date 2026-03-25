@@ -55,7 +55,7 @@ export default function CreateProject() {
   const { activeCloudProvider, oneDriveNetworkLink } = useSettingsStore()
   const { toast } = useToast()
 
-  const [reference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
+  const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
   const [sourceLang, setSourceLang] = useState('pt')
@@ -137,14 +137,23 @@ export default function CreateProject() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!clientName)
+    if (!reference.trim()) {
+      return toast({
+        title: 'Erro',
+        description: 'Código de Referência é obrigatório.',
+        variant: 'destructive',
+      })
+    }
+    if (!clientName.trim()) {
       return toast({
         title: 'Erro',
         description: 'Nome do cliente é obrigatório.',
         variant: 'destructive',
       })
-    if (!deadline)
+    }
+    if (!deadline) {
       return toast({ title: 'Erro', description: 'Prazo é obrigatório.', variant: 'destructive' })
+    }
 
     addProject({
       title: `Ordem de Serviço ${reference}`,
@@ -183,13 +192,21 @@ export default function CreateProject() {
                 <CardTitle>Configuração do Projeto</CardTitle>
                 <CardDescription>Preencha os detalhes navegando pelas abas abaixo.</CardDescription>
               </div>
-              <div className="text-right">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Cód. Referência
-                </p>
-                <p className="text-lg font-mono font-bold text-primary bg-primary/10 px-3 py-1 rounded">
-                  {reference}
-                </p>
+              <div className="text-right flex flex-col items-end">
+                <Label
+                  htmlFor="reference"
+                  className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2"
+                >
+                  Cód. Referência <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="reference"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="Ex: TRD-123456"
+                  className="w-48 font-mono font-bold text-primary bg-primary/5 h-9"
+                  required
+                />
               </div>
             </div>
           </CardHeader>
