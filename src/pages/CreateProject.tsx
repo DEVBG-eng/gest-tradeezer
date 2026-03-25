@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import useProjectStore, { CloudFile } from '@/stores/useProjectStore'
 import useSettingsStore from '@/stores/useSettingsStore'
@@ -61,6 +62,8 @@ export default function CreateProject() {
 
   const [laudas, setLaudas] = useState('')
   const [docCount, setDocCount] = useState('0')
+  const [documentType, setDocumentType] = useState('')
+  const [observations, setObservations] = useState('')
   const [cloudFiles, setCloudFiles] = useState<CloudFile[]>([])
 
   const [services, setServices] = useState({
@@ -196,6 +199,8 @@ export default function CreateProject() {
       files: cloudFiles,
       sourceLang,
       targetLang,
+      documentType,
+      observations,
     })
 
     toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
@@ -381,6 +386,25 @@ export default function CreateProject() {
                       onChange={handleLaudasChange}
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tipo de Documento</Label>
+                  <Input
+                    placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
+                    value={documentType}
+                    onChange={(e) => setDocumentType(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Textarea
+                    placeholder="Instruções especiais, notas internas, ou outras observações do documento..."
+                    value={observations}
+                    onChange={(e) => setObservations(e.target.value)}
+                    className="min-h-[100px] resize-y"
+                  />
                 </div>
 
                 <div className="space-y-4 pt-2">

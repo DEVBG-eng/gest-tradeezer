@@ -33,6 +33,8 @@ export interface Project {
   files?: CloudFile[]
   sourceLang?: string
   targetLang?: string
+  documentType?: string
+  observations?: string
 }
 
 interface ProjectStoreContext {
@@ -60,6 +62,8 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       documents: 2,
       sourceLang: 'pt',
       targetLang: 'en',
+      documentType: 'Contrato Social',
+      observations: 'Prioridade alta para envio.',
     },
     {
       id: 'PRJ-1002',
@@ -75,6 +79,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       documents: 1,
       sourceLang: 'pt',
       targetLang: 'es',
+      documentType: 'Procuração Pública',
     },
     {
       id: 'PRJ-1003',
@@ -90,6 +95,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       documents: 5,
       sourceLang: 'de',
       targetLang: 'pt',
+      documentType: 'Manual Técnico',
     },
     {
       id: 'PRJ-1004',
@@ -105,6 +111,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       documents: 1,
       sourceLang: 'pt',
       targetLang: 'it',
+      documentType: 'Certidão',
     },
     {
       id: 'PRJ-1005',
@@ -120,6 +127,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       documents: 1,
       sourceLang: 'en',
       targetLang: 'pt',
+      documentType: 'Estatuto',
     },
   ])
 
