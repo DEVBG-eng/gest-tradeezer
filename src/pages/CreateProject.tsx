@@ -10,6 +10,7 @@ import {
   Loader2,
   ExternalLink,
   FileText,
+  AlertCircle,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -68,7 +69,16 @@ export default function CreateProject() {
   const folderUrl =
     activeCloudProvider === 'google_drive'
       ? `https://drive.google.com/drive/folders/${reference}`
-      : `https://www.dropbox.com/sh/${reference}`
+      : activeCloudProvider === 'onedrive'
+        ? `https://onedrive.live.com/?id=root/Projetos/${reference}`
+        : `https://www.dropbox.com/sh/${reference}`
+
+  const providerName =
+    activeCloudProvider === 'google_drive'
+      ? 'Google Drive'
+      : activeCloudProvider === 'onedrive'
+        ? 'Microsoft OneDrive'
+        : 'Dropbox'
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -84,7 +94,9 @@ export default function CreateProject() {
           url:
             activeCloudProvider === 'google_drive'
               ? `https://drive.google.com/file/d/${id}/view`
-              : `https://www.dropbox.com/s/${id}/${f.name}`,
+              : activeCloudProvider === 'onedrive'
+                ? `https://onedrive.live.com/view.aspx?resid=${id}`
+                : `https://www.dropbox.com/s/${id}/${f.name}`,
         }
       })
 
@@ -94,9 +106,21 @@ export default function CreateProject() {
       newCloudFiles.forEach((cf) => {
         setTimeout(
           () => {
+            // Simulate a chance of error for OneDrive to show error handling capabilities
+            const isError = activeCloudProvider === 'onedrive' && Math.random() > 0.8
             setCloudFiles((prev) =>
-              prev.map((p) => (p.id === cf.id ? { ...p, status: 'synced' } : p)),
+              prev.map((p) =>
+                p.id === cf.id ? { ...p, status: isError ? 'error' : 'synced' } : p,
+              ),
             )
+
+            if (isError) {
+              toast({
+                title: 'Erro de Sincronização',
+                description: `Falha ao transferir ${cf.name} para o OneDrive. Verifique os limites de armazenamento ou permissões.`,
+                variant: 'destructive',
+              })
+            }
           },
           1500 + Math.random() * 2000,
         )
@@ -305,11 +329,10 @@ export default function CreateProject() {
                     <AlertTitle>Sincronização em Nuvem Ativa</AlertTitle>
                     <AlertDescription className="flex items-center justify-between mt-2">
                       <span className="text-sm">
-                        Pasta criada no{' '}
-                        <strong>
-                          {activeCloudProvider === 'google_drive' ? 'Google Drive' : 'Dropbox'}
-                        </strong>
-                        : /{reference}
+                        Pasta criada no <strong>{providerName}</strong>:{' '}
+                        {activeCloudProvider === 'onedrive'
+                          ? `/Projetos/${reference}`
+                          : `/${reference}`}
                       </span>
                       <Button variant="outline" size="sm" asChild className="h-8">
                         <a href={folderUrl} target="_blank" rel="noreferrer">
@@ -371,6 +394,13 @@ export default function CreateProject() {
                                   className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1"
                                 >
                                   <Loader2 className="h-3 w-3 animate-spin" /> Sincronizando
+                                </Badge>
+                              ) : f.status === 'error' ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-destructive border-destructive/30 bg-destructive/10 gap-1"
+                                >
+                                  <AlertCircle className="h-3 w-3" /> Erro Sync
                                 </Badge>
                               ) : (
                                 <Badge

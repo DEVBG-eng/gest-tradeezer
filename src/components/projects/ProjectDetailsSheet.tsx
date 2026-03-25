@@ -34,6 +34,7 @@ import {
   ExternalLink,
   CheckCircle2,
   Loader2,
+  AlertCircle,
 } from 'lucide-react'
 import useProjectStore from '@/stores/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
@@ -148,7 +149,11 @@ export function ProjectDetailsSheet({
                         <p className="text-sm font-medium">Pasta Sincronizada</p>
                         <p className="text-xs text-muted-foreground">
                           Via{' '}
-                          {project.cloudProvider === 'google_drive' ? 'Google Drive' : 'Dropbox'}
+                          {project.cloudProvider === 'google_drive'
+                            ? 'Google Drive'
+                            : project.cloudProvider === 'onedrive'
+                              ? 'Microsoft OneDrive'
+                              : 'Dropbox'}
                         </p>
                       </div>
                     </div>
@@ -181,16 +186,23 @@ export function ProjectDetailsSheet({
                             {f.status === 'uploading' ? (
                               <Badge
                                 variant="outline"
-                                className="text-amber-500 border-amber-500/30 bg-amber-500/10"
+                                className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1"
                               >
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enviando
+                                <Loader2 className="h-3 w-3 animate-spin" /> Enviando
+                              </Badge>
+                            ) : f.status === 'error' ? (
+                              <Badge
+                                variant="outline"
+                                className="text-destructive border-destructive/30 bg-destructive/10 gap-1"
+                              >
+                                <AlertCircle className="h-3 w-3" /> Erro Sync
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10"
+                                className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1"
                               >
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Sincronizado
+                                <CheckCircle2 className="h-3 w-3" /> Sincronizado
                               </Badge>
                             )}
                           </TableCell>
