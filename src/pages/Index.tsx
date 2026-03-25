@@ -21,7 +21,7 @@ export default function Index() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard Executivo</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Tradeezer</h1>
         <p className="text-muted-foreground mt-1">
           Visão geral das operações e alertas do sistema.
         </p>
@@ -51,7 +51,7 @@ export default function Index() {
         <Card className="border-warning/50 bg-warning/5 hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-warning-foreground">
-              SLA em Risco
+              Atrasos&nbsp;
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-warning" />
           </CardHeader>
