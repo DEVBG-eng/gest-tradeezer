@@ -141,6 +141,14 @@ export default function CreateProject() {
     }
   }
 
+  const handleLaudasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // Allow digits and at most one comma or dot as decimal separator
+    if (/^\d*[.,]?\d*$/.test(value)) {
+      setLaudas(value)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!reference.trim()) {
@@ -180,7 +188,7 @@ export default function CreateProject() {
       international: sourceLang !== 'pt' || targetLang !== 'pt',
       physicalCopy: services.fisico,
       dueDate: deadline.toISOString(),
-      laudas: Number(laudas) || 0,
+      laudas: Number(laudas.replace(',', '.')) || 0,
       value: 0,
       documents: Number(docCount) || cloudFiles.length || 1,
       cloudProvider: activeCloudProvider,
@@ -366,11 +374,11 @@ export default function CreateProject() {
                   <div className="space-y-2">
                     <Label>Quantidade de Laudas</Label>
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       placeholder="Opcional"
                       value={laudas}
-                      onChange={(e) => setLaudas(e.target.value)}
-                      min="0"
+                      onChange={handleLaudasChange}
                     />
                   </div>
                 </div>
