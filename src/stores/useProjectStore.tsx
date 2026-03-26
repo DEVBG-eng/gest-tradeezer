@@ -1,4 +1,22 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from 'react'
+import {
+  ProjetoRecord,
+  getProjetos,
+  createProjeto,
+  updateProjeto,
+  deleteProjeto,
+} from '@/services/projetos'
+import { useRealtime } from '@/hooks/use-realtime'
+import { useToast } from '@/hooks/use-toast'
+import { extractFieldErrors } from '@/lib/pocketbase/errors'
+import { useAuth } from '@/hooks/use-auth'
 
 export type ProjectStatus =
   | 'Aguardando'
@@ -26,6 +44,7 @@ export interface CloudFile {
 }
 
 export interface Project {
+  pbId: string
   id: string
   title: string
   client: string
@@ -37,6 +56,7 @@ export interface Project {
   entryDate?: string
   dueDate: string
   laudas: number
+  valorLauda: number
   value: number
   documents: number
   cloudProvider?: string | null
@@ -55,155 +75,174 @@ export interface Project {
 
 interface ProjectStoreContext {
   projects: Project[]
-  addProject: (project: Omit<Project, 'id'>) => void
-  updateProjectStatus: (id: string, status: ProjectStatus) => void
-  updateProject: (id: string, data: Partial<Project>) => void
-  deleteProject: (id: string) => void
+  loading: boolean
+  addProject: (project: Omit<Project, 'pbId'>) => Promise<void>
+  updateProjectStatus: (id: string, status: ProjectStatus) => Promise<void>
+  updateProject: (id: string, data: Partial<Project>) => Promise<void>
+  deleteProject: (id: string) => Promise<void>
 }
 
 const StoreContext = createContext<ProjectStoreContext | null>(null)
 
+const mapToProject = (record: ProjetoRecord): Project => ({
+  pbId: record.id as string,
+  id: record.cod_referencia,
+  title: `Ordem de Serviço ${record.cod_referencia}`,
+  client: record.cliente,
+  status: (record.status as ProjectStatus) || 'Aguardando',
+  urgent: record.urgente || false,
+  international: record.internacional || false,
+  physicalCopy: record.fisico || false,
+  digitalCopy: record.digital || false,
+  entryDate: record.data_entrada,
+  dueDate: record.data_entrega || '',
+  laudas: record.qtd_laudas || 0,
+  valorLauda: record.valor_lauda || 0,
+  value: record.valor_total || 0,
+  documents: record.qtd_documentos || 1,
+  sourceLang: record.idioma_origem,
+  targetLang: record.idioma_destino,
+  documentType: record.tipo_documento,
+  translationType: record.tipo_servico,
+  observations: record.observacoes,
+  hagueApostille: record.apostilamento,
+  notarization: record.reconhecimento,
+  shipping: record.frete,
+  internationalShipping: record.dhl,
+})
+
+const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
+  const data: Partial<ProjetoRecord> = {}
+  if (project.id !== undefined) data.cod_referencia = project.id
+  if (project.client !== undefined) data.cliente = project.client
+  if (project.status !== undefined) data.status = project.status
+  if (project.urgent !== undefined) data.urgente = project.urgent
+  if (project.international !== undefined) data.internacional = project.international
+  if (project.physicalCopy !== undefined) data.fisico = project.physicalCopy
+  if (project.digitalCopy !== undefined) data.digital = project.digitalCopy
+  if (project.entryDate !== undefined)
+    data.data_entrada = project.entryDate ? new Date(project.entryDate).toISOString() : undefined
+  if (project.dueDate !== undefined)
+    data.data_entrega = project.dueDate ? new Date(project.dueDate).toISOString() : undefined
+  if (project.laudas !== undefined) data.qtd_laudas = project.laudas
+  if (project.valorLauda !== undefined) data.valor_lauda = project.valorLauda
+  if (project.documents !== undefined) data.qtd_documentos = project.documents
+  if (project.sourceLang !== undefined) data.idioma_origem = project.sourceLang
+  if (project.targetLang !== undefined) data.idioma_destino = project.targetLang
+  if (project.documentType !== undefined) data.tipo_documento = project.documentType
+  if (project.translationType !== undefined) data.tipo_servico = project.translationType
+  if (project.observations !== undefined) data.observacoes = project.observations
+  if (project.hagueApostille !== undefined) data.apostilamento = project.hagueApostille
+  if (project.notarization !== undefined) data.reconhecimento = project.notarization
+  if (project.shipping !== undefined) data.frete = project.shipping
+  if (project.internationalShipping !== undefined) data.dhl = project.internationalShipping
+  return data
+}
+
 export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 'PRJ-1001',
-      title: 'Contrato Social - TechCorp',
-      client: 'TechCorp Brasil',
-      status: 'Aguardando',
-      urgent: true,
-      international: false,
-      physicalCopy: false,
-      digitalCopy: true,
-      entryDate: '2023-11-01',
-      dueDate: '2023-11-10',
-      laudas: 15.5,
-      value: 0,
-      documents: 2,
-      sourceLang: 'pt',
-      targetLang: 'en',
-      documentType: 'Contrato Social',
-      translationType: 'Tradução Juramentada',
-      observations: 'Prioridade alta para envio.',
-      hagueApostille: false,
-      notarization: true,
-      shipping: false,
-      internationalShipping: false,
-    },
-    {
-      id: 'PRJ-1002',
-      title: 'Procuração Pública (Apostila)',
-      client: 'Maria Silva',
-      status: 'Em Revisão',
-      urgent: false,
-      international: true,
-      physicalCopy: true,
-      digitalCopy: true,
-      entryDate: '2023-11-02',
-      dueDate: '2023-11-15',
-      laudas: 3.0,
-      value: 450,
-      documents: 1,
-      sourceLang: 'pt',
-      targetLang: 'es',
-      documentType: 'Procuração Pública',
-      translationType: 'Tradução Juramentada',
-      hagueApostille: true,
-      notarization: true,
-      shipping: true,
-      internationalShipping: true,
-    },
-    {
-      id: 'PRJ-1003',
-      title: 'Manuais Técnicos de Maquinário',
-      client: 'Industria XPTO',
-      status: 'Em Andamento',
-      urgent: false,
-      international: true,
-      physicalCopy: false,
-      digitalCopy: true,
-      entryDate: '2023-11-03',
-      dueDate: '2023-11-20',
-      laudas: 120.0,
-      value: 8400,
-      documents: 5,
-      sourceLang: 'de',
-      targetLang: 'pt',
-      documentType: 'Manual Técnico',
-      translationType: 'Tradução Técnica',
-      hagueApostille: false,
-      notarization: false,
-      shipping: false,
-      internationalShipping: false,
-      observations: 'Glossário técnico específico fornecido pelo cliente.',
-    },
-    {
-      id: 'PRJ-1004',
-      title: 'Certidão de Casamento',
-      client: 'João Souza',
-      status: 'Cartório',
-      urgent: true,
-      international: true,
-      physicalCopy: true,
-      digitalCopy: false,
-      entryDate: '2023-11-01',
-      dueDate: '2023-11-05',
-      laudas: 1.0,
-      value: 300,
-      documents: 1,
-      sourceLang: 'pt',
-      targetLang: 'it',
-      documentType: 'Certidão',
-      translationType: 'Tradução Juramentada',
-      hagueApostille: true,
-      notarization: false,
-      shipping: true,
-      internationalShipping: true,
-    },
-    {
-      id: 'PRJ-1005',
-      title: 'Estatuto da Empresa',
-      client: 'Global Invest',
-      status: 'Concluído',
-      urgent: false,
-      international: false,
-      physicalCopy: false,
-      digitalCopy: true,
-      entryDate: '2023-11-04',
-      dueDate: '2023-11-12',
-      laudas: 45.0,
-      value: 0,
-      documents: 1,
-      sourceLang: 'en',
-      targetLang: 'pt',
-      documentType: 'Estatuto',
-      translationType: 'Tradução Juramentada',
-      hagueApostille: false,
-      notarization: false,
-      shipping: false,
-      internationalShipping: false,
-    },
-  ])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+  const { user } = useAuth()
 
-  const addProject = (project: Omit<Project, 'id'>) => {
-    const newId = `PRJ-${1000 + projects.length + 1}`
-    setProjects((prev) => [{ ...project, id: newId }, ...prev])
+  const loadData = useCallback(async () => {
+    if (!user) return
+    try {
+      const records = await getProjetos()
+      setProjects(records.map(mapToProject))
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  useRealtime(
+    'Projetos',
+    () => {
+      loadData()
+    },
+    !!user,
+  )
+
+  const getPbId = (id: string) => projects.find((p) => p.id === id)?.pbId
+
+  const addProject = async (project: Omit<Project, 'pbId'>) => {
+    try {
+      await createProjeto(mapToPB(project))
+    } catch (e: any) {
+      const errors = extractFieldErrors(e)
+      if (
+        errors.cod_referencia ||
+        e?.response?.data?.cod_referencia?.code === 'validation_not_unique'
+      ) {
+        toast({
+          title: 'Erro de Validação',
+          description: 'O Cód. de Referência já existe.',
+          variant: 'destructive',
+        })
+        throw new Error('Cód. Referência duplicado')
+      }
+      toast({ title: 'Erro', description: 'Falha ao salvar projeto.', variant: 'destructive' })
+      throw e
+    }
   }
 
-  const updateProjectStatus = (id: string, status: ProjectStatus) => {
+  const updateProjectStatus = async (id: string, status: ProjectStatus) => {
+    const pbId = getPbId(id)
+    if (!pbId) return
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
+    try {
+      await updateProjeto(pbId, { status })
+    } catch (e) {
+      loadData()
+      toast({ title: 'Erro', description: 'Falha ao atualizar status', variant: 'destructive' })
+    }
   }
 
-  const updateProject = (id: string, data: Partial<Project>) => {
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)))
+  const updateProject = async (id: string, data: Partial<Project>) => {
+    const pbId = getPbId(id)
+    if (!pbId) return
+    try {
+      await updateProjeto(pbId, mapToPB(data))
+    } catch (e: any) {
+      const errors = extractFieldErrors(e)
+      if (
+        errors.cod_referencia ||
+        e?.response?.data?.cod_referencia?.code === 'validation_not_unique'
+      ) {
+        toast({
+          title: 'Erro de Validação',
+          description: 'O Cód. de Referência já existe.',
+          variant: 'destructive',
+        })
+        throw new Error('Cód. Referência duplicado')
+      }
+      loadData()
+      toast({ title: 'Erro', description: 'Falha ao atualizar projeto', variant: 'destructive' })
+      throw e
+    }
   }
 
-  const deleteProject = (id: string) => {
+  const deleteProject = async (id: string) => {
+    const pbId = getPbId(id)
+    if (!pbId) return
     setProjects((prev) => prev.filter((p) => p.id !== id))
+    try {
+      await deleteProjeto(pbId)
+    } catch (e) {
+      loadData()
+      toast({ title: 'Erro', description: 'Falha ao excluir projeto', variant: 'destructive' })
+    }
   }
 
   return (
     <StoreContext.Provider
-      value={{ projects, addProject, updateProjectStatus, updateProject, deleteProject }}
+      value={{ projects, loading, addProject, updateProjectStatus, updateProject, deleteProject }}
     >
       {children}
     </StoreContext.Provider>

@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns'
-import { MoreHorizontal, Edit, Trash2, ChevronRight } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, ChevronRight, Loader2 } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -37,7 +37,7 @@ interface ProjectGridProps {
 }
 
 export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }: ProjectGridProps) {
-  const { projects, updateProjectStatus } = useProjectStore()
+  const { projects, updateProjectStatus, loading } = useProjectStore()
 
   const getLanguageLabel = (code?: string) => {
     if (!code) return '-'
@@ -65,114 +65,123 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
           </TableRow>
         </TableHeader>
         <TableBody>
-          {projects.map((project) => (
-            <TableRow key={project.id} className="group hover:bg-muted/50">
-              <TableCell className="font-medium">
-                <span
-                  className="cursor-pointer text-primary hover:underline hover:text-primary/80 transition-colors"
-                  onClick={() => onSelectProject(project.id)}
-                >
-                  {project.id}
-                </span>
-              </TableCell>
-              <TableCell>{project.translationType || '-'}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1.5 text-sm">
-                  <span>{getLanguageLabel(project.sourceLang)}</span>
-                  <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                  <span>{getLanguageLabel(project.targetLang)}</span>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando projetos...
                 </div>
-              </TableCell>
-              <TableCell>{project.documentType || '-'}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">{project.documents}</span> docs
-                  <ChevronRight className="h-3 w-3 shrink-0" />
-                  <span className="font-medium text-foreground">{project.laudas}</span> laudas
-                </div>
-              </TableCell>
-              <TableCell>
-                {project.dueDate ? format(parseISO(project.dueDate), 'dd/MM/yyyy') : '-'}
-              </TableCell>
-              <TableCell className="text-right font-medium">
-                {typeof project.value === 'number'
-                  ? `R$ ${project.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                  : '-'}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="focus:outline-none">
-                      <Badge
-                        className={cn(
-                          'cursor-pointer border-transparent transition-colors font-medium',
-                          STATUS_COLORS[project.status],
-                        )}
-                      >
-                        {project.status}
-                      </Badge>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[180px]">
-                    {ALL_STATUSES.map((status) => (
-                      <DropdownMenuItem
-                        key={status}
-                        onClick={() => updateProjectStatus(project.id, status)}
-                        className={cn(
-                          'flex items-center gap-2 cursor-pointer',
-                          project.status === status && 'bg-muted font-medium',
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            'h-2 w-2 rounded-full',
-                            STATUS_COLORS[status].split(' ')[0],
-                          )}
-                        />
-                        {status}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 data-[state=open]:opacity-100"
-                    >
-                      <span className="sr-only">Abrir menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => onEditProject(project.id)}
-                      className="cursor-pointer"
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onDeleteProject(project.id)}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))}
-          {projects.length === 0 && (
+          ) : projects.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                 Nenhum projeto encontrado.
               </TableCell>
             </TableRow>
+          ) : (
+            projects.map((project) => (
+              <TableRow key={project.id} className="group hover:bg-muted/50">
+                <TableCell className="font-medium">
+                  <span
+                    className="cursor-pointer text-primary hover:underline hover:text-primary/80 transition-colors"
+                    onClick={() => onSelectProject(project.id)}
+                  >
+                    {project.id}
+                  </span>
+                </TableCell>
+                <TableCell>{project.translationType || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <span>{getLanguageLabel(project.sourceLang)}</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span>{getLanguageLabel(project.targetLang)}</span>
+                  </div>
+                </TableCell>
+                <TableCell>{project.documentType || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{project.documents}</span> docs
+                    <ChevronRight className="h-3 w-3 shrink-0" />
+                    <span className="font-medium text-foreground">{project.laudas}</span> laudas
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {project.dueDate ? format(parseISO(project.dueDate), 'dd/MM/yyyy') : '-'}
+                </TableCell>
+                <TableCell className="text-right font-medium">
+                  {typeof project.value === 'number'
+                    ? `R$ ${project.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : '-'}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="focus:outline-none">
+                        <Badge
+                          className={cn(
+                            'cursor-pointer border-transparent transition-colors font-medium',
+                            STATUS_COLORS[project.status],
+                          )}
+                        >
+                          {project.status}
+                        </Badge>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[180px]">
+                      {ALL_STATUSES.map((status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          onClick={() => updateProjectStatus(project.id, status)}
+                          className={cn(
+                            'flex items-center gap-2 cursor-pointer',
+                            project.status === status && 'bg-muted font-medium',
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'h-2 w-2 rounded-full',
+                              STATUS_COLORS[status].split(' ')[0],
+                            )}
+                          />
+                          {status}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 data-[state=open]:opacity-100"
+                      >
+                        <span className="sr-only">Abrir menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => onEditProject(project.id)}
+                        className="cursor-pointer"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onDeleteProject(project.id)}
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
           )}
         </TableBody>
       </Table>

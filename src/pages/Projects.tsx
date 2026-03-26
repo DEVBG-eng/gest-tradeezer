@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
+import { Loader2 } from 'lucide-react'
 
 export default function Projects() {
   const { projects, deleteProject } = useProjectStore()
@@ -23,6 +24,7 @@ export default function Projects() {
   const [printingId, setPrintingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const handlePrintEvent = (e: Event) => {
@@ -53,15 +55,22 @@ export default function Projects() {
 
   const printingProject = projects.find((p) => p.id === printingId)
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingId) {
-      deleteProject(deletingId)
-      toast({
-        title: 'Projeto removido',
-        description: `O projeto foi removido com sucesso.`,
-      })
-      if (selectedId === deletingId) setSelectedId(null)
-      setDeletingId(null)
+      setIsDeleting(true)
+      try {
+        await deleteProject(deletingId)
+        toast({
+          title: 'Projeto removido',
+          description: `O projeto foi removido com sucesso.`,
+        })
+        if (selectedId === deletingId) setSelectedId(null)
+      } catch (error) {
+        // Handled in store
+      } finally {
+        setIsDeleting(false)
+        setDeletingId(null)
+      }
     }
   }
 
@@ -94,7 +103,12 @@ export default function Projects() {
 
       {editingId && <EditProjectDialog projectId={editingId} onClose={() => setEditingId(null)} />}
 
-      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeletingId(null)
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
@@ -103,11 +117,13 @@ export default function Projects() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
+              disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Excluir Projeto
             </AlertDialogAction>
           </AlertDialogFooter>

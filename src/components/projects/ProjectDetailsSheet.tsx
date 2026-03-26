@@ -52,26 +52,35 @@ export function ProjectDetailsSheet({
   const { toast } = useToast()
   const project = projects.find((p) => p.id === projectId)
 
-  const initialRate =
-    project && project.laudas && project.laudas > 0 ? project.value / project.laudas : 45
+  const [saving, setSaving] = useState(false)
   const [laudas, setLaudas] = useState(project?.laudas?.toString() || '0')
-  const [rate, setRate] = useState(initialRate.toFixed(2))
+  const [rate, setRate] = useState((project?.valorLauda || 0).toFixed(2))
   const [isPrinting, setIsPrinting] = useState(false)
 
   useEffect(() => {
     if (project) {
       setLaudas(project.laudas?.toString() || '0')
-      const newRate = project.laudas && project.laudas > 0 ? project.value / project.laudas : 45
-      setRate(newRate.toFixed(2))
+      setRate((project.valorLauda || 0).toFixed(2))
     }
-  }, [project?.laudas, project?.value])
+  }, [project?.laudas, project?.valorLauda])
 
   if (!project) return null
 
-  const handleSaveQuote = () => {
-    const total = parseFloat(laudas) * parseFloat(rate)
-    updateProject(projectId, { laudas: parseFloat(laudas), value: total })
-    toast({ title: 'Orçamento Atualizado', description: `Valor total: R$ ${total.toFixed(2)}` })
+  const handleSaveQuote = async () => {
+    setSaving(true)
+    try {
+      const parsedLaudas = parseFloat(laudas) || 0
+      const parsedRate = parseFloat(rate) || 0
+      await updateProject(projectId, {
+        laudas: parsedLaudas,
+        valorLauda: parsedRate,
+      })
+      toast({ title: 'Orçamento Atualizado', description: `Os valores foram salvos.` })
+    } catch (e) {
+      // Error is handled in store
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +99,9 @@ export function ProjectDetailsSheet({
       })
 
       const updatedFiles = [...(project.files || []), ...newFiles]
-      updateProject(projectId, { files: updatedFiles, documents: updatedFiles.length })
+      updateProject(projectId, { files: updatedFiles, documents: updatedFiles.length }).catch(
+        () => {},
+      )
 
       newFiles.forEach((cf) => {
         setTimeout(
@@ -110,7 +121,7 @@ export function ProjectDetailsSheet({
               files: currentProject.files?.map((p) =>
                 p.id === cf.id ? { ...p, status: isError ? 'error' : 'synced' } : p,
               ),
-            })
+            }).catch(() => {})
 
             if (isError) {
               toast({
@@ -129,6 +140,8 @@ export function ProjectDetailsSheet({
       })
     }
   }
+
+  const calculatedTotal = parseFloat(laudas || '0') * parseFloat(rate || '0')
 
   return (
     <>
@@ -201,9 +214,14 @@ export function ProjectDetailsSheet({
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border flex justify-between items-center">
-                <span className="text-sm font-medium">Valor Total Calculado:</span>
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium">Valor Total Calculado:</span>
+                  <span className="text-xs text-muted-foreground">
+                    Valor na base: R$ {(project.value || 0).toFixed(2)}
+                  </span>
+                </div>
                 <span className="text-2xl font-bold text-primary">
-                  R$ {(parseFloat(laudas || '0') * parseFloat(rate || '0')).toFixed(2)}
+                  R$ {calculatedTotal.toFixed(2)}
                 </span>
               </div>
 
@@ -211,7 +229,10 @@ export function ProjectDetailsSheet({
                 <Button variant="outline" className="gap-2" onClick={() => setIsPrinting(true)}>
                   <Download size={16} /> Gerar Proposta PDF
                 </Button>
-                <Button onClick={handleSaveQuote}>Salvar Orçamento</Button>
+                <Button onClick={handleSaveQuote} disabled={saving}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Salvar Orçamento
+                </Button>
               </div>
             </TabsContent>
 

@@ -76,6 +76,7 @@ export default function CreateProject() {
   const { activeCloudProvider, oneDriveNetworkLink } = useSettingsStore()
   const { toast } = useToast()
 
+  const [saving, setSaving] = useState(false)
   const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
@@ -189,19 +190,6 @@ export default function CreateProject() {
     )
   }
 
-  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    const digits = value.replace(/\D/g, '')
-    if (!digits) {
-      setProjectValue('')
-      return
-    }
-    const number = parseInt(digits, 10) / 100
-    setProjectValue(
-      number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    )
-  }
-
   useEffect(() => {
     const l = Number(laudas.replace(',', '.')) || 0
     const lp = Number(laudaPrice.replace(/\./g, '').replace(',', '.')) || 0
@@ -213,7 +201,7 @@ export default function CreateProject() {
     }
   }, [laudas, laudaPrice])
 
-  const handleSave = (generatePdf: boolean) => {
+  const handleSave = async (generatePdf: boolean) => {
     if (!reference.trim()) {
       return toast({
         title: 'Erro',
@@ -252,8 +240,10 @@ export default function CreateProject() {
 
     const val = Number(projectValue.replace(/\./g, '').replace(',', '.')) || 0
     const lauds = Number(laudas.replace(',', '.')) || 0
+    const vlLauda = Number(laudaPrice.replace(/\./g, '').replace(',', '.')) || 0
 
     const newProjectData = {
+      id: reference,
       title: `Ordem de Serviço ${reference}`,
       client: clientName,
       status,
@@ -263,6 +253,7 @@ export default function CreateProject() {
       dueDate: deadline.toISOString(),
       entryDate: startDate.toISOString(),
       laudas: lauds,
+      valorLauda: vlLauda,
       value: val,
       documents: Number(docCount) || cloudFiles.length || 1,
       cloudProvider: activeCloudProvider,
@@ -280,14 +271,21 @@ export default function CreateProject() {
       internationalShipping: services.dhl,
     }
 
-    addProject(newProjectData)
+    setSaving(true)
+    try {
+      await addProject(newProjectData)
 
-    if (generatePdf) {
-      setCreatedProject({ ...newProjectData, id: reference } as Project)
-      setShowProposal(true)
-    } else {
-      toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
-      navigate('/projects')
+      if (generatePdf) {
+        setCreatedProject({ ...newProjectData, pbId: '' } as Project)
+        setShowProposal(true)
+      } else {
+        toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
+        navigate('/projects')
+      }
+    } catch (e) {
+      // Error is handled and toasted in the store
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -586,8 +584,8 @@ export default function CreateProject() {
                         inputMode="decimal"
                         placeholder="0,00"
                         value={projectValue}
-                        onChange={handleValueChange}
-                        className="pl-9 font-bold text-emerald-600 dark:text-emerald-400"
+                        disabled
+                        className="pl-9 font-bold text-emerald-600 dark:text-emerald-400 bg-muted cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -904,7 +902,7 @@ export default function CreateProject() {
             </Tabs>
           </CardContent>
           <CardFooter className="bg-muted/30 border-t p-6 flex justify-between">
-            <Button variant="ghost" type="button" onClick={() => navigate(-1)}>
+            <Button variant="ghost" type="button" onClick={() => navigate(-1)} disabled={saving}>
               Cancelar
             </Button>
             <div className="flex space-x-3">
@@ -912,11 +910,17 @@ export default function CreateProject() {
                 variant="outline"
                 type="button"
                 onClick={() => handleSave(true)}
-                disabled={!isFormValid}
+                disabled={!isFormValid || saving}
               >
                 Gerar Proposta
               </Button>
-              <Button type="submit" size="lg" className="min-w-[150px]" disabled={!isFormValid}>
+              <Button
+                type="submit"
+                size="lg"
+                className="min-w-[150px]"
+                disabled={!isFormValid || saving}
+              >
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Registrar Projeto
               </Button>
             </div>

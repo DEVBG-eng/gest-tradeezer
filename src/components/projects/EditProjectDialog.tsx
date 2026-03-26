@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CalendarIcon, ChevronRight } from 'lucide-react'
+import { CalendarIcon, ChevronRight, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox } from '@/components/LanguageCombobox'
 import useProjectStore, { ProjectStatus, ALL_STATUSES } from '@/stores/useProjectStore'
@@ -54,6 +54,7 @@ export function EditProjectDialog({
   const { toast } = useToast()
   const project = projects.find((p) => p.id === projectId)
 
+  const [saving, setSaving] = useState(false)
   const [referenceCode, setReferenceCode] = useState(project?.id || '')
   const [client, setClient] = useState(project?.client || '')
   const [status, setStatus] = useState<ProjectStatus>(project?.status || 'Aguardando')
@@ -79,11 +80,18 @@ export function EditProjectDialog({
     dhl: project?.internationalShipping ?? false,
   })
 
-  const initialRate =
-    project && project.laudas && project.laudas > 0 ? project.value / project.laudas : 45
   const [rate, setRate] = useState(
-    initialRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    project?.valorLauda
+      ? project.valorLauda.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : (project && project.laudas && project.laudas > 0
+          ? project.value / project.laudas
+          : 45
+        ).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   )
+
   const [value, setValue] = useState(
     project?.value?.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
@@ -103,29 +111,36 @@ export function EditProjectDialog({
 
   if (!project) return null
 
-  const handleSave = () => {
-    updateProject(projectId, {
-      id: referenceCode,
-      client,
-      status,
-      translationType,
-      sourceLang,
-      targetLang,
-      documentType,
-      documents: Number(documents) || 1,
-      laudas: Number(laudas.replace(',', '.')) || 0,
-      entryDate: entryDate ? entryDate.toISOString() : project.entryDate,
-      dueDate: deadline ? deadline.toISOString() : project.dueDate,
-      value: Number(value.replace(/\./g, '').replace(',', '.')) || 0,
-      digitalCopy: services.digital,
-      physicalCopy: services.fisico,
-      hagueApostille: services.apostilamento,
-      notarization: services.reconhecimentoFirma,
-      shipping: services.frete,
-      internationalShipping: services.dhl,
-    })
-    toast({ title: 'Projeto atualizado', description: 'As alterações foram salvas com sucesso.' })
-    onClose()
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await updateProject(projectId, {
+        id: referenceCode,
+        client,
+        status,
+        translationType,
+        sourceLang,
+        targetLang,
+        documentType,
+        documents: Number(documents) || 1,
+        laudas: Number(laudas.replace(',', '.')) || 0,
+        valorLauda: Number(rate.replace(/\./g, '').replace(',', '.')) || 0,
+        entryDate: entryDate ? entryDate.toISOString() : project.entryDate,
+        dueDate: deadline ? deadline.toISOString() : project.dueDate,
+        digitalCopy: services.digital,
+        physicalCopy: services.fisico,
+        hagueApostille: services.apostilamento,
+        notarization: services.reconhecimentoFirma,
+        shipping: services.frete,
+        internationalShipping: services.dhl,
+      })
+      toast({ title: 'Projeto atualizado', description: 'As alterações foram salvas com sucesso.' })
+      onClose()
+    } catch (e) {
+      // Error handled by store
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -300,8 +315,8 @@ export function EditProjectDialog({
                 type="text"
                 inputMode="decimal"
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className="pl-9 font-bold text-emerald-600"
+                disabled
+                className="pl-9 font-bold text-emerald-600 bg-muted cursor-not-allowed"
               />
             </div>
           </div>
@@ -326,12 +341,13 @@ export function EditProjectDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={
+              saving ||
               !referenceCode ||
               !client ||
               !translationType ||
@@ -340,6 +356,7 @@ export function EditProjectDialog({
               !deadline
             }
           >
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar Alterações
           </Button>
         </DialogFooter>
