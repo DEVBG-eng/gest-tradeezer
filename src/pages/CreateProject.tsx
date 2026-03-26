@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import {
@@ -12,6 +12,7 @@ import {
   FileText,
   AlertCircle,
   CheckCircle,
+  ChevronRight,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -80,6 +81,7 @@ export default function CreateProject() {
   const [deadline, setDeadline] = useState<Date>()
 
   const [laudas, setLaudas] = useState('')
+  const [laudaPrice, setLaudaPrice] = useState('')
   const [projectValue, setProjectValue] = useState('')
   const [docCount, setDocCount] = useState('0')
   const [documentType, setDocumentType] = useState('')
@@ -168,6 +170,19 @@ export default function CreateProject() {
     }
   }
 
+  const handleLaudaPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    const digits = value.replace(/\D/g, '')
+    if (!digits) {
+      setLaudaPrice('')
+      return
+    }
+    const number = parseInt(digits, 10) / 100
+    setLaudaPrice(
+      number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
+  }
+
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     const digits = value.replace(/\D/g, '')
@@ -180,6 +195,19 @@ export default function CreateProject() {
       number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     )
   }
+
+  useEffect(() => {
+    const l = Number(laudas.replace(',', '.')) || 0
+    const lp = Number(laudaPrice.replace(/\./g, '').replace(',', '.')) || 0
+    if (l > 0 && lp > 0 && laudaPrice !== '') {
+      const total = l * lp
+      setProjectValue(
+        total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      )
+    } else if (laudas === '' || laudaPrice === '') {
+      // Optional: clear value if inputs are cleared, or just let it be overridden manually
+    }
+  }, [laudas, laudaPrice])
 
   const handleSave = (generatePdf: boolean) => {
     if (!reference.trim()) {
@@ -213,7 +241,7 @@ export default function CreateProject() {
     if (!deadline) {
       return toast({
         title: 'Erro',
-        description: 'Prazo de Entrega é obrigatório.',
+        description: 'Data de Entrega é obrigatória.',
         variant: 'destructive',
       })
     }
@@ -266,11 +294,11 @@ export default function CreateProject() {
   }, [navigate, reference, toast])
 
   const missingFields = []
-  if (!reference.trim()) missingFields.push('Cód. de referência')
+  if (!reference.trim()) missingFields.push('Cód. de referência (Aba 4)')
   if (!clientName.trim()) missingFields.push('Nome / Razão Social (Aba 1)')
   if (!translationType) missingFields.push('Categoria do Serviço (Aba 2)')
   if (!startDate) missingFields.push('Data de Entrada (Aba 2)')
-  if (!deadline) missingFields.push('Prazo de Entrega (Aba 2)')
+  if (!deadline) missingFields.push('Data de Entrega (Aba 2)')
 
   const isFormValid = missingFields.length === 0
 
@@ -311,7 +339,7 @@ export default function CreateProject() {
                   value="specs"
                   className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
                 >
-                  2. Especificações
+                  2. Especificações / Orçamento
                 </TabsTrigger>
                 <TabsTrigger
                   value="docs"
@@ -323,7 +351,7 @@ export default function CreateProject() {
                   value="budget"
                   className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
                 >
-                  4. Orçamento
+                  4. Resumo
                 </TabsTrigger>
               </TabsList>
 
@@ -393,44 +421,59 @@ export default function CreateProject() {
                   </RadioGroup>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Tipo de Documento</Label>
-                    <Input
-                      placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
-                      value={documentType}
-                      onChange={(e) => setDocumentType(e.target.value)}
+                <div className="flex items-end gap-2 sm:gap-4">
+                  <div className="flex-1">
+                    <LanguageCombobox
+                      label="Idioma de Origem *"
+                      value={sourceLang}
+                      onChange={setSourceLang}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Valor (R$)</Label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <span className="text-sm text-muted-foreground font-medium">R$</span>
-                      </div>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="0,00"
-                        value={projectValue}
-                        onChange={handleValueChange}
-                        className="pl-9"
-                      />
-                    </div>
+                  <div className="flex items-center justify-center h-10 shrink-0 text-muted-foreground">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <LanguageCombobox
+                      label="Idioma de Destino *"
+                      value={targetLang}
+                      onChange={setTargetLang}
+                    />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <LanguageCombobox
-                    label="Idioma de Origem"
-                    value={sourceLang}
-                    onChange={setSourceLang}
+                <div className="space-y-2">
+                  <Label>Tipo de Documento</Label>
+                  <Input
+                    placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
+                    value={documentType}
+                    onChange={(e) => setDocumentType(e.target.value)}
                   />
-                  <LanguageCombobox
-                    label="Idioma de Destino"
-                    value={targetLang}
-                    onChange={setTargetLang}
-                  />
+                </div>
+
+                <div className="flex items-end gap-2 sm:gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Label>Quantidade de Documentos</Label>
+                    <Input
+                      type="number"
+                      placeholder="Ex: 1"
+                      value={docCount}
+                      onChange={(e) => setDocCount(e.target.value)}
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex items-center justify-center h-10 shrink-0 text-muted-foreground">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label>Quantidade de Laudas</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="Ex: 1,5"
+                      value={laudas}
+                      onChange={handleLaudasChange}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -467,7 +510,7 @@ export default function CreateProject() {
                   </div>
                   <div className="space-y-2 flex flex-col">
                     <Label>
-                      Prazo de Entrega <span className="text-destructive">*</span>
+                      Data de Entrega <span className="text-destructive">*</span>
                     </Label>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -500,24 +543,36 @@ export default function CreateProject() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Quantidade de Documentos</Label>
-                    <Input
-                      type="number"
-                      placeholder="Ex: 1"
-                      value={docCount}
-                      onChange={(e) => setDocCount(e.target.value)}
-                      min="0"
-                    />
+                    <Label>Valor da Lauda (R$)</Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <span className="text-sm text-muted-foreground font-medium">R$</span>
+                      </div>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={laudaPrice}
+                        onChange={handleLaudaPriceChange}
+                        className="pl-9"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Quantidade de Laudas</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="Opcional"
-                      value={laudas}
-                      onChange={handleLaudasChange}
-                    />
+                    <Label>Valor Final (R$)</Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <span className="text-sm text-muted-foreground font-medium">R$</span>
+                      </div>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={projectValue}
+                        onChange={handleValueChange}
+                        className="pl-9 font-bold text-emerald-600 dark:text-emerald-400"
+                      />
+                    </div>
                   </div>
                 </div>
 
