@@ -11,6 +11,7 @@ import {
   ExternalLink,
   FileText,
   AlertCircle,
+  CheckCircle,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -43,7 +44,7 @@ import { useToast } from '@/hooks/use-toast'
 import useProjectStore, { CloudFile, ProjectStatus, Project } from '@/stores/useProjectStore'
 import useSettingsStore from '@/stores/useSettingsStore'
 import { cn } from '@/lib/utils'
-import { LanguageCombobox } from '@/components/LanguageCombobox'
+import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 
 const SERVICES_OPTS = [
@@ -264,6 +265,15 @@ export default function CreateProject() {
     navigate('/projects')
   }, [navigate, reference, toast])
 
+  const missingFields = []
+  if (!reference.trim()) missingFields.push('Cód. de referência')
+  if (!clientName.trim()) missingFields.push('Nome / Razão Social (Aba 1)')
+  if (!translationType) missingFields.push('Categoria do Serviço (Aba 2)')
+  if (!startDate) missingFields.push('Data de Entrada (Aba 2)')
+  if (!deadline) missingFields.push('Prazo de Entrega (Aba 2)')
+
+  const isFormValid = missingFields.length === 0
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {showProposal && createdProject && (
@@ -285,32 +295,12 @@ export default function CreateProject() {
       >
         <Card className="shadow-sm border-border/50">
           <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b pb-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Configuração do Projeto</CardTitle>
-                <CardDescription>Preencha os detalhes navegando pelas abas abaixo.</CardDescription>
-              </div>
-              <div className="text-right flex flex-col items-end">
-                <Label
-                  htmlFor="reference"
-                  className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2"
-                >
-                  Cód. Referência <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="reference"
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  placeholder="Ex: TRD-123456"
-                  className="w-48 font-mono font-bold text-primary bg-primary/5 h-9"
-                  required
-                />
-              </div>
-            </div>
+            <CardTitle>Configuração do Projeto</CardTitle>
+            <CardDescription>Preencha os detalhes navegando pelas abas abaixo.</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <Tabs defaultValue="client" className="w-full">
-              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6 h-auto p-1 gap-1">
+              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 mb-6 h-auto p-1 gap-1">
                 <TabsTrigger
                   value="client"
                   className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
@@ -328,6 +318,12 @@ export default function CreateProject() {
                   className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
                 >
                   3. Documentos
+                </TabsTrigger>
+                <TabsTrigger
+                  value="budget"
+                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  4. Orçamento
                 </TabsTrigger>
               </TabsList>
 
@@ -680,6 +676,161 @@ export default function CreateProject() {
                   </div>
                 )}
               </TabsContent>
+
+              <TabsContent value="budget" className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="referenceTab" className="text-base font-semibold">
+                    Cód. de referência <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="referenceTab"
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                    placeholder="Ex: TRD-123456"
+                    className="max-w-md font-mono font-bold text-primary bg-primary/5"
+                    required
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Código único para identificação do projeto e sincronização em nuvem.
+                  </p>
+                </div>
+
+                {missingFields.length > 0 ? (
+                  <Alert variant="destructive" className="bg-destructive/5">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Informações Pendentes</AlertTitle>
+                    <AlertDescription>
+                      Preencha os seguintes campos obrigatórios antes de finalizar o projeto:
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-sm font-medium">
+                        {missingFields.map((field) => (
+                          <li key={field}>{field}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Alert className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <AlertTitle>Validação Concluída</AlertTitle>
+                    <AlertDescription>
+                      Todos os campos obrigatórios foram preenchidos. Você pode registrar o projeto
+                      ou gerar a proposta.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium tracking-tight border-b pb-2">
+                    Painel de Sincronização e Resumo
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className="shadow-sm">
+                      <CardHeader className="pb-3 bg-muted/30">
+                        <CardTitle className="text-base">Cliente e Especificações</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Nome/Razão Social</span>
+                          <span className="font-medium text-right">
+                            {clientName || '-'} {clientName && `(${clientType})`}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Categoria do Serviço</span>
+                          <span className="font-medium text-right">{translationType || '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Tipo de Documento</span>
+                          <span className="font-medium text-right">{documentType || '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Documentos Anexados</span>
+                          <span className="font-medium text-right">
+                            {docCount || '0'} / Nuvem: {cloudFiles.length}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm">
+                      <CardHeader className="pb-3 bg-muted/30">
+                        <CardTitle className="text-base">Prazos e Idiomas</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Data de Entrada</span>
+                          <span className="font-medium text-right">
+                            {startDate ? format(startDate, 'dd/MM/yyyy') : '-'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Prazo de Entrega</span>
+                          <span className="font-medium text-right">
+                            {deadline ? format(deadline, 'dd/MM/yyyy') : '-'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Idioma de Origem</span>
+                          <span className="font-medium text-right">
+                            {LANGUAGES.find((l) => l.value === sourceLang)?.label || sourceLang}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Idioma de Destino</span>
+                          <span className="font-medium text-right">
+                            {LANGUAGES.find((l) => l.value === targetLang)?.label || targetLang}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm md:col-span-2">
+                      <CardHeader className="pb-3 bg-muted/30">
+                        <CardTitle className="text-base">Serviços e Valores</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4 space-y-4 text-sm">
+                        <div className="flex flex-col gap-2">
+                          <span className="text-muted-foreground">
+                            Logística e Serviços Adicionais:
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {SERVICES_OPTS.filter((s) => services[s.key]).map((s) => (
+                              <Badge
+                                key={s.id}
+                                variant="secondary"
+                                className="bg-primary/10 text-primary hover:bg-primary/20"
+                              >
+                                {s.label}
+                              </Badge>
+                            ))}
+                            {Object.values(services).every((v) => !v) && (
+                              <span className="text-muted-foreground italic">
+                                Nenhum serviço adicional selecionado
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div>
+                            <span className="text-muted-foreground block">
+                              Quantidade de Laudas
+                            </span>
+                            <span className="font-medium text-base">{laudas || '-'}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-muted-foreground block">
+                              Valor Total do Projeto
+                            </span>
+                            <span className="font-bold text-2xl text-emerald-600 dark:text-emerald-400">
+                              R$ {projectValue || '0,00'}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
           </CardContent>
           <CardFooter className="bg-muted/30 border-t p-6 flex justify-between">
@@ -687,10 +838,15 @@ export default function CreateProject() {
               Cancelar
             </Button>
             <div className="flex space-x-3">
-              <Button variant="outline" type="button" onClick={() => handleSave(true)}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => handleSave(true)}
+                disabled={!isFormValid}
+              >
                 Gerar Proposta
               </Button>
-              <Button type="submit" size="lg" className="min-w-[150px]">
+              <Button type="submit" size="lg" className="min-w-[150px]" disabled={!isFormValid}>
                 Registrar Projeto
               </Button>
             </div>
