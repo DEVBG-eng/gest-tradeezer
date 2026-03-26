@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import {
   Dialog,
@@ -16,13 +16,21 @@ import { Calendar } from '@/components/ui/calendar'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CalendarIcon, ChevronRight, Loader2, Download } from 'lucide-react'
+import { CalendarIcon, ChevronRight, Loader2, Download, Trash2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox } from '@/components/LanguageCombobox'
 import useProjectStore, { ProjectStatus, ALL_STATUSES } from '@/stores/useProjectStore'
@@ -60,6 +68,13 @@ const SERVICES_OPTS = [
   { id: 'edit-dhl', label: 'DHL (Exterior)', key: 'dhl' as const },
 ]
 
+interface ItemInput {
+  id?: string
+  description: string
+  laudas: string
+  valorLauda: string
+}
+
 export function EditProjectDialog({
   projectId,
   onClose,
@@ -80,7 +95,6 @@ export function EditProjectDialog({
   const [targetLang, setTargetLang] = useState(project?.targetLang || 'en')
   const [documentType, setDocumentType] = useState(project?.documentType || '')
   const [documents, setDocuments] = useState(project?.documents?.toString() || '1')
-  const [laudas, setLaudas] = useState(project?.laudas?.toString() || '0')
   const [observations, setObservations] = useState(project?.observations || '')
   const [entryDate, setEntryDate] = useState<Date | undefined>(
     project?.entryDate ? parseISO(project.entryDate) : undefined,
@@ -101,55 +115,81 @@ export function EditProjectDialog({
     dhl: project?.internationalShipping ?? false,
   })
 
-  const [rate, setRate] = useState(
-    project?.valorLauda
-      ? project.valorLauda.toLocaleString('pt-BR', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
-      : (project && project.laudas && project.laudas > 0
-          ? project.value / project.laudas
-          : 45
-        ).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  const [items, setItems] = useState<ItemInput[]>(
+    project?.items?.length
+      ? project.items.map((i) => ({
+          id: i.id,
+          description: i.description,
+          laudas: i.laudas.toString().replace('.', ','),
+          valorLauda: i.valorLauda.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+        }))
+      : [{ description: '', laudas: '', valorLauda: '' }],
   )
-
-  const [value, setValue] = useState(
-    project?.value?.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }) || '0,00',
-  )
-
-  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value
-    const digits = val.replace(/\D/g, '')
-    if (!digits) {
-      setValue('')
-      return
-    }
-    const number = parseInt(digits, 10) / 100
-    setValue(number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
-  }
-
-  useEffect(() => {
-    const l = Number(laudas.replace(',', '.')) || 0
-    const r = Number(rate.replace(/\./g, '').replace(',', '.')) || 0
-    if (l > 0 && r > 0 && rate !== '') {
-      setValue(
-        (l * r).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      )
-    }
-  }, [laudas, rate])
 
   if (!project) return null
 
-  const parsedLaudas = Number(laudas.replace(',', '.')) || 0
-  const parsedRate = Number(rate.replace(/\./g, '').replace(',', '.')) || 0
-  const parsedValue = Number(value.replace(/\./g, '').replace(',', '.')) || 0
+  const updateItem = (index: number, field: keyof ItemInput, value: string) => {
+    const newItems = [...items]
+    newItems[index][field] = value
+    setItems(newItems)
+  }
+
+  const handleValorChange = (index: number, val: string) => {
+    const digits = val.replace(/\D/g, '')
+    if (!digits) {
+      updateItem(index, 'valorLauda', '')
+      return
+    }
+    const num = parseInt(digits, 10) / 100
+    updateItem(
+      index,
+      'valorLauda',
+      num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
+  }
+
+  const handleLaudasChange = (index: number, val: string) => {
+    if (/^\d*[.,]?\d*$/.test(val)) {
+      updateItem(index, 'laudas', val)
+    }
+  }
+
+  const removeItem = (index: number) => {
+    if (items.length > 1) {
+      setItems(items.filter((_, i) => i !== index))
+    }
+  }
+
+  const computedLaudas = items.reduce(
+    (acc, item) => acc + (Number(item.laudas.replace(',', '.')) || 0),
+    0,
+  )
+  const computedValue = items.reduce(
+    (acc, item) =>
+      acc +
+      (Number(item.laudas.replace(',', '.')) || 0) *
+        (Number(item.valorLauda.replace(/\./g, '').replace(',', '.')) || 0),
+    0,
+  )
+
+  const isItemsValid = items.every((i) => i.description.trim() !== '' && i.laudas && i.valorLauda)
 
   const handleSave = async () => {
     setSaving(true)
     try {
+      const projectItems = items.map((i) => ({
+        id: i.id,
+        description: i.description,
+        laudas: Number(i.laudas.replace(',', '.')) || 0,
+        valorLauda: Number(i.valorLauda.replace(/\./g, '').replace(',', '.')) || 0,
+        total:
+          (Number(i.laudas.replace(',', '.')) || 0) *
+          (Number(i.valorLauda.replace(/\./g, '').replace(',', '.')) || 0),
+      }))
+
       await updateProject(projectId, {
         id: referenceCode,
         client,
@@ -159,9 +199,9 @@ export function EditProjectDialog({
         targetLang,
         documentType,
         documents: Number(documents) || 1,
-        laudas: parsedLaudas,
-        valorLauda: parsedRate,
-        value: parsedValue,
+        laudas: computedLaudas,
+        valorLauda: computedLaudas > 0 ? computedValue / computedLaudas : 0,
+        value: computedValue,
         entryDate: entryDate ? entryDate.toISOString() : project.entryDate,
         dueDate: deadline ? deadline.toISOString() : project.dueDate,
         observations,
@@ -174,6 +214,7 @@ export function EditProjectDialog({
         digitalAuthentication: services.autenticacaoDigital,
         shipping: services.frete,
         internationalShipping: services.dhl,
+        items: projectItems,
       })
       toast({ title: 'Projeto atualizado', description: 'As alterações foram salvas com sucesso.' })
       onClose()
@@ -193,6 +234,15 @@ export function EditProjectDialog({
     }, 100)
   }
 
+  const projectItemsForPrint = items.map((i) => ({
+    description: i.description,
+    laudas: Number(i.laudas.replace(',', '.')) || 0,
+    valorLauda: Number(i.valorLauda.replace(/\./g, '').replace(',', '.')) || 0,
+    total:
+      (Number(i.laudas.replace(',', '.')) || 0) *
+      (Number(i.valorLauda.replace(/\./g, '').replace(',', '.')) || 0),
+  }))
+
   const printData = {
     referenceCode,
     client,
@@ -202,9 +252,9 @@ export function EditProjectDialog({
     targetLang,
     documentType,
     documents: Number(documents) || 1,
-    laudas: parsedLaudas,
-    rate: parsedRate,
-    value: parsedValue,
+    laudas: computedLaudas,
+    rate: computedLaudas > 0 ? computedValue / computedLaudas : 0,
+    value: computedValue,
     entryDate,
     deadline,
     services: [
@@ -216,12 +266,13 @@ export function EditProjectDialog({
       })),
     ],
     observations,
+    items: projectItemsForPrint,
   }
 
   return (
     <>
       <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-2xl overflow-y-auto max-h-[90vh]">
+        <DialogContent className="sm:max-w-4xl overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Editar Projeto</DialogTitle>
           </DialogHeader>
@@ -303,7 +354,7 @@ export function EditProjectDialog({
               </div>
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label>3. Tipo de Documento</Label>
               <Input value={documentType} onChange={(e) => setDocumentType(e.target.value)} />
             </div>
@@ -315,15 +366,6 @@ export function EditProjectDialog({
                 value={documents}
                 onChange={(e) => setDocuments(e.target.value)}
                 min="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Qtd. de Laudas</Label>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={laudas}
-                onChange={(e) => setLaudas(e.target.value)}
               />
             </div>
 
@@ -375,30 +417,100 @@ export function EditProjectDialog({
               </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label>Taxa por Lauda (R$)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">R$</span>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={rate}
-                  onChange={(e) => setRate(e.target.value)}
-                  className="pl-9"
-                />
+            <div className="space-y-4 md:col-span-2 pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <Label className="text-base font-semibold">
+                  Itens do Projeto <span className="text-destructive">*</span>
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setItems([...items, { description: '', laudas: '', valorLauda: '' }])
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Adicionar Item
+                </Button>
+              </div>
+              <div className="bg-card border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Descrição</TableHead>
+                      <TableHead className="w-[120px]">Laudas</TableHead>
+                      <TableHead className="w-[140px]">Valor (R$)</TableHead>
+                      <TableHead className="w-[120px] text-right">Total</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((item, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="p-2">
+                          <Input
+                            value={item.description}
+                            onChange={(e) => updateItem(idx, 'description', e.target.value)}
+                            placeholder="Ex: Documento X..."
+                          />
+                        </TableCell>
+                        <TableCell className="p-2">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.laudas}
+                            onChange={(e) => handleLaudasChange(idx, e.target.value)}
+                            placeholder="0"
+                          />
+                        </TableCell>
+                        <TableCell className="p-2">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.valorLauda}
+                            onChange={(e) => handleValorChange(idx, e.target.value)}
+                            placeholder="0,00"
+                          />
+                        </TableCell>
+                        <TableCell className="p-2 text-right font-medium">
+                          {(
+                            (Number(item.laudas.replace(',', '.')) || 0) *
+                            (Number(item.valorLauda.replace(/\./g, '').replace(',', '.')) || 0)
+                          ).toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            style: 'currency',
+                            currency: 'BRL',
+                          })}
+                        </TableCell>
+                        <TableCell className="p-2 text-right">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeItem(idx)}
+                            disabled={items.length === 1}
+                            className="h-8 w-8"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>6. Valor Final (R$)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">R$</span>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={value}
-                  onChange={handleValueChange}
-                  className="pl-9 font-bold text-emerald-600 dark:text-emerald-400"
-                />
+
+            <div className="space-y-2 md:col-span-2 bg-muted/30 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center mt-2">
+              <div className="text-center md:text-left mb-2 md:mb-0">
+                <span className="text-sm text-muted-foreground block">Total de Laudas</span>
+                <span className="font-semibold text-lg">{computedLaudas}</span>
+              </div>
+              <div className="text-center md:text-right">
+                <span className="text-sm text-muted-foreground block">Valor Final do Projeto</span>
+                <span className="font-bold text-2xl text-emerald-600 dark:text-emerald-400">
+                  {computedValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
               </div>
             </div>
 
@@ -461,7 +573,8 @@ export function EditProjectDialog({
                   !translationType ||
                   !sourceLang ||
                   !targetLang ||
-                  !deadline
+                  !deadline ||
+                  !isItemsValid
                 }
                 className="w-full sm:w-auto"
               >

@@ -12,6 +12,9 @@ import {
   createProjeto,
   updateProjeto,
   deleteProjeto,
+  createItemProjeto,
+  updateItemProjeto,
+  deleteItemProjeto,
 } from '@/services/projetos'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useToast } from '@/hooks/use-toast'
@@ -51,6 +54,14 @@ export interface CloudFile {
   size: number
 }
 
+export interface ProjectItem {
+  id?: string
+  description: string
+  laudas: number
+  valorLauda: number
+  total: number
+}
+
 export interface Project {
   pbId: string
   id: string
@@ -82,6 +93,7 @@ export interface Project {
   shipping?: boolean
   internationalShipping?: boolean
   translationType?: string
+  items?: ProjectItem[]
 }
 
 interface ProjectStoreContext {
@@ -123,6 +135,13 @@ const mapToProject = (record: ProjetoRecord): Project => ({
   digitalAuthentication: record.autenticacao_digital,
   shipping: record.frete,
   internationalShipping: record.dhl,
+  items: (record.expand?.ItensProjeto_via_projeto || []).map((i) => ({
+    id: i.id as string,
+    description: i.descricao,
+    laudas: i.qtd_laudas,
+    valorLauda: i.valor_lauda,
+    total: i.valor_total,
+  })),
 })
 
 const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
@@ -168,7 +187,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return
     try {
       const records = await getProjetos()
-      setProjects(records.map(mapToProject))
+      setProjects(records.map((r) => mapToProject(r)))
     } catch (e) {
       console.error(e)
     } finally {
@@ -187,12 +206,32 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     },
     !!user,
   )
+  useRealtime(
+    'ItensProjeto',
+    () => {
+      loadData()
+    },
+    !!user,
+  )
 
   const getPbId = (id: string) => projects.find((p) => p.id === id)?.pbId
 
   const addProject = async (project: Omit<Project, 'pbId'>) => {
     try {
-      await createProjeto(mapToPB(project))
+      const created = await createProjeto(mapToPB(project))
+      if (project.items && project.items.length > 0) {
+        await Promise.all(
+          project.items.map((item) =>
+            createItemProjeto({
+              projeto: created.id,
+              descricao: item.description,
+              qtd_laudas: item.laudas,
+              valor_lauda: item.valorLauda,
+              valor_total: item.total,
+            }),
+          ),
+        )
+      }
     } catch (e: any) {
       const errors = extractFieldErrors(e)
       if (
@@ -229,6 +268,39 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     if (!pbId) return
     try {
       await updateProjeto(pbId, mapToPB(data))
+
+      if (data.items) {
+        const currentProject = projects.find((p) => p.id === id)
+        const currentIds = (currentProject?.items || [])
+          .map((i) => i.id)
+          .filter(Boolean) as string[]
+        const newIds = data.items.map((i) => i.id).filter(Boolean) as string[]
+
+        const toDelete = currentIds.filter((cid) => !newIds.includes(cid))
+
+        await Promise.all(toDelete.map((delId) => deleteItemProjeto(delId)))
+
+        await Promise.all(
+          data.items.map((item) => {
+            if (item.id) {
+              return updateItemProjeto(item.id, {
+                descricao: item.description,
+                qtd_laudas: item.laudas,
+                valor_lauda: item.valorLauda,
+                valor_total: item.total,
+              })
+            } else {
+              return createItemProjeto({
+                projeto: pbId,
+                descricao: item.description,
+                qtd_laudas: item.laudas,
+                valor_lauda: item.valorLauda,
+                valor_total: item.total,
+              })
+            }
+          }),
+        )
+      }
     } catch (e: any) {
       const errors = extractFieldErrors(e)
       if (

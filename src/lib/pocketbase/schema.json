@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-26T17:15:10.229Z",
+  "generatedAt": "2026-03-26T17:58:27.927Z",
   "collections": [
     {
       "name": "users",
@@ -233,6 +233,65 @@
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX `idx_cod_referencia_unique` ON `Projetos` (cod_referencia)"]
+    },
+    {
+      "name": "ItensProjeto",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "projeto",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "Projetos"
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "qtd_laudas",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "valor_lauda",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "valor_total",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_itensprojeto_projeto ON ItensProjeto (projeto)"]
     }
   ]
 }

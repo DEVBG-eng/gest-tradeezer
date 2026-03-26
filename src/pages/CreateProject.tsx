@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import {
@@ -13,6 +13,8 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronRight,
+  Trash2,
+  Plus,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
@@ -81,6 +83,13 @@ const TRANSLATION_TYPES = [
   'Locação de Equipamentos',
 ]
 
+interface ItemInput {
+  id?: string
+  description: string
+  laudas: string
+  valorLauda: string
+}
+
 export default function CreateProject() {
   const navigate = useNavigate()
   const { addProject } = useProjectStore()
@@ -98,14 +107,13 @@ export default function CreateProject() {
   const [startDate, setStartDate] = useState<Date>()
   const [deadline, setDeadline] = useState<Date>()
 
-  const [laudas, setLaudas] = useState('')
-  const [laudaPrice, setLaudaPrice] = useState('')
-  const [projectValue, setProjectValue] = useState('')
   const [docCount, setDocCount] = useState('0')
   const [documentType, setDocumentType] = useState('')
   const [translationType, setTranslationType] = useState('')
   const [observations, setObservations] = useState('')
   const [cloudFiles, setCloudFiles] = useState<CloudFile[]>([])
+
+  const [items, setItems] = useState<ItemInput[]>([{ description: '', laudas: '', valorLauda: '' }])
 
   const [services, setServices] = useState({
     digital: true,
@@ -184,49 +192,49 @@ export default function CreateProject() {
     })
   }
 
-  const handleLaudasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    if (/^\d*[.,]?\d*$/.test(value)) {
-      setLaudas(value)
-    }
+  const updateItem = (index: number, field: keyof ItemInput, value: string) => {
+    const newItems = [...items]
+    newItems[index][field] = value
+    setItems(newItems)
   }
 
-  const handleLaudaPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    const digits = value.replace(/\D/g, '')
+  const handleValorChange = (index: number, val: string) => {
+    const digits = val.replace(/\D/g, '')
     if (!digits) {
-      setLaudaPrice('')
+      updateItem(index, 'valorLauda', '')
       return
     }
-    const number = parseInt(digits, 10) / 100
-    setLaudaPrice(
-      number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    const num = parseInt(digits, 10) / 100
+    updateItem(
+      index,
+      'valorLauda',
+      num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     )
   }
 
-  const handleProjectValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    const digits = value.replace(/\D/g, '')
-    if (!digits) {
-      setProjectValue('')
-      return
+  const handleLaudasChange = (index: number, val: string) => {
+    if (/^\d*[.,]?\d*$/.test(val)) {
+      updateItem(index, 'laudas', val)
     }
-    const number = parseInt(digits, 10) / 100
-    setProjectValue(
-      number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    )
   }
 
-  useEffect(() => {
-    const l = Number(laudas.replace(',', '.')) || 0
-    const lp = Number(laudaPrice.replace(/\./g, '').replace(',', '.')) || 0
-    if (l > 0 && lp > 0 && laudaPrice !== '') {
-      const total = l * lp
-      setProjectValue(
-        total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      )
+  const removeItem = (index: number) => {
+    if (items.length > 1) {
+      setItems(items.filter((_, i) => i !== index))
     }
-  }, [laudas, laudaPrice])
+  }
+
+  const computedLaudas = items.reduce(
+    (acc, item) => acc + (Number(item.laudas.replace(',', '.')) || 0),
+    0,
+  )
+  const computedValue = items.reduce(
+    (acc, item) =>
+      acc +
+      (Number(item.laudas.replace(',', '.')) || 0) *
+        (Number(item.valorLauda.replace(/\./g, '').replace(',', '.')) || 0),
+    0,
+  )
 
   const handleSave = async (generatePdf: boolean) => {
     if (!reference.trim()) {
@@ -265,9 +273,14 @@ export default function CreateProject() {
       })
     }
 
-    const val = Number(projectValue.replace(/\./g, '').replace(',', '.')) || 0
-    const lauds = Number(laudas.replace(',', '.')) || 0
-    const vlLauda = Number(laudaPrice.replace(/\./g, '').replace(',', '.')) || 0
+    const projectItems = items.map((i) => ({
+      description: i.description,
+      laudas: Number(i.laudas.replace(',', '.')) || 0,
+      valorLauda: Number(i.valorLauda.replace(/\./g, '').replace(',', '.')) || 0,
+      total:
+        (Number(i.laudas.replace(',', '.')) || 0) *
+        (Number(i.valorLauda.replace(/\./g, '').replace(',', '.')) || 0),
+    }))
 
     const newProjectData = {
       id: reference,
@@ -279,9 +292,9 @@ export default function CreateProject() {
       physicalCopy: services.fisico,
       dueDate: deadline.toISOString(),
       entryDate: startDate.toISOString(),
-      laudas: lauds,
-      valorLauda: vlLauda,
-      value: val,
+      laudas: computedLaudas,
+      valorLauda: computedLaudas > 0 ? computedValue / computedLaudas : 0,
+      value: computedValue,
       documents: Number(docCount) || cloudFiles.length || 1,
       cloudProvider: activeCloudProvider,
       cloudFolderUrl: folderUrl,
@@ -299,6 +312,7 @@ export default function CreateProject() {
       digitalAuthentication: services.autenticacaoDigital,
       shipping: services.frete,
       internationalShipping: services.dhl,
+      items: projectItems,
     }
 
     setSaving(true)
@@ -331,6 +345,9 @@ export default function CreateProject() {
   if (!translationType) missingFields.push('Categoria do Serviço (Aba 2)')
   if (!startDate) missingFields.push('Data de Entrada (Aba 2)')
   if (!deadline) missingFields.push('Data de Entrega (Aba 2)')
+  if (items.some((i) => !i.description.trim() || !i.laudas || !i.valorLauda)) {
+    missingFields.push('Todos os campos dos Itens do Projeto devem estar preenchidos (Aba 2)')
+  }
 
   const isFormValid = missingFields.length === 0
 
@@ -486,37 +503,23 @@ export default function CreateProject() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Tipo de Documento</Label>
-                  <Input
-                    placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex items-end gap-2 sm:gap-4">
-                  <div className="flex-1 space-y-2">
-                    <Label>Quantidade de Documentos</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Tipo de Documento</Label>
+                    <Input
+                      placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
+                      value={documentType}
+                      onChange={(e) => setDocumentType(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Quantidade de Documentos (Estimado)</Label>
                     <Input
                       type="number"
                       placeholder="Ex: 1"
                       value={docCount}
                       onChange={(e) => setDocCount(e.target.value)}
                       min="0"
-                    />
-                  </div>
-                  <div className="flex items-center justify-center h-10 shrink-0 text-muted-foreground">
-                    <ChevronRight className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <Label>Quantidade de Laudas</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="Ex: 1,5"
-                      value={laudas}
-                      onChange={handleLaudasChange}
                     />
                   </div>
                 </div>
@@ -586,38 +589,86 @@ export default function CreateProject() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Valor da Lauda (R$)</Label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <span className="text-sm text-muted-foreground font-medium">R$</span>
-                      </div>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="0,00"
-                        value={laudaPrice}
-                        onChange={handleLaudaPriceChange}
-                        className="pl-9"
-                      />
-                    </div>
+                <div className="space-y-4 pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <Label className="text-base font-semibold">
+                      Itens do Projeto <span className="text-destructive">*</span>
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setItems([...items, { description: '', laudas: '', valorLauda: '' }])
+                      }
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Adicionar Item
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Valor Final (R$)</Label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <span className="text-sm text-muted-foreground font-medium">R$</span>
-                      </div>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="0,00"
-                        value={projectValue}
-                        onChange={handleProjectValueChange}
-                        className="pl-9 font-bold text-emerald-600 dark:text-emerald-400"
-                      />
-                    </div>
+                  <div className="bg-card border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>Descrição</TableHead>
+                          <TableHead className="w-[120px]">Laudas</TableHead>
+                          <TableHead className="w-[140px]">Valor (R$)</TableHead>
+                          <TableHead className="w-[120px] text-right">Total</TableHead>
+                          <TableHead className="w-[50px]"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {items.map((item, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="p-2">
+                              <Input
+                                value={item.description}
+                                onChange={(e) => updateItem(idx, 'description', e.target.value)}
+                                placeholder="Ex: Certidão..."
+                              />
+                            </TableCell>
+                            <TableCell className="p-2">
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                value={item.laudas}
+                                onChange={(e) => handleLaudasChange(idx, e.target.value)}
+                                placeholder="0"
+                              />
+                            </TableCell>
+                            <TableCell className="p-2">
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                value={item.valorLauda}
+                                onChange={(e) => handleValorChange(idx, e.target.value)}
+                                placeholder="0,00"
+                              />
+                            </TableCell>
+                            <TableCell className="p-2 text-right font-medium">
+                              {(
+                                (Number(item.laudas.replace(',', '.')) || 0) *
+                                (Number(item.valorLauda.replace(/\./g, '').replace(',', '.')) || 0)
+                              ).toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                                style: 'currency',
+                                currency: 'BRL',
+                              })}
+                            </TableCell>
+                            <TableCell className="p-2 text-right">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeItem(idx)}
+                                disabled={items.length === 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
 
@@ -911,16 +962,19 @@ export default function CreateProject() {
                         <div className="pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div>
                             <span className="text-muted-foreground block">
-                              Quantidade de Laudas
+                              Quantidade de Laudas (Itens)
                             </span>
-                            <span className="font-medium text-base">{laudas || '-'}</span>
+                            <span className="font-medium text-base">{computedLaudas || '-'}</span>
                           </div>
                           <div className="text-right">
                             <span className="text-muted-foreground block">
                               Valor Total do Projeto
                             </span>
                             <span className="font-bold text-2xl text-emerald-600 dark:text-emerald-400">
-                              R$ {projectValue || '0,00'}
+                              {computedValue.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                              })}
                             </span>
                           </div>
                         </div>

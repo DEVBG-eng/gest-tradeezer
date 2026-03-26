@@ -21,6 +21,12 @@ export interface PrintProjectData {
   deadline?: Date
   services: { label: string; active: boolean }[]
   observations: string
+  items: {
+    description: string
+    laudas: number
+    valorLauda: number
+    total: number
+  }[]
 }
 
 export const ProposalPrintTemplate: React.FC<{
@@ -133,6 +139,39 @@ export const ProposalPrintTemplate: React.FC<{
           </div>
         </div>
 
+        {/* Documents Table Section */}
+        {data.items && data.items.length > 0 && (
+          <div className="mb-8 break-inside-avoid">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
+              Itens do Projeto
+            </h3>
+            <table className="w-full text-sm text-left">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="py-2 text-slate-500 font-semibold">Item / Descrição</th>
+                  <th className="py-2 text-slate-500 font-semibold text-center">Qtd. Laudas</th>
+                  <th className="py-2 text-slate-500 font-semibold text-right">Valor Unitário</th>
+                  <th className="py-2 text-slate-500 font-semibold text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map((item, idx) => (
+                  <tr key={idx} className="border-b border-slate-100">
+                    <td className="py-3 font-medium text-slate-800">{item.description}</td>
+                    <td className="py-3 text-center text-slate-600">{item.laudas}</td>
+                    <td className="py-3 text-right text-slate-600">
+                      {formatCurrency(item.valorLauda)}
+                    </td>
+                    <td className="py-3 text-right font-medium text-slate-800">
+                      {formatCurrency(item.total)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Additional Services */}
         <div className="mb-8 break-inside-avoid">
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
@@ -157,22 +196,13 @@ export const ProposalPrintTemplate: React.FC<{
         {/* Financial Section */}
         <div className="mb-8 flex justify-end break-inside-avoid">
           <div className="w-full sm:w-2/3 lg:w-1/2 bg-slate-50 p-6 rounded-xl border border-slate-100">
-            <div className="space-y-3 mb-4">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 text-sm">Volume Estimado</span>
-                <span className="text-slate-700 font-medium">{data.laudas} lauda(s)</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 text-sm">Taxa por Lauda</span>
-                <span className="text-slate-700 font-medium">{formatCurrency(data.rate)}</span>
-              </div>
-            </div>
-            <div className="flex justify-between items-center border-t border-slate-200 pt-4 mt-4">
+            <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-bold uppercase tracking-wider text-slate-800">
                 Investimento Total
               </span>
               <span className="text-2xl font-bold text-teal-600">{formatCurrency(data.value)}</span>
             </div>
+            <div className="text-right text-xs text-slate-400">Total de {data.laudas} lauda(s)</div>
           </div>
         </div>
 
