@@ -139,7 +139,7 @@ export default function Index() {
         </Card>
 
         <div className="space-y-6 flex flex-col">
-          <Card className="flex-1">
+          <Card className="flex-1 pt-[32px]">
             <CardHeader>
               <CardTitle>Ações Rápidas</CardTitle>
             </CardHeader>
@@ -156,34 +156,6 @@ export default function Index() {
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="flex-1">
-            <CardHeader className="pb-3">
-              <CardTitle>Atividade Recente</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-3 text-sm">
-                <div className="mt-0.5">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                </div>
-                <div>
-                  <p className="font-medium">Projeto Criado - PRJ-1005</p>
-                  <p className="text-muted-foreground text-xs">
-                    Estatuto Global Invest - 45 laudas
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3 text-sm">
-                <div className="mt-0.5">
-                  <Truck className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="font-medium">Coletado - DHL 8493</p>
-                  <p className="text-muted-foreground text-xs">Certidão de Casamento - PRJ-1004</p>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
