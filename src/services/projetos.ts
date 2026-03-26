@@ -20,7 +20,10 @@ export interface ProjetoRecord {
   fisico?: boolean
   digital?: boolean
   apostilamento?: boolean
+  apostilamento_digital?: boolean
+  apostilamento_fisico?: boolean
   reconhecimento?: boolean
+  autenticacao_digital?: boolean
   frete?: boolean
   dhl?: boolean
   observacoes?: string

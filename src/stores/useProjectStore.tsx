@@ -75,7 +75,10 @@ export interface Project {
   documentType?: string
   observations?: string
   hagueApostille?: boolean
+  digitalApostille?: boolean
+  physicalApostille?: boolean
   notarization?: boolean
+  digitalAuthentication?: boolean
   shipping?: boolean
   internationalShipping?: boolean
   translationType?: string
@@ -114,7 +117,10 @@ const mapToProject = (record: ProjetoRecord): Project => ({
   translationType: record.tipo_servico,
   observations: record.observacoes,
   hagueApostille: record.apostilamento,
+  digitalApostille: record.apostilamento_digital,
+  physicalApostille: record.apostilamento_fisico,
   notarization: record.reconhecimento,
+  digitalAuthentication: record.autenticacao_digital,
   shipping: record.frete,
   internationalShipping: record.dhl,
 })
@@ -142,7 +148,11 @@ const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
   if (project.translationType !== undefined) data.tipo_servico = project.translationType
   if (project.observations !== undefined) data.observacoes = project.observations
   if (project.hagueApostille !== undefined) data.apostilamento = project.hagueApostille
+  if (project.digitalApostille !== undefined) data.apostilamento_digital = project.digitalApostille
+  if (project.physicalApostille !== undefined) data.apostilamento_fisico = project.physicalApostille
   if (project.notarization !== undefined) data.reconhecimento = project.notarization
+  if (project.digitalAuthentication !== undefined)
+    data.autenticacao_digital = project.digitalAuthentication
   if (project.shipping !== undefined) data.frete = project.shipping
   if (project.internationalShipping !== undefined) data.dhl = project.internationalShipping
   return data

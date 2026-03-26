@@ -57,7 +57,18 @@ const SERVICES_OPTS = [
   { id: 'digital', label: 'Via Digital', key: 'digital' as const },
   { id: 'fisico', label: 'Via Física', key: 'fisico' as const },
   { id: 'apostilamento', label: 'Apostilamento de Haia', key: 'apostilamento' as const },
+  {
+    id: 'apostilamentoDigital',
+    label: 'Apostilamento Digital',
+    key: 'apostilamentoDigital' as const,
+  },
+  { id: 'apostilamentoFisico', label: 'Apostilamento Físico', key: 'apostilamentoFisico' as const },
   { id: 'reconhecimento', label: 'Reconhecimento de Firma', key: 'reconhecimentoFirma' as const },
+  {
+    id: 'autenticacaoDigital',
+    label: 'Autenticação documento Digital',
+    key: 'autenticacaoDigital' as const,
+  },
   { id: 'frete', label: 'Frete', key: 'frete' as const },
   { id: 'dhl', label: 'DHL (envio para fora do Brasil)', key: 'dhl' as const },
 ]
@@ -100,7 +111,10 @@ export default function CreateProject() {
     digital: true,
     fisico: false,
     apostilamento: false,
+    apostilamentoDigital: false,
+    apostilamentoFisico: false,
     reconhecimentoFirma: false,
+    autenticacaoDigital: false,
     frete: false,
     dhl: false,
   })
@@ -279,7 +293,10 @@ export default function CreateProject() {
       observations,
       digitalCopy: services.digital,
       hagueApostille: services.apostilamento,
+      digitalApostille: services.apostilamentoDigital,
+      physicalApostille: services.apostilamentoFisico,
       notarization: services.reconhecimentoFirma,
+      digitalAuthentication: services.autenticacaoDigital,
       shipping: services.frete,
       internationalShipping: services.dhl,
     }

@@ -38,7 +38,22 @@ const SERVICES_OPTS = [
   { id: 'edit-digital', label: 'Via Digital', key: 'digital' as const },
   { id: 'edit-fisico', label: 'Via Física', key: 'fisico' as const },
   { id: 'edit-apostilamento', label: 'Apostilamento de Haia', key: 'apostilamento' as const },
+  {
+    id: 'edit-apostilamento-digital',
+    label: 'Apostilamento Digital',
+    key: 'apostilamentoDigital' as const,
+  },
+  {
+    id: 'edit-apostilamento-fisico',
+    label: 'Apostilamento Físico',
+    key: 'apostilamentoFisico' as const,
+  },
   { id: 'edit-reconhecimento', label: 'Reconhecimento', key: 'reconhecimentoFirma' as const },
+  {
+    id: 'edit-autenticacao-digital',
+    label: 'Autenticação documento Digital',
+    key: 'autenticacaoDigital' as const,
+  },
   { id: 'edit-frete', label: 'Frete', key: 'frete' as const },
   { id: 'edit-dhl', label: 'DHL (Exterior)', key: 'dhl' as const },
 ]
@@ -75,7 +90,10 @@ export function EditProjectDialog({
     digital: project?.digitalCopy ?? true,
     fisico: project?.physicalCopy ?? false,
     apostilamento: project?.hagueApostille ?? false,
+    apostilamentoDigital: project?.digitalApostille ?? false,
+    apostilamentoFisico: project?.physicalApostille ?? false,
     reconhecimentoFirma: project?.notarization ?? false,
+    autenticacaoDigital: project?.digitalAuthentication ?? false,
     frete: project?.shipping ?? false,
     dhl: project?.internationalShipping ?? false,
   })
@@ -142,7 +160,10 @@ export function EditProjectDialog({
         digitalCopy: services.digital,
         physicalCopy: services.fisico,
         hagueApostille: services.apostilamento,
+        digitalApostille: services.apostilamentoDigital,
+        physicalApostille: services.apostilamentoFisico,
         notarization: services.reconhecimentoFirma,
+        digitalAuthentication: services.autenticacaoDigital,
         shipping: services.frete,
         internationalShipping: services.dhl,
       })
