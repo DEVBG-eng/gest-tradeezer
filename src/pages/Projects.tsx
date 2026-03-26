@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { KanbanBoard } from '@/components/projects/KanbanBoard'
+import { ProjectGrid } from '@/components/projects/ProjectGrid'
 import { ProjectDetailsSheet } from '@/components/projects/ProjectDetailsSheet'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 import { EditProjectDialog } from '@/components/projects/EditProjectDialog'
@@ -71,13 +71,17 @@ export default function Projects() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Quadro de Projetos</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie o fluxo completo, do Intake à Logística.
+            Gerencie e acompanhe todos os projetos de forma centralizada e visual.
           </p>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0">
-        <KanbanBoard onSelectProject={setSelectedId} />
+      <div className="flex-1 min-h-0 pb-4">
+        <ProjectGrid
+          onSelectProject={setSelectedId}
+          onEditProject={setEditingId}
+          onDeleteProject={setDeletingId}
+        />
       </div>
 
       {selectedId && (
@@ -95,8 +99,7 @@ export default function Projects() {
           <AlertDialogHeader>
             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
             <AlertDialogDescription>
-              Essa ação não pode ser desfeita. O projeto e todos os seus dados serão permanentemente
-              removidos do sistema.
+              Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

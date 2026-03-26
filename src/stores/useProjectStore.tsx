@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
 export type ProjectStatus =
-  | 'Triagem'
-  | 'Orçamento'
-  | 'Produção'
-  | 'Cartório'
-  | 'Logística'
+  | 'Aguardando'
+  | 'Em Andamento'
+  | 'Em Revisão'
   | 'Concluído'
+  | 'Atrasado/Bloqueado'
 
 export interface CloudFile {
   id: string
@@ -60,7 +59,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       id: 'PRJ-1001',
       title: 'Contrato Social - TechCorp',
       client: 'TechCorp Brasil',
-      status: 'Triagem',
+      status: 'Aguardando',
       urgent: true,
       international: false,
       physicalCopy: false,
@@ -84,7 +83,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       id: 'PRJ-1002',
       title: 'Procuração Pública (Apostila)',
       client: 'Maria Silva',
-      status: 'Cartório',
+      status: 'Em Revisão',
       urgent: false,
       international: true,
       physicalCopy: true,
@@ -107,7 +106,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       id: 'PRJ-1003',
       title: 'Manuais Técnicos de Maquinário',
       client: 'Industria XPTO',
-      status: 'Produção',
+      status: 'Em Andamento',
       urgent: false,
       international: true,
       physicalCopy: false,
@@ -131,7 +130,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       id: 'PRJ-1004',
       title: 'Certidão de Casamento',
       client: 'João Souza',
-      status: 'Logística',
+      status: 'Atrasado/Bloqueado',
       urgent: true,
       international: true,
       physicalCopy: true,
@@ -154,7 +153,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       id: 'PRJ-1005',
       title: 'Estatuto da Empresa',
       client: 'Global Invest',
-      status: 'Orçamento',
+      status: 'Concluído',
       urgent: false,
       international: false,
       physicalCopy: false,

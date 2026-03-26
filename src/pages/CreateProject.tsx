@@ -204,8 +204,6 @@ export default function CreateProject() {
       setProjectValue(
         total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       )
-    } else if (laudas === '' || laudaPrice === '') {
-      // Optional: clear value if inputs are cleared, or just let it be overridden manually
     }
   }, [laudas, laudaPrice])
 
@@ -252,7 +250,7 @@ export default function CreateProject() {
     const newProjectData = {
       title: `Ordem de Serviço ${reference}`,
       client: clientName,
-      status: 'Orçamento' as ProjectStatus,
+      status: 'Aguardando' as ProjectStatus,
       urgent: false,
       international: sourceLang !== 'pt' || targetLang !== 'pt',
       physicalCopy: services.fisico,
