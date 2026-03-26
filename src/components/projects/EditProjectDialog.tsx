@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -79,6 +80,7 @@ export function EditProjectDialog({
   const [documentType, setDocumentType] = useState(project?.documentType || '')
   const [documents, setDocuments] = useState(project?.documents?.toString() || '1')
   const [laudas, setLaudas] = useState(project?.laudas?.toString() || '0')
+  const [observations, setObservations] = useState(project?.observations || '')
   const [entryDate, setEntryDate] = useState<Date | undefined>(
     project?.entryDate ? parseISO(project.entryDate) : undefined,
   )
@@ -157,6 +159,7 @@ export function EditProjectDialog({
         value: Number(value.replace(/\./g, '').replace(',', '.')) || 0,
         entryDate: entryDate ? entryDate.toISOString() : project.entryDate,
         dueDate: deadline ? deadline.toISOString() : project.dueDate,
+        observations,
         digitalCopy: services.digital,
         physicalCopy: services.fisico,
         hagueApostille: services.apostilamento,
@@ -352,6 +355,16 @@ export function EditProjectDialog({
                 className="pl-9 font-bold text-emerald-600 dark:text-emerald-400"
               />
             </div>
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label>Observações</Label>
+            <Textarea
+              placeholder="Instruções especiais, notas internas, ou outras observações do documento..."
+              value={observations}
+              onChange={(e) => setObservations(e.target.value)}
+              className="min-h-[100px] resize-y"
+            />
           </div>
 
           <div className="space-y-3 md:col-span-2 mt-2">

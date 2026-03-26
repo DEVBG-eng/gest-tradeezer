@@ -621,16 +621,6 @@ export default function CreateProject() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Textarea
-                    placeholder="Instruções especiais, notas internas, ou outras observações do documento..."
-                    value={observations}
-                    onChange={(e) => setObservations(e.target.value)}
-                    className="min-h-[100px] resize-y"
-                  />
-                </div>
-
                 <div className="space-y-4 pt-2">
                   <Label className="text-base font-semibold">Serviços e Logística</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border rounded-lg p-4 bg-slate-50/50 dark:bg-slate-900/50">
@@ -793,6 +783,16 @@ export default function CreateProject() {
                   <p className="text-sm text-muted-foreground">
                     Código único para identificação do projeto e sincronização em nuvem.
                   </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Textarea
+                    placeholder="Instruções especiais, notas internas, ou outras observações do documento..."
+                    value={observations}
+                    onChange={(e) => setObservations(e.target.value)}
+                    className="min-h-[100px] resize-y"
+                  />
                 </div>
 
                 {missingFields.length > 0 ? (
