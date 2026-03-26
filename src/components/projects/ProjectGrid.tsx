@@ -23,12 +23,16 @@ import { LANGUAGES } from '@/components/LanguageCombobox'
 import { cn } from '@/lib/utils'
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
+  Orçamento: 'bg-slate-400 hover:bg-slate-500 text-white',
+  Aprovado: 'bg-blue-500 hover:bg-blue-600 text-white',
   Aguardando: 'bg-slate-500 hover:bg-slate-600 text-white',
   'Em Andamento': 'bg-amber-500 hover:bg-amber-600 text-white',
   'Em Revisão': 'bg-indigo-500 hover:bg-indigo-600 text-white',
   Cartório: 'bg-purple-500 hover:bg-purple-600 text-white',
   Concluído: 'bg-emerald-500 hover:bg-emerald-600 text-white',
   'Atrasado/Bloqueado': 'bg-rose-500 hover:bg-rose-600 text-white',
+  Cancelado: 'bg-zinc-500 hover:bg-zinc-600 text-white',
+  'Não Aprovado': 'bg-red-500 hover:bg-red-600 text-white',
 }
 
 interface ProjectGridProps {

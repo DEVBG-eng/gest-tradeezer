@@ -19,20 +19,28 @@ import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import { useAuth } from '@/hooks/use-auth'
 
 export type ProjectStatus =
+  | 'Orçamento'
+  | 'Aprovado'
   | 'Aguardando'
   | 'Em Andamento'
   | 'Em Revisão'
   | 'Cartório'
   | 'Concluído'
   | 'Atrasado/Bloqueado'
+  | 'Cancelado'
+  | 'Não Aprovado'
 
 export const ALL_STATUSES: ProjectStatus[] = [
+  'Orçamento',
+  'Aprovado',
   'Aguardando',
   'Em Andamento',
   'Em Revisão',
   'Cartório',
   'Concluído',
   'Atrasado/Bloqueado',
+  'Cancelado',
+  'Não Aprovado',
 ]
 
 export interface CloudFile {
@@ -89,7 +97,7 @@ const mapToProject = (record: ProjetoRecord): Project => ({
   id: record.cod_referencia,
   title: `Ordem de Serviço ${record.cod_referencia}`,
   client: record.cliente,
-  status: (record.status as ProjectStatus) || 'Aguardando',
+  status: (record.status as ProjectStatus) || 'Orçamento',
   urgent: record.urgente || false,
   international: record.internacional || false,
   physicalCopy: record.fisico || false,

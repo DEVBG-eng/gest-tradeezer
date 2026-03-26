@@ -57,7 +57,7 @@ export function EditProjectDialog({
   const [saving, setSaving] = useState(false)
   const [referenceCode, setReferenceCode] = useState(project?.id || '')
   const [client, setClient] = useState(project?.client || '')
-  const [status, setStatus] = useState<ProjectStatus>(project?.status || 'Aguardando')
+  const [status, setStatus] = useState<ProjectStatus>(project?.status || 'Orçamento')
   const [translationType, setTranslationType] = useState(project?.translationType || '')
   const [sourceLang, setSourceLang] = useState(project?.sourceLang || 'pt')
   const [targetLang, setTargetLang] = useState(project?.targetLang || 'en')

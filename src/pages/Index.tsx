@@ -16,9 +16,9 @@ const chartData = [
 export default function Index() {
   const { projects } = useProjectStore()
   const activeCount = projects.filter((p) =>
-    ['Em Andamento', 'Em Revisão', 'Cartório'].includes(p.status),
+    ['Aprovado', 'Em Andamento', 'Em Revisão', 'Cartório'].includes(p.status),
   ).length
-  const quoteCount = projects.filter((p) => p.status === 'Aguardando').length
+  const quoteCount = projects.filter((p) => ['Orçamento', 'Aguardando'].includes(p.status)).length
   const delayCount = projects.filter((p) => p.status === 'Atrasado/Bloqueado').length
   const shippingCount = projects.filter((p) => p.shipping || p.internationalShipping).length
 
@@ -33,7 +33,7 @@ export default function Index() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
-          to="/projects?status=Em Andamento&status=Em Revisão&status=Cartório"
+          to="/projects?status=Aprovado&status=Em Andamento&status=Em Revisão&status=Cartório"
           className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg group"
         >
           <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group-hover:border-primary/50">
@@ -43,13 +43,15 @@ export default function Index() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{activeCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">Andamento, Revisão ou Cartório</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Aprovado, Andamento, Revisão ou Cartório
+              </p>
             </CardContent>
           </Card>
         </Link>
 
         <Link
-          to="/projects?status=Aguardando"
+          to="/projects?status=Orçamento&status=Aguardando"
           className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg group"
         >
           <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group-hover:border-primary/50">
@@ -59,7 +61,7 @@ export default function Index() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{quoteCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">Aguardando aprovação</p>
+              <p className="text-xs text-muted-foreground mt-1">Aguardando aprovação ou envio</p>
             </CardContent>
           </Card>
         </Link>

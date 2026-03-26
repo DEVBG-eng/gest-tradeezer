@@ -80,7 +80,7 @@ export default function CreateProject() {
   const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
-  const [status, setStatus] = useState<ProjectStatus>('Aguardando')
+  const [status, setStatus] = useState<ProjectStatus>('Orçamento')
   const [sourceLang, setSourceLang] = useState('pt')
   const [targetLang, setTargetLang] = useState('en')
 

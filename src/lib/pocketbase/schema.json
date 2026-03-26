@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-26T14:48:16.770Z",
+  "generatedAt": "2026-03-26T15:04:43.739Z",
   "collections": [
     {
       "name": "users",
@@ -87,12 +87,16 @@
           "required": true,
           "system": false,
           "selectValues": [
+            "Orçamento",
+            "Aprovado",
             "Aguardando",
             "Em Andamento",
             "Em Revisão",
             "Cartório",
             "Concluído",
-            "Atrasado/Bloqueado"
+            "Atrasado/Bloqueado",
+            "Cancelado",
+            "Não Aprovado"
           ]
         },
         {
