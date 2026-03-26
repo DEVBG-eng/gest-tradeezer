@@ -134,6 +134,7 @@ const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
     data.data_entrega = project.dueDate ? new Date(project.dueDate).toISOString() : undefined
   if (project.laudas !== undefined) data.qtd_laudas = project.laudas
   if (project.valorLauda !== undefined) data.valor_lauda = project.valorLauda
+  if (project.value !== undefined) data.valor_total = project.value
   if (project.documents !== undefined) data.qtd_documentos = project.documents
   if (project.sourceLang !== undefined) data.idioma_origem = project.sourceLang
   if (project.targetLang !== undefined) data.idioma_destino = project.targetLang

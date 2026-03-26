@@ -99,6 +99,17 @@ export function EditProjectDialog({
     }) || '0,00',
   )
 
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    const digits = val.replace(/\D/g, '')
+    if (!digits) {
+      setValue('')
+      return
+    }
+    const number = parseInt(digits, 10) / 100
+    setValue(number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+  }
+
   useEffect(() => {
     const l = Number(laudas.replace(',', '.')) || 0
     const r = Number(rate.replace(/\./g, '').replace(',', '.')) || 0
@@ -125,6 +136,7 @@ export function EditProjectDialog({
         documents: Number(documents) || 1,
         laudas: Number(laudas.replace(',', '.')) || 0,
         valorLauda: Number(rate.replace(/\./g, '').replace(',', '.')) || 0,
+        value: Number(value.replace(/\./g, '').replace(',', '.')) || 0,
         entryDate: entryDate ? entryDate.toISOString() : project.entryDate,
         dueDate: deadline ? deadline.toISOString() : project.dueDate,
         digitalCopy: services.digital,
@@ -315,8 +327,8 @@ export function EditProjectDialog({
                 type="text"
                 inputMode="decimal"
                 value={value}
-                disabled
-                className="pl-9 font-bold text-emerald-600 bg-muted cursor-not-allowed"
+                onChange={handleValueChange}
+                className="pl-9 font-bold text-emerald-600 dark:text-emerald-400"
               />
             </div>
           </div>

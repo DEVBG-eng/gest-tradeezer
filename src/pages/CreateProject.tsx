@@ -190,6 +190,19 @@ export default function CreateProject() {
     )
   }
 
+  const handleProjectValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    const digits = value.replace(/\D/g, '')
+    if (!digits) {
+      setProjectValue('')
+      return
+    }
+    const number = parseInt(digits, 10) / 100
+    setProjectValue(
+      number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
+  }
+
   useEffect(() => {
     const l = Number(laudas.replace(',', '.')) || 0
     const lp = Number(laudaPrice.replace(/\./g, '').replace(',', '.')) || 0
@@ -584,8 +597,8 @@ export default function CreateProject() {
                         inputMode="decimal"
                         placeholder="0,00"
                         value={projectValue}
-                        disabled
-                        className="pl-9 font-bold text-emerald-600 dark:text-emerald-400 bg-muted cursor-not-allowed"
+                        onChange={handleProjectValueChange}
+                        className="pl-9 font-bold text-emerald-600 dark:text-emerald-400"
                       />
                     </div>
                   </div>
