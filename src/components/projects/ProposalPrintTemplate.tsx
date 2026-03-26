@@ -166,10 +166,13 @@ export function ProposalPrintTemplate({
         </div>
 
         {/* Tipo de Tradução */}
-        <div className="p-3 border-b border-[#2d1b4e] min-h-[4rem]">Tipo de Tradução:</div>
+        <div className="p-3 border-b border-[#2d1b4e] min-h-[4rem] flex items-center">
+          Tipo de Tradução:{' '}
+          <span className="ml-2 font-medium">{project.translationType || ''}</span>
+        </div>
 
         {/* Valor */}
-        <div className="p-3 border-b border-[#2d1b4e] min-h-[4rem]">
+        <div className="p-3 border-b border-[#2d1b4e] min-h-[4rem] flex items-center">
           Valor:{' '}
           <span className="ml-2 font-medium">
             {project.value
@@ -179,7 +182,7 @@ export function ProposalPrintTemplate({
         </div>
 
         {/* Tipo de documento */}
-        <div className="p-3 min-h-[4rem]">
+        <div className="p-3 min-h-[4rem] flex items-center">
           Tipo de documento:{' '}
           <span className="ml-2">
             {project.documentType || ''}

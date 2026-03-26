@@ -63,6 +63,7 @@ export default function CreateProject() {
   const [laudas, setLaudas] = useState('')
   const [docCount, setDocCount] = useState('0')
   const [documentType, setDocumentType] = useState('')
+  const [translationType, setTranslationType] = useState('')
   const [observations, setObservations] = useState('')
   const [cloudFiles, setCloudFiles] = useState<CloudFile[]>([])
 
@@ -182,6 +183,13 @@ export default function CreateProject() {
         variant: 'destructive',
       })
     }
+    if (!translationType) {
+      return toast({
+        title: 'Aviso',
+        description: 'Por favor, selecione o Tipo de Tradução.',
+        variant: 'destructive',
+      })
+    }
 
     addProject({
       title: `Ordem de Serviço ${reference}`,
@@ -200,6 +208,7 @@ export default function CreateProject() {
       sourceLang,
       targetLang,
       documentType,
+      translationType,
       observations,
     })
 
@@ -244,10 +253,31 @@ export default function CreateProject() {
           </CardHeader>
           <CardContent className="pt-6">
             <Tabs defaultValue="client" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="client">1. Dados do Cliente</TabsTrigger>
-                <TabsTrigger value="specs">2. Especificações</TabsTrigger>
-                <TabsTrigger value="docs">3. Documentos</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6 h-auto p-1 gap-1">
+                <TabsTrigger
+                  value="client"
+                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  1. Dados do Cliente
+                </TabsTrigger>
+                <TabsTrigger
+                  value="specs"
+                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  2. Especificações
+                </TabsTrigger>
+                <TabsTrigger
+                  value="docs"
+                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  3. Documentos
+                </TabsTrigger>
+                <TabsTrigger
+                  value="translation"
+                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  4. Tipo de Tradução
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="client" className="space-y-6">
@@ -260,13 +290,13 @@ export default function CreateProject() {
                   >
                     <div className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full">
                       <RadioGroupItem value="PJ" id="pj" />
-                      <Label htmlFor="pj" className="cursor-pointer">
+                      <Label htmlFor="pj" className="cursor-pointer flex-1">
                         Pessoa Jurídica (PJ)
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full">
                       <RadioGroupItem value="PF" id="pf" />
-                      <Label htmlFor="pf" className="cursor-pointer">
+                      <Label htmlFor="pf" className="cursor-pointer flex-1">
                         Pessoa Física (PF)
                       </Label>
                     </div>
@@ -603,6 +633,43 @@ export default function CreateProject() {
                     </Table>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="translation" className="space-y-6">
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">
+                    Categoria do Serviço <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup
+                    value={translationType}
+                    onValueChange={setTranslationType}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                  >
+                    {[
+                      'Tradução Juramentada',
+                      'Tradução Técnica',
+                      'Tradução Simultânea',
+                      'Tradução Consecutiva',
+                      'Locação de Equipamentos',
+                    ].map((type) => (
+                      <div
+                        key={type}
+                        className={cn(
+                          'flex items-center space-x-2 border rounded-md p-4 cursor-pointer transition-colors w-full',
+                          translationType === type
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:bg-muted',
+                        )}
+                        onClick={() => setTranslationType(type)}
+                      >
+                        <RadioGroupItem value={type} id={`type-${type}`} />
+                        <Label htmlFor={`type-${type}`} className="cursor-pointer flex-1 text-sm">
+                          {type}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>

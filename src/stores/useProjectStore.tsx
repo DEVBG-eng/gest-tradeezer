@@ -41,6 +41,7 @@ export interface Project {
   notarization?: boolean
   shipping?: boolean
   internationalShipping?: boolean
+  translationType?: string
 }
 
 interface ProjectStoreContext {
@@ -71,6 +72,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       sourceLang: 'pt',
       targetLang: 'en',
       documentType: 'Contrato Social',
+      translationType: 'Tradução Juramentada',
       observations: 'Prioridade alta para envio.',
       hagueApostille: false,
       notarization: true,
@@ -94,6 +96,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       sourceLang: 'pt',
       targetLang: 'es',
       documentType: 'Procuração Pública',
+      translationType: 'Tradução Juramentada',
       hagueApostille: true,
       notarization: true,
       shipping: true,
@@ -116,6 +119,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       sourceLang: 'de',
       targetLang: 'pt',
       documentType: 'Manual Técnico',
+      translationType: 'Tradução Técnica',
       hagueApostille: false,
       notarization: false,
       shipping: false,
@@ -139,6 +143,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       sourceLang: 'pt',
       targetLang: 'it',
       documentType: 'Certidão',
+      translationType: 'Tradução Juramentada',
       hagueApostille: true,
       notarization: false,
       shipping: true,
@@ -161,6 +166,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       sourceLang: 'en',
       targetLang: 'pt',
       documentType: 'Estatuto',
+      translationType: 'Tradução Juramentada',
       hagueApostille: false,
       notarization: false,
       shipping: false,
