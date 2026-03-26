@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import useProjectStore, { ProjectStatus } from '@/stores/useProjectStore'
+import useProjectStore, { ProjectStatus, ALL_STATUSES } from '@/stores/useProjectStore'
 import { LANGUAGES } from '@/components/LanguageCombobox'
 import { cn } from '@/lib/utils'
 
@@ -25,17 +25,10 @@ const STATUS_COLORS: Record<ProjectStatus, string> = {
   Aguardando: 'bg-slate-500 hover:bg-slate-600 text-white',
   'Em Andamento': 'bg-amber-500 hover:bg-amber-600 text-white',
   'Em Revisão': 'bg-indigo-500 hover:bg-indigo-600 text-white',
+  Cartório: 'bg-purple-500 hover:bg-purple-600 text-white',
   Concluído: 'bg-emerald-500 hover:bg-emerald-600 text-white',
   'Atrasado/Bloqueado': 'bg-rose-500 hover:bg-rose-600 text-white',
 }
-
-const ALL_STATUSES: ProjectStatus[] = [
-  'Aguardando',
-  'Em Andamento',
-  'Em Revisão',
-  'Concluído',
-  'Atrasado/Bloqueado',
-]
 
 interface ProjectGridProps {
   onSelectProject: (id: string) => void

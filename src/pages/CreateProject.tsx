@@ -15,14 +15,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -30,6 +23,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -42,7 +42,12 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import useProjectStore, { CloudFile, ProjectStatus, Project } from '@/stores/useProjectStore'
+import useProjectStore, {
+  CloudFile,
+  ProjectStatus,
+  Project,
+  ALL_STATUSES,
+} from '@/stores/useProjectStore'
 import useSettingsStore from '@/stores/useSettingsStore'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
@@ -74,6 +79,7 @@ export default function CreateProject() {
   const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
+  const [status, setStatus] = useState<ProjectStatus>('Aguardando')
   const [sourceLang, setSourceLang] = useState('pt')
   const [targetLang, setTargetLang] = useState('en')
 
@@ -250,7 +256,7 @@ export default function CreateProject() {
     const newProjectData = {
       title: `Ordem de Serviço ${reference}`,
       client: clientName,
-      status: 'Aguardando' as ProjectStatus,
+      status,
       urgent: false,
       international: sourceLang !== 'pt' || targetLang !== 'pt',
       physicalCopy: services.fisico,
@@ -384,6 +390,23 @@ export default function CreateProject() {
                     onChange={(e) => setClientName(e.target.value)}
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">
+                    Status <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={status} onValueChange={(val) => setStatus(val as ProjectStatus)}>
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ALL_STATUSES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </TabsContent>
 
@@ -783,6 +806,10 @@ export default function CreateProject() {
                           <span className="font-medium text-right">
                             {clientName || '-'} {clientName && `(${clientType})`}
                           </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Status</span>
+                          <span className="font-medium text-right">{status}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Categoria do Serviço</span>

@@ -4,8 +4,18 @@ export type ProjectStatus =
   | 'Aguardando'
   | 'Em Andamento'
   | 'Em Revisão'
+  | 'Cartório'
   | 'Concluído'
   | 'Atrasado/Bloqueado'
+
+export const ALL_STATUSES: ProjectStatus[] = [
+  'Aguardando',
+  'Em Andamento',
+  'Em Revisão',
+  'Cartório',
+  'Concluído',
+  'Atrasado/Bloqueado',
+]
 
 export interface CloudFile {
   id: string
@@ -130,7 +140,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       id: 'PRJ-1004',
       title: 'Certidão de Casamento',
       client: 'João Souza',
-      status: 'Atrasado/Bloqueado',
+      status: 'Cartório',
       urgent: true,
       international: true,
       physicalCopy: true,

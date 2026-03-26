@@ -14,10 +14,17 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { CalendarIcon, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox } from '@/components/LanguageCombobox'
-import useProjectStore from '@/stores/useProjectStore'
+import useProjectStore, { ProjectStatus, ALL_STATUSES } from '@/stores/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
 
 const TRANSLATION_TYPES = [
@@ -49,6 +56,7 @@ export function EditProjectDialog({
 
   const [referenceCode, setReferenceCode] = useState(project?.id || '')
   const [client, setClient] = useState(project?.client || '')
+  const [status, setStatus] = useState<ProjectStatus>(project?.status || 'Aguardando')
   const [translationType, setTranslationType] = useState(project?.translationType || '')
   const [sourceLang, setSourceLang] = useState(project?.sourceLang || 'pt')
   const [targetLang, setTargetLang] = useState(project?.targetLang || 'en')
@@ -99,6 +107,7 @@ export function EditProjectDialog({
     updateProject(projectId, {
       id: referenceCode,
       client,
+      status,
       translationType,
       sourceLang,
       targetLang,
@@ -144,6 +153,24 @@ export function EditProjectDialog({
               Cliente <span className="text-destructive">*</span>
             </Label>
             <Input value={client} onChange={(e) => setClient(e.target.value)} required />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label>
+              Status <span className="text-destructive">*</span>
+            </Label>
+            <Select value={status} onValueChange={(val) => setStatus(val as ProjectStatus)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o status" />
+              </SelectTrigger>
+              <SelectContent>
+                {ALL_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2 md:col-span-2">
