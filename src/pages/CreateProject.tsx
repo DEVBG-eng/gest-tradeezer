@@ -195,6 +195,13 @@ export default function CreateProject() {
         variant: 'destructive',
       })
     }
+    if (!translationType) {
+      return toast({
+        title: 'Erro',
+        description: 'A Categoria do Serviço é obrigatória.',
+        variant: 'destructive',
+      })
+    }
     if (!startDate) {
       return toast({
         title: 'Erro',
@@ -206,13 +213,6 @@ export default function CreateProject() {
       return toast({
         title: 'Erro',
         description: 'Prazo de Entrega é obrigatório.',
-        variant: 'destructive',
-      })
-    }
-    if (!translationType) {
-      return toast({
-        title: 'Aviso',
-        description: 'Por favor, selecione o Tipo de Tradução.',
         variant: 'destructive',
       })
     }
@@ -310,7 +310,7 @@ export default function CreateProject() {
           </CardHeader>
           <CardContent className="pt-6">
             <Tabs defaultValue="client" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6 h-auto p-1 gap-1">
+              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6 h-auto p-1 gap-1">
                 <TabsTrigger
                   value="client"
                   className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
@@ -328,12 +328,6 @@ export default function CreateProject() {
                   className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
                 >
                   3. Documentos
-                </TabsTrigger>
-                <TabsTrigger
-                  value="translation"
-                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
-                >
-                  4. Tipo de Tradução
                 </TabsTrigger>
               </TabsList>
 
@@ -376,7 +370,61 @@ export default function CreateProject() {
               </TabsContent>
 
               <TabsContent value="specs" className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">
+                    Categoria do Serviço <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup
+                    value={translationType}
+                    onValueChange={setTranslationType}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                  >
+                    {TRANSLATION_TYPES.map((type) => (
+                      <label
+                        key={type}
+                        htmlFor={`type-${type}`}
+                        className={cn(
+                          'flex items-center space-x-2 border rounded-md p-4 cursor-pointer transition-colors w-full',
+                          translationType === type
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:bg-muted',
+                        )}
+                      >
+                        <RadioGroupItem value={type} id={`type-${type}`} />
+                        <span className="flex-1 text-sm font-medium leading-none">{type}</span>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Tipo de Documento</Label>
+                    <Input
+                      placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
+                      value={documentType}
+                      onChange={(e) => setDocumentType(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <span className="text-sm text-muted-foreground font-medium">R$</span>
+                      </div>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={projectValue}
+                        onChange={handleValueChange}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <LanguageCombobox
                     label="Idioma de Origem"
                     value={sourceLang}
@@ -389,7 +437,7 @@ export default function CreateProject() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2 flex flex-col">
                     <Label>
                       Data de Entrada <span className="text-destructive">*</span>
@@ -454,7 +502,7 @@ export default function CreateProject() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label>Quantidade de Documentos</Label>
                     <Input
@@ -474,33 +522,6 @@ export default function CreateProject() {
                       value={laudas}
                       onChange={handleLaudasChange}
                     />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Tipo de Documento</Label>
-                    <Input
-                      placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
-                      value={documentType}
-                      onChange={(e) => setDocumentType(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Valor (R$)</Label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <span className="text-sm text-muted-foreground font-medium">R$</span>
-                      </div>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="0,00"
-                        value={projectValue}
-                        onChange={handleValueChange}
-                        className="pl-9"
-                      />
-                    </div>
                   </div>
                 </div>
 
@@ -658,35 +679,6 @@ export default function CreateProject() {
                     </Table>
                   </div>
                 )}
-              </TabsContent>
-
-              <TabsContent value="translation" className="space-y-6">
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">
-                    Categoria do Serviço <span className="text-destructive">*</span>
-                  </Label>
-                  <RadioGroup
-                    value={translationType}
-                    onValueChange={setTranslationType}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                  >
-                    {TRANSLATION_TYPES.map((type) => (
-                      <label
-                        key={type}
-                        htmlFor={`type-${type}`}
-                        className={cn(
-                          'flex items-center space-x-2 border rounded-md p-4 cursor-pointer transition-colors w-full',
-                          translationType === type
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:bg-muted',
-                        )}
-                      >
-                        <RadioGroupItem value={type} id={`type-${type}`} />
-                        <span className="flex-1 text-sm font-medium leading-none">{type}</span>
-                      </label>
-                    ))}
-                  </RadioGroup>
-                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
