@@ -49,6 +49,7 @@ interface ProjectStoreContext {
   addProject: (project: Omit<Project, 'id'>) => void
   updateProjectStatus: (id: string, status: ProjectStatus) => void
   updateProject: (id: string, data: Partial<Project>) => void
+  deleteProject: (id: string) => void
 }
 
 const StoreContext = createContext<ProjectStoreContext | null>(null)
@@ -187,8 +188,14 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)))
   }
 
+  const deleteProject = (id: string) => {
+    setProjects((prev) => prev.filter((p) => p.id !== id))
+  }
+
   return (
-    <StoreContext.Provider value={{ projects, addProject, updateProjectStatus, updateProject }}>
+    <StoreContext.Provider
+      value={{ projects, addProject, updateProjectStatus, updateProject, deleteProject }}
+    >
       {children}
     </StoreContext.Provider>
   )

@@ -2,7 +2,14 @@ import { Project } from '@/stores/useProjectStore'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Globe, FileText, Download } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { AlertCircle, Globe, FileText, Download, MoreHorizontal, Edit, Trash } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -12,9 +19,16 @@ interface Props {
 }
 
 export function ProjectCard({ project, onDragStart, onClick }: Props) {
-  const handlePrint = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handlePrint = () => {
     window.dispatchEvent(new CustomEvent('print-project', { detail: project.id }))
+  }
+
+  const handleEdit = () => {
+    window.dispatchEvent(new CustomEvent('edit-project', { detail: project.id }))
+  }
+
+  const handleDelete = () => {
+    window.dispatchEvent(new CustomEvent('delete-project', { detail: project.id }))
   }
 
   return (
@@ -31,15 +45,34 @@ export function ProjectCard({ project, onDragStart, onClick }: Props) {
         <div className="flex justify-between items-start mb-2">
           <span className="text-xs font-mono text-muted-foreground">{project.id}</span>
           <div className="flex gap-1.5 items-center bg-background/80 rounded-sm px-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity -ml-1"
-              onClick={handlePrint}
-              title="Gerar Proposta PDF"
-            >
-              <Download className="h-3.5 w-3.5 text-primary" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity -ml-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onSelect={handleEdit}>
+                  <Edit className="h-4 w-4 mr-2" /> Editar Projeto
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handlePrint}>
+                  <Download className="h-4 w-4 mr-2" /> Gerar Proposta PDF
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                  onSelect={handleDelete}
+                >
+                  <Trash className="h-4 w-4 mr-2" /> Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {project.urgent && <AlertCircle className="w-3.5 h-3.5 text-destructive" />}
             {project.international && <Globe className="w-3.5 h-3.5 text-accent" />}
           </div>

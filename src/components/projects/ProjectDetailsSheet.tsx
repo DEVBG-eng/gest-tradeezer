@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -52,9 +52,19 @@ export function ProjectDetailsSheet({
   const { toast } = useToast()
   const project = projects.find((p) => p.id === projectId)
 
+  const initialRate =
+    project && project.laudas && project.laudas > 0 ? project.value / project.laudas : 45
   const [laudas, setLaudas] = useState(project?.laudas?.toString() || '0')
-  const [rate, setRate] = useState('45.00')
+  const [rate, setRate] = useState(initialRate.toFixed(2))
   const [isPrinting, setIsPrinting] = useState(false)
+
+  useEffect(() => {
+    if (project) {
+      setLaudas(project.laudas?.toString() || '0')
+      const newRate = project.laudas && project.laudas > 0 ? project.value / project.laudas : 45
+      setRate(newRate.toFixed(2))
+    }
+  }, [project?.laudas, project?.value])
 
   if (!project) return null
 
