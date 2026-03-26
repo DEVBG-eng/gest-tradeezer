@@ -184,6 +184,15 @@ export function EditProjectDialog({
     }
   }
 
+  const handlePrint = () => {
+    const originalTitle = document.title
+    document.title = `Orcamento_${referenceCode}`
+    setTimeout(() => {
+      window.print()
+      document.title = originalTitle
+    }, 100)
+  }
+
   const printData = {
     referenceCode,
     client,
@@ -427,7 +436,7 @@ export function EditProjectDialog({
               <Button
                 variant="outline"
                 type="button"
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="w-full sm:w-auto"
               >
                 <Download className="mr-2 h-4 w-4" />

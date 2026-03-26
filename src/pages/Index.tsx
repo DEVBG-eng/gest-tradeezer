@@ -1,26 +1,52 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, AlertCircle, Clock, CheckCircle2, Truck, FileText, Plus } from 'lucide-react'
+import { ArrowRight, AlertCircle, Clock, Truck, FileText, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import useProjectStore from '@/stores/useProjectStore'
-
-const chartData = [
-  { language: 'Inglês', volume: 145, fill: 'hsl(var(--primary))' },
-  { language: 'Espanhol', volume: 90, fill: 'hsl(var(--accent))' },
-  { language: 'Alemão', volume: 45, fill: 'hsl(var(--chart-3))' },
-  { language: 'Italiano', volume: 30, fill: 'hsl(var(--chart-4))' },
-]
+import { LANGUAGES } from '@/components/LanguageCombobox'
 
 export default function Index() {
   const { projects } = useProjectStore()
+
   const activeCount = projects.filter((p) =>
     ['Aprovado', 'Em Andamento', 'Em Revisão', 'Cartório'].includes(p.status),
   ).length
   const quoteCount = projects.filter((p) => ['Orçamento', 'Aguardando'].includes(p.status)).length
   const delayCount = projects.filter((p) => p.status === 'Atrasado/Bloqueado').length
   const shippingCount = projects.filter((p) => p.shipping || p.internationalShipping).length
+
+  const chartData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    projects.forEach((p) => {
+      const lang = p.targetLang || 'Outros'
+      counts[lang] = (counts[lang] || 0) + 1
+    })
+
+    const colors = [
+      'hsl(var(--primary))',
+      'hsl(var(--accent))',
+      'hsl(var(--chart-3))',
+      'hsl(var(--chart-4))',
+      'hsl(var(--chart-5))',
+    ]
+
+    return Object.entries(counts)
+      .map(([code, count], index) => {
+        const label =
+          LANGUAGES.find((l) => l.value === code)?.label ||
+          (code === 'Outros' ? 'Não definido' : code)
+        return {
+          language: label,
+          projetos: count,
+          fill: colors[index % colors.length],
+        }
+      })
+      .sort((a, b) => b.projetos - a.projetos)
+      .slice(0, 7) // Top 7 languages
+  }, [projects])
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -104,37 +130,47 @@ export default function Index() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 flex flex-col">
           <CardHeader>
-            <CardTitle>Volume de Traduções por Idioma</CardTitle>
-            <CardDescription>Distribuição de laudas nos últimos 30 dias</CardDescription>
+            <CardTitle>Projetos por Idioma de Destino</CardTitle>
+            <CardDescription>Quantidade de projetos por idioma</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 min-h-[300px]">
-            <ChartContainer config={{ volume: { label: 'Laudas' } }} className="h-full w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="hsl(var(--border))"
-                  />
-                  <XAxis
-                    dataKey="language"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  />
-                  <ChartTooltip
-                    cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }}
-                    content={<ChartTooltipContent />}
-                  />
-                  <Bar dataKey="volume" radius={[4, 4, 0, 0]} maxBarSize={60} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            {chartData.length > 0 ? (
+              <ChartContainer
+                config={{ projetos: { label: 'Projetos' } }}
+                className="h-full w-full"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="hsl(var(--border))"
+                    />
+                    <XAxis
+                      dataKey="language"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                      allowDecimals={false}
+                    />
+                    <ChartTooltip
+                      cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }}
+                      content={<ChartTooltipContent />}
+                    />
+                    <Bar dataKey="projetos" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                Nenhum dado disponível.
+              </div>
+            )}
           </CardContent>
         </Card>
 

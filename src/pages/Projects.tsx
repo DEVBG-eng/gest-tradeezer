@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, FilterX } from 'lucide-react'
+import { mapProjectToPrintData } from '@/lib/project-utils'
 
 export default function Projects() {
   const { projects, deleteProject } = useProjectStore()
@@ -109,7 +110,11 @@ export default function Projects() {
       )}
 
       {printingProject && (
-        <ProposalPrintTemplate project={printingProject} onClose={() => setPrintingId(null)} />
+        <ProposalPrintTemplate
+          data={mapProjectToPrintData(printingProject)}
+          autoPrint={true}
+          onClose={() => setPrintingId(null)}
+        />
       )}
 
       {editingId && <EditProjectDialog projectId={editingId} onClose={() => setEditingId(null)} />}

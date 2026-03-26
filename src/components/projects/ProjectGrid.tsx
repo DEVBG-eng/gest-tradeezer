@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { MoreHorizontal, Edit, Trash2, ChevronRight, Loader2 } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, ChevronRight, Loader2, Download } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -186,6 +186,16 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
                       >
                         <Edit className="mr-2 h-4 w-4" />
                         Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const event = new CustomEvent('print-project', { detail: project.id })
+                          window.dispatchEvent(event)
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Baixar Orçamento
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem

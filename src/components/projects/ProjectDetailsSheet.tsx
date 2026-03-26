@@ -40,6 +40,7 @@ import {
 import useProjectStore from '@/stores/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
 import { ProposalPrintTemplate } from './ProposalPrintTemplate'
+import { mapProjectToPrintData } from '@/lib/project-utils'
 
 export function ProjectDetailsSheet({
   projectId,
@@ -227,7 +228,7 @@ export function ProjectDetailsSheet({
 
               <div className="flex gap-2 justify-end pt-4">
                 <Button variant="outline" className="gap-2" onClick={() => setIsPrinting(true)}>
-                  <Download size={16} /> Gerar Proposta PDF
+                  <Download size={16} /> Baixar Orçamento
                 </Button>
                 <Button onClick={handleSaveQuote} disabled={saving}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -386,7 +387,11 @@ export function ProjectDetailsSheet({
       </Sheet>
 
       {isPrinting && (
-        <ProposalPrintTemplate project={project} onClose={() => setIsPrinting(false)} />
+        <ProposalPrintTemplate
+          data={mapProjectToPrintData(project)}
+          autoPrint={true}
+          onClose={() => setIsPrinting(false)}
+        />
       )}
     </>
   )

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
 import { CheckCircle2, XCircle } from 'lucide-react'
@@ -23,7 +23,26 @@ export interface PrintProjectData {
   observations: string
 }
 
-export const ProposalPrintTemplate: React.FC<{ data: PrintProjectData }> = ({ data }) => {
+export const ProposalPrintTemplate: React.FC<{
+  data: PrintProjectData
+  autoPrint?: boolean
+  onClose?: () => void
+}> = ({ data, autoPrint, onClose }) => {
+  useEffect(() => {
+    if (autoPrint) {
+      const originalTitle = document.title
+      document.title = `Orcamento_${data.referenceCode}`
+
+      const timer = setTimeout(() => {
+        window.print()
+        document.title = originalTitle
+        if (onClose) onClose()
+      }, 300)
+
+      return () => clearTimeout(timer)
+    }
+  }, [autoPrint, data.referenceCode, onClose])
+
   if (typeof document === 'undefined') return null
 
   const formatCurrency = (val: number) =>
