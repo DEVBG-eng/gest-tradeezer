@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Project } from '@/stores/useProjectStore'
 import { format, parseISO } from 'date-fns'
@@ -45,6 +45,12 @@ export function ProposalPrintTemplate({
   project: Project
   onClose: () => void
 }) {
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
   useEffect(() => {
     const originalTitle = document.title
     const safeTitle = project.title.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
@@ -53,14 +59,14 @@ export function ProposalPrintTemplate({
     const timer = setTimeout(() => {
       window.print()
       document.title = originalTitle
-      onClose()
+      onCloseRef.current()
     }, 500)
 
     return () => {
       document.title = originalTitle
       clearTimeout(timer)
     }
-  }, [onClose, project.title])
+  }, [project.title])
 
   const sourceLangName = project.sourceLang
     ? LANGUAGES[project.sourceLang] || project.sourceLang

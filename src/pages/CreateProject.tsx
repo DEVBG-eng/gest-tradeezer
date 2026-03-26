@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import {
@@ -40,10 +40,28 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import useProjectStore, { CloudFile } from '@/stores/useProjectStore'
+import useProjectStore, { CloudFile, ProjectStatus, Project } from '@/stores/useProjectStore'
 import useSettingsStore from '@/stores/useSettingsStore'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox } from '@/components/LanguageCombobox'
+import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
+
+const SERVICES_OPTS = [
+  { id: 'digital', label: 'Via Digital', key: 'digital' as const },
+  { id: 'fisico', label: 'Via Física', key: 'fisico' as const },
+  { id: 'apostilamento', label: 'Apostilamento de Haia', key: 'apostilamento' as const },
+  { id: 'reconhecimento', label: 'Reconhecimento de Firma', key: 'reconhecimentoFirma' as const },
+  { id: 'frete', label: 'Frete', key: 'frete' as const },
+  { id: 'dhl', label: 'DHL (envio para fora do Brasil)', key: 'dhl' as const },
+]
+
+const TRANSLATION_TYPES = [
+  'Tradução Juramentada',
+  'Tradução Técnica',
+  'Tradução Simultânea',
+  'Tradução Consecutiva',
+  'Locação de Equipamentos',
+]
 
 export default function CreateProject() {
   const navigate = useNavigate()
@@ -77,6 +95,9 @@ export default function CreateProject() {
     dhl: false,
   })
 
+  const [showProposal, setShowProposal] = useState(false)
+  const [createdProject, setCreatedProject] = useState<Project | null>(null)
+
   const folderUrl =
     activeCloudProvider === 'google_drive'
       ? `https://drive.google.com/drive/folders/${reference}`
@@ -94,61 +115,53 @@ export default function CreateProject() {
         : 'Dropbox'
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files)
+    if (!e.target.files?.length) return
+    const newFiles = Array.from(e.target.files)
 
-      const newCloudFiles = newFiles.map((f) => {
-        const id = Math.random().toString(36).substr(2, 9)
-        return {
-          id,
-          name: f.name,
-          size: f.size,
-          status: 'uploading' as const,
-          url:
-            activeCloudProvider === 'google_drive'
-              ? `https://drive.google.com/file/d/${id}/view`
-              : activeCloudProvider === 'onedrive'
-                ? folderUrl
-                  ? `${folderUrl}/${f.name}`
-                  : `https://onedrive.live.com/view.aspx?resid=${id}`
-                : `https://www.dropbox.com/s/${id}/${f.name}`,
-        }
-      })
+    const newCloudFiles = newFiles.map((f) => {
+      const id = Math.random().toString(36).substring(2, 11)
+      const url =
+        activeCloudProvider === 'google_drive'
+          ? `https://drive.google.com/file/d/${id}/view`
+          : activeCloudProvider === 'onedrive'
+            ? folderUrl
+              ? `${folderUrl}/${f.name}`
+              : `https://onedrive.live.com/view.aspx?resid=${id}`
+            : `https://www.dropbox.com/s/${id}/${f.name}`
 
-      setCloudFiles((prev) => [...prev, ...newCloudFiles])
-      setDocCount((prev) => (Number(prev) + newFiles.length).toString())
+      return { id, name: f.name, size: f.size, status: 'uploading' as const, url }
+    })
 
-      newCloudFiles.forEach((cf) => {
-        setTimeout(
-          () => {
-            const isMissingLink = activeCloudProvider === 'onedrive' && !oneDriveNetworkLink
-            const isError = isMissingLink ? true : Math.random() > 0.85
+    setCloudFiles((prev) => [...prev, ...newCloudFiles])
+    setDocCount((prev) => (Number(prev) + newFiles.length).toString())
 
-            setCloudFiles((prev) =>
-              prev.map((p) =>
-                p.id === cf.id ? { ...p, status: isError ? 'error' : 'synced' } : p,
-              ),
-            )
+    newCloudFiles.forEach((cf) => {
+      setTimeout(
+        () => {
+          const isMissingLink = activeCloudProvider === 'onedrive' && !oneDriveNetworkLink
+          const isError = isMissingLink ? true : Math.random() > 0.85
 
-            if (isError) {
-              toast({
-                title: 'Erro de Sincronização',
-                description: isMissingLink
-                  ? `Falha ao transferir ${cf.name}. Link de rede Microsoft ausente ou inválido.`
-                  : `Falha ao transferir ${cf.name}. Verifique a estabilidade da rede.`,
-                variant: 'destructive',
-              })
-            }
-          },
-          1500 + Math.random() * 2000,
-        )
-      })
-    }
+          setCloudFiles((prev) =>
+            prev.map((p) => (p.id === cf.id ? { ...p, status: isError ? 'error' : 'synced' } : p)),
+          )
+
+          if (isError) {
+            toast({
+              title: 'Erro de Sincronização',
+              description: isMissingLink
+                ? `Falha ao transferir ${cf.name}. Link de rede Microsoft ausente ou inválido.`
+                : `Falha ao transferir ${cf.name}. Verifique a estabilidade da rede.`,
+              variant: 'destructive',
+            })
+          }
+        },
+        1500 + Math.random() * 2000,
+      )
+    })
   }
 
   const handleLaudasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    // Allow digits and at most one comma or dot as decimal separator
     if (/^\d*[.,]?\d*$/.test(value)) {
       setLaudas(value)
     }
@@ -156,14 +169,18 @@ export default function CreateProject() {
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    // Allow digits and at most one comma or dot as decimal separator
-    if (/^\d*[.,]?\d*$/.test(value)) {
-      setProjectValue(value)
+    const digits = value.replace(/\D/g, '')
+    if (!digits) {
+      setProjectValue('')
+      return
     }
+    const number = parseInt(digits, 10) / 100
+    setProjectValue(
+      number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSave = (generatePdf: boolean) => {
     if (!reference.trim()) {
       return toast({
         title: 'Erro',
@@ -200,16 +217,20 @@ export default function CreateProject() {
       })
     }
 
-    addProject({
+    const val = Number(projectValue.replace(/\./g, '').replace(',', '.')) || 0
+    const lauds = Number(laudas.replace(',', '.')) || 0
+
+    const newProjectData = {
       title: `Ordem de Serviço ${reference}`,
       client: clientName,
-      status: 'Orçamento',
+      status: 'Orçamento' as ProjectStatus,
       urgent: false,
       international: sourceLang !== 'pt' || targetLang !== 'pt',
       physicalCopy: services.fisico,
       dueDate: deadline.toISOString(),
-      laudas: Number(laudas.replace(',', '.')) || 0,
-      value: Number(projectValue.replace(',', '.')) || 0,
+      entryDate: startDate.toISOString(),
+      laudas: lauds,
+      value: val,
       documents: Number(docCount) || cloudFiles.length || 1,
       cloudProvider: activeCloudProvider,
       cloudFolderUrl: folderUrl,
@@ -219,14 +240,36 @@ export default function CreateProject() {
       documentType,
       translationType,
       observations,
-    })
+      digitalCopy: services.digital,
+      hagueApostille: services.apostilamento,
+      notarization: services.reconhecimentoFirma,
+      shipping: services.frete,
+      internationalShipping: services.dhl,
+    }
 
+    addProject(newProjectData)
+
+    if (generatePdf) {
+      setCreatedProject({ ...newProjectData, id: reference } as Project)
+      setShowProposal(true)
+    } else {
+      toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
+      navigate('/projects')
+    }
+  }
+
+  const handleCloseProposal = useCallback(() => {
+    setShowProposal(false)
     toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
     navigate('/projects')
-  }
+  }, [navigate, reference, toast])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+      {showProposal && createdProject && (
+        <ProposalPrintTemplate project={createdProject} onClose={handleCloseProposal} />
+      )}
+
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Criar Novo Projeto</h1>
         <p className="text-muted-foreground mt-1">
@@ -234,7 +277,12 @@ export default function CreateProject() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          handleSave(false)
+        }}
+      >
         <Card className="shadow-sm border-border/50">
           <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b pb-4">
             <div className="flex justify-between items-center">
@@ -297,18 +345,20 @@ export default function CreateProject() {
                     onValueChange={setClientType}
                     className="flex gap-6"
                   >
-                    <div className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full">
+                    <label
+                      htmlFor="pj"
+                      className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full"
+                    >
                       <RadioGroupItem value="PJ" id="pj" />
-                      <Label htmlFor="pj" className="cursor-pointer flex-1">
-                        Pessoa Jurídica (PJ)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full">
+                      <span className="flex-1 text-sm font-medium">Pessoa Jurídica (PJ)</span>
+                    </label>
+                    <label
+                      htmlFor="pf"
+                      className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full"
+                    >
                       <RadioGroupItem value="PF" id="pf" />
-                      <Label htmlFor="pf" className="cursor-pointer flex-1">
-                        Pessoa Física (PF)
-                      </Label>
-                    </div>
+                      <span className="flex-1 text-sm font-medium">Pessoa Física (PF)</span>
+                    </label>
                   </RadioGroup>
                 </div>
                 <div className="space-y-2">
@@ -467,70 +517,18 @@ export default function CreateProject() {
                 <div className="space-y-4 pt-2">
                   <Label className="text-base font-semibold">Serviços e Logística</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border rounded-lg p-4 bg-slate-50/50 dark:bg-slate-900/50">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="digital"
-                        checked={services.digital}
-                        onCheckedChange={(c) => setServices((prev) => ({ ...prev, digital: !!c }))}
-                      />
-                      <Label htmlFor="digital" className="font-normal cursor-pointer">
-                        Via Digital
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="fisico"
-                        checked={services.fisico}
-                        onCheckedChange={(c) => setServices((prev) => ({ ...prev, fisico: !!c }))}
-                      />
-                      <Label htmlFor="fisico" className="font-normal cursor-pointer">
-                        Via Física
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="apostilamento"
-                        checked={services.apostilamento}
-                        onCheckedChange={(c) =>
-                          setServices((prev) => ({ ...prev, apostilamento: !!c }))
-                        }
-                      />
-                      <Label htmlFor="apostilamento" className="font-normal cursor-pointer">
-                        Apostilamento de Haia
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="reconhecimento"
-                        checked={services.reconhecimentoFirma}
-                        onCheckedChange={(c) =>
-                          setServices((prev) => ({ ...prev, reconhecimentoFirma: !!c }))
-                        }
-                      />
-                      <Label htmlFor="reconhecimento" className="font-normal cursor-pointer">
-                        Reconhecimento de Firma
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="frete"
-                        checked={services.frete}
-                        onCheckedChange={(c) => setServices((prev) => ({ ...prev, frete: !!c }))}
-                      />
-                      <Label htmlFor="frete" className="font-normal cursor-pointer">
-                        Frete
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="dhl"
-                        checked={services.dhl}
-                        onCheckedChange={(c) => setServices((prev) => ({ ...prev, dhl: !!c }))}
-                      />
-                      <Label htmlFor="dhl" className="font-normal cursor-pointer">
-                        DHL (envio para fora do Brasil)
-                      </Label>
-                    </div>
+                    {SERVICES_OPTS.map(({ id, label, key }) => (
+                      <div key={id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={id}
+                          checked={services[key]}
+                          onCheckedChange={(c) => setServices((prev) => ({ ...prev, [key]: !!c }))}
+                        />
+                        <Label htmlFor={id} className="font-normal cursor-pointer">
+                          {label}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </TabsContent>
@@ -672,28 +670,20 @@ export default function CreateProject() {
                     onValueChange={setTranslationType}
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                   >
-                    {[
-                      'Tradução Juramentada',
-                      'Tradução Técnica',
-                      'Tradução Simultânea',
-                      'Tradução Consecutiva',
-                      'Locação de Equipamentos',
-                    ].map((type) => (
-                      <div
+                    {TRANSLATION_TYPES.map((type) => (
+                      <label
                         key={type}
+                        htmlFor={`type-${type}`}
                         className={cn(
                           'flex items-center space-x-2 border rounded-md p-4 cursor-pointer transition-colors w-full',
                           translationType === type
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-muted',
                         )}
-                        onClick={() => setTranslationType(type)}
                       >
                         <RadioGroupItem value={type} id={`type-${type}`} />
-                        <Label htmlFor={`type-${type}`} className="cursor-pointer flex-1 text-sm">
-                          {type}
-                        </Label>
-                      </div>
+                        <span className="flex-1 text-sm font-medium leading-none">{type}</span>
+                      </label>
                     ))}
                   </RadioGroup>
                 </div>
@@ -704,9 +694,14 @@ export default function CreateProject() {
             <Button variant="ghost" type="button" onClick={() => navigate(-1)}>
               Cancelar
             </Button>
-            <Button type="submit" size="lg" className="min-w-[150px]">
-              Registrar Projeto
-            </Button>
+            <div className="flex space-x-3">
+              <Button variant="outline" type="button" onClick={() => handleSave(true)}>
+                Gerar Proposta
+              </Button>
+              <Button type="submit" size="lg" className="min-w-[150px]">
+                Registrar Projeto
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </form>
