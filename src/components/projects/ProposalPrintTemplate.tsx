@@ -175,7 +175,7 @@ export function ProposalPrintTemplate({
         <div className="p-3 border-b border-[#2d1b4e] min-h-[4rem] flex items-center">
           Valor:{' '}
           <span className="ml-2 font-medium">
-            {project.value
+            {typeof project.value === 'number'
               ? `R$ ${project.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
               : ''}
           </span>

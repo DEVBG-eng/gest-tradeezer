@@ -61,6 +61,7 @@ export default function CreateProject() {
   const [deadline, setDeadline] = useState<Date>()
 
   const [laudas, setLaudas] = useState('')
+  const [projectValue, setProjectValue] = useState('')
   const [docCount, setDocCount] = useState('0')
   const [documentType, setDocumentType] = useState('')
   const [translationType, setTranslationType] = useState('')
@@ -153,6 +154,14 @@ export default function CreateProject() {
     }
   }
 
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // Allow digits and at most one comma or dot as decimal separator
+    if (/^\d*[.,]?\d*$/.test(value)) {
+      setProjectValue(value)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!reference.trim()) {
@@ -200,7 +209,7 @@ export default function CreateProject() {
       physicalCopy: services.fisico,
       dueDate: deadline.toISOString(),
       laudas: Number(laudas.replace(',', '.')) || 0,
-      value: 0,
+      value: Number(projectValue.replace(',', '.')) || 0,
       documents: Number(docCount) || cloudFiles.length || 1,
       cloudProvider: activeCloudProvider,
       cloudFolderUrl: folderUrl,
@@ -418,13 +427,31 @@ export default function CreateProject() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Tipo de Documento</Label>
-                  <Input
-                    placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Tipo de Documento</Label>
+                    <Input
+                      placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
+                      value={documentType}
+                      onChange={(e) => setDocumentType(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <span className="text-sm text-muted-foreground font-medium">R$</span>
+                      </div>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={projectValue}
+                        onChange={handleValueChange}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
