@@ -322,10 +322,6 @@ export default function CreateProject() {
         }}
       >
         <Card className="shadow-sm border-border/50">
-          <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b pb-4">
-            <CardTitle>Configuração do Projeto</CardTitle>
-            <CardDescription>Preencha os detalhes navegando pelas abas abaixo.</CardDescription>
-          </CardHeader>
           <CardContent className="pt-6">
             <Tabs defaultValue="client" className="w-full">
               <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 mb-6 h-auto p-1 gap-1">
@@ -797,12 +793,6 @@ export default function CreateProject() {
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Tipo de Documento</span>
                           <span className="font-medium text-right">{documentType || '-'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Documentos Anexados</span>
-                          <span className="font-medium text-right">
-                            {docCount || '0'} / Nuvem: {cloudFiles.length}
-                          </span>
                         </div>
                       </CardContent>
                     </Card>
