@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Project } from '@/stores/useProjectStore'
 import { format, parseISO } from 'date-fns'
+import { CheckCircle } from 'lucide-react'
 
 const LANGUAGES: Record<string, string> = {
   pt: 'Português',
@@ -54,7 +55,7 @@ export function ProposalPrintTemplate({
   useEffect(() => {
     const originalTitle = document.title
     const safeTitle = project.title.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
-    document.title = `Protocolo_${safeTitle}`
+    document.title = `Proposta_${safeTitle}`
 
     const timer = setTimeout(() => {
       window.print()
@@ -76,7 +77,7 @@ export function ProposalPrintTemplate({
     : ''
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return ''
+    if (!dateStr) return '-'
     try {
       const date = dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr + 'T12:00:00')
       return format(date, 'dd/MM/yyyy')
@@ -85,8 +86,22 @@ export function ProposalPrintTemplate({
     }
   }
 
+  const activeServices = [
+    { key: project.digitalCopy, label: 'Via Digital' },
+    { key: project.physicalCopy, label: 'Via Física' },
+    { key: project.hagueApostille, label: 'Apostilamento de Haia' },
+    { key: project.digitalApostille, label: 'Apostilamento Digital' },
+    { key: project.physicalApostille, label: 'Apostilamento Físico' },
+    { key: project.digitalAuthentication, label: 'Autenticação Digital' },
+    { key: project.notarization, label: 'Reconhecimento de Firma' },
+    { key: project.shipping, label: 'Frete' },
+    { key: project.internationalShipping, label: 'DHL (Exterior)' },
+    { key: project.urgent, label: 'Urgente' },
+    { key: project.international, label: 'Internacional' },
+  ].filter((s) => s.key)
+
   const content = (
-    <div className="print-only bg-white text-black p-12 font-sans min-h-screen z-[9999] absolute inset-0">
+    <div className="print-only bg-white text-slate-900 p-8 font-sans min-h-screen z-[9999] absolute inset-0">
       <style>{`
         @media screen {
           .print-only { display: none !important; }
@@ -97,6 +112,8 @@ export function ProposalPrintTemplate({
           }
           .print-only, .print-only * {
             visibility: visible;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .print-only {
             position: absolute;
@@ -104,8 +121,9 @@ export function ProposalPrintTemplate({
             top: 0;
             width: 100%;
             margin: 0;
-            padding: 2cm !important;
+            padding: 1.5cm !important;
             box-sizing: border-box;
+            background: white;
           }
           @page {
             size: A4;
@@ -114,90 +132,146 @@ export function ProposalPrintTemplate({
         }
       `}</style>
 
-      <div className="w-full border border-[#2d1b4e] flex flex-col text-black text-[16px]">
-        {/* Header */}
-        <div className="flex border-b border-[#2d1b4e]">
-          <div className="w-1/2 p-5 flex items-center">
-            <div className="flex items-center gap-2">
-              <div className="relative flex items-center justify-center w-[46px] h-[46px] rounded-full border-[3px] border-[#a5d8d1] text-[#a5d8d1] bg-white">
-                <span
-                  className="text-[28px] font-bold italic"
-                  style={{ fontFamily: 'serif', marginTop: '2px', marginLeft: '2px' }}
-                >
-                  T
-                </span>
+      <div className="max-w-4xl mx-auto space-y-6 text-[15px]">
+        {/* Header Section */}
+        <div className="space-y-2 mb-6">
+          <label className="text-base font-semibold flex items-center">
+            Cód. de referência <span className="text-red-500 ml-1">*</span>
+          </label>
+          <div className="w-full max-w-md bg-slate-50 border border-slate-200 rounded-md px-3 py-2 font-mono font-bold text-slate-800">
+            {project.id}
+          </div>
+          <p className="text-sm text-slate-500">
+            Código único para identificação do projeto e sincronização em nuvem.
+          </p>
+        </div>
+
+        {/* Alert Banner */}
+        <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-lg p-4 flex gap-3 text-[#059669] mb-6">
+          <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div>
+            <h5 className="font-semibold leading-none mb-1">Validação Concluída</h5>
+            <p className="text-sm opacity-90">
+              Todos os campos obrigatórios foram preenchidos. Você pode registrar o projeto ou gerar
+              a proposta.
+            </p>
+          </div>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-lg font-semibold tracking-tight border-b border-slate-200 pb-2 mb-4">
+          Painel de Sincronização e Resumo
+        </h3>
+
+        {/* Summary Cards Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Card 1: Cliente e Especificações */}
+          <div className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
+            <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-200">
+              <h4 className="font-semibold text-sm">Cliente e Especificações</h4>
+            </div>
+            <div className="p-4 space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Nome/Razão Social</span>
+                <span className="font-medium">{project.client || '-'}</span>
               </div>
-              <span className="text-[36px] font-extrabold text-[#a5d8d1] tracking-tighter leading-none mt-1">
-                tradeezer.
-              </span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Status</span>
+                <span className="font-medium">{project.status || '-'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Categoria do Serviço</span>
+                <span className="font-medium">{project.translationType || '-'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Tipo de Documento</span>
+                <span className="font-medium">{project.documentType || '-'}</span>
+              </div>
             </div>
           </div>
-          <div className="w-1/2 p-5 flex items-center justify-center border-l border-[#2d1b4e]">
-            <span className="text-2xl font-medium tracking-wide">PROTOCOLO</span>
+
+          {/* Card 2: Prazos e Idiomas */}
+          <div className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
+            <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-200">
+              <h4 className="font-semibold text-sm">Prazos e Idiomas</h4>
+            </div>
+            <div className="p-4 space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Data de Entrada</span>
+                <span className="font-medium">{formatDate(project.entryDate)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Prazo de Entrega</span>
+                <span className="font-medium">{formatDate(project.dueDate)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Idioma de Origem</span>
+                <span className="font-medium">{sourceLangName || '-'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Idioma de Destino</span>
+                <span className="font-medium">{targetLangName || '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Serviços e Valores */}
+          <div className="col-span-2 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm mt-2">
+            <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-200">
+              <h4 className="font-semibold text-sm">Serviços e Valores</h4>
+            </div>
+            <div className="p-4 space-y-5 text-sm">
+              <div>
+                <span className="text-slate-500 block mb-2">Logística e Serviços Adicionais:</span>
+                <div className="flex flex-wrap gap-2">
+                  {activeServices.length > 0 ? (
+                    activeServices.map((service, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
+                      >
+                        {service.label}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-slate-400 italic">
+                      Nenhum serviço adicional selecionado
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-between items-end">
+                <div>
+                  <span className="text-slate-500 block mb-1">Quantidade de Laudas</span>
+                  <span className="font-medium text-base">{project.laudas || '-'}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-500 block mb-1">Valor Total do Projeto</span>
+                  <span className="font-bold text-3xl text-[#10b981]">
+                    R${' '}
+                    {(project.value || 0).toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Vendedor */}
-        <div className="p-3 border-b border-[#2d1b4e] min-h-[3.5rem] flex items-center uppercase tracking-wide">
-          VENDEDOR:
-        </div>
-
-        {/* Cliente */}
-        <div className="flex border-b border-[#2d1b4e]">
-          <div className="p-3 border-r border-[#2d1b4e] min-w-[120px] flex items-center">
-            Cliente:
+        {/* Observações */}
+        {project.observations && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold tracking-tight border-b border-slate-200 pb-2 mb-3">
+              Observações
+            </h3>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 whitespace-pre-wrap">
+              {project.observations}
+            </div>
           </div>
-          <div className="p-3 flex-1 flex items-center font-medium">{project.client}</div>
-        </div>
-
-        {/* Dates */}
-        <div className="flex border-b border-[#2d1b4e]">
-          <div className="p-3 w-1/2 border-r border-[#2d1b4e] flex items-center">
-            Data de ENTRADA: <span className="ml-2">{formatDate(project.entryDate)}</span>
-          </div>
-          <div className="p-3 w-1/2 flex items-center">
-            <span className="font-bold">Data de ENTREGA:</span>{' '}
-            <span className="ml-2 font-bold">{formatDate(project.dueDate)}</span>
-          </div>
-        </div>
-
-        {/* Languages */}
-        <div className="flex border-b border-[#2d1b4e]">
-          <div className="p-3 w-1/2 border-r border-[#2d1b4e] flex items-center">
-            Idioma Origem: <span className="ml-2">{sourceLangName}</span>
-          </div>
-          <div className="p-3 w-1/2 flex items-center">
-            Idioma destino: <span className="ml-2">{targetLangName}</span>
-          </div>
-        </div>
-
-        {/* Tipo de Tradução */}
-        <div className="p-3 border-b border-[#2d1b4e] min-h-[4rem] flex items-center">
-          Tipo de Tradução:{' '}
-          <span className="ml-2 font-medium">{project.translationType || ''}</span>
-        </div>
-
-        {/* Valor */}
-        <div className="p-3 border-b border-[#2d1b4e] min-h-[4rem] flex items-center">
-          Valor:{' '}
-          <span className="ml-2 font-medium">
-            {typeof project.value === 'number'
-              ? `R$ ${project.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : ''}
-          </span>
-        </div>
-
-        {/* Tipo de documento */}
-        <div className="p-3 min-h-[4rem] flex items-center">
-          Tipo de documento:{' '}
-          <span className="ml-2">
-            {project.documentType || ''}
-            {project.documentType && project.laudas ? ' - ' : ''}
-            {project.laudas
-              ? `${project.laudas.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} laudas`
-              : ''}
-          </span>
-        </div>
+        )}
       </div>
     </div>
   )
