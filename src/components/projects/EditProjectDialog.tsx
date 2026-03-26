@@ -47,6 +47,7 @@ export function EditProjectDialog({
   const { toast } = useToast()
   const project = projects.find((p) => p.id === projectId)
 
+  const [referenceCode, setReferenceCode] = useState(project?.id || '')
   const [client, setClient] = useState(project?.client || '')
   const [translationType, setTranslationType] = useState(project?.translationType || '')
   const [sourceLang, setSourceLang] = useState(project?.sourceLang || 'pt')
@@ -96,6 +97,7 @@ export function EditProjectDialog({
 
   const handleSave = () => {
     updateProject(projectId, {
+      id: referenceCode,
       client,
       translationType,
       sourceLang,
@@ -122,12 +124,21 @@ export function EditProjectDialog({
       <DialogContent className="sm:max-w-2xl overflow-y-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Editar Projeto</DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Cód. Referência: <span className="font-mono font-bold text-primary">{project.id}</span>
-          </p>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+          <div className="space-y-2 md:col-span-2">
+            <Label>
+              Cód. Referência <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              value={referenceCode}
+              onChange={(e) => setReferenceCode(e.target.value)}
+              required
+              className="font-mono"
+            />
+          </div>
+
           <div className="space-y-2 md:col-span-2">
             <Label>
               Cliente <span className="text-destructive">*</span>
@@ -293,7 +304,14 @@ export function EditProjectDialog({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!client || !translationType || !sourceLang || !targetLang || !deadline}
+            disabled={
+              !referenceCode ||
+              !client ||
+              !translationType ||
+              !sourceLang ||
+              !targetLang ||
+              !deadline
+            }
           >
             Salvar Alterações
           </Button>
