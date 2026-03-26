@@ -11,10 +11,24 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import useProjectStore from '@/stores/useProjectStore'
+import { useToast } from '@/hooks/use-toast'
 
 export default function Notary() {
   const { projects, updateProjectStatus } = useProjectStore()
+  const { toast } = useToast()
   const notaryProjects = projects.filter((p) => p.status === 'Cartório')
+
+  const handleComplete = async (id: string) => {
+    try {
+      await updateProjectStatus(id, 'Concluído')
+      toast({
+        title: 'Sucesso',
+        description: 'Projeto concluído e sincronizado com sucesso.',
+      })
+    } catch (e) {
+      // Error is handled in the store
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -59,12 +73,12 @@ export default function Notary() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">
-                    {new Date(project.dueDate).toLocaleDateString('pt-BR')}
+                    {project.dueDate ? new Date(project.dueDate).toLocaleDateString('pt-BR') : '-'}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       size="sm"
-                      onClick={() => updateProjectStatus(project.id, 'Logística')}
+                      onClick={() => handleComplete(project.id)}
                       className="gap-1.5"
                     >
                       <Check size={14} /> Concluir e Enviar

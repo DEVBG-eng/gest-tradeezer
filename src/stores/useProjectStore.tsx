@@ -201,6 +201,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       loadData()
       toast({ title: 'Erro', description: 'Falha ao atualizar status', variant: 'destructive' })
+      throw e
     }
   }
 
@@ -237,6 +238,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       loadData()
       toast({ title: 'Erro', description: 'Falha ao excluir projeto', variant: 'destructive' })
+      throw e
     }
   }
 
