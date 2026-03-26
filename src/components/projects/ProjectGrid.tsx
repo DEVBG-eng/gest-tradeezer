@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { MoreHorizontal, Edit, Trash2, ChevronRight, Loader2 } from 'lucide-react'
 import {
@@ -38,11 +39,22 @@ interface ProjectGridProps {
 
 export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }: ProjectGridProps) {
   const { projects, updateProjectStatus, loading } = useProjectStore()
+  const [searchParams] = useSearchParams()
 
   const getLanguageLabel = (code?: string) => {
     if (!code) return '-'
     return LANGUAGES.find((l) => l.value === code)?.label || code
   }
+
+  const filteredProjects = projects.filter((p) => {
+    const statusParams = searchParams.getAll('status')
+    const shippingParam = searchParams.get('shipping') === 'true'
+
+    if (statusParams.length > 0 && !statusParams.includes(p.status)) return false
+    if (shippingParam && !(p.shipping || p.internationalShipping)) return false
+
+    return true
+  })
 
   return (
     <div className="rounded-md border bg-card overflow-hidden h-full flex flex-col">
@@ -73,14 +85,16 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
                 </div>
               </TableCell>
             </TableRow>
-          ) : projects.length === 0 ? (
+          ) : filteredProjects.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                Nenhum projeto encontrado.
+                {projects.length === 0
+                  ? 'Nenhum projeto encontrado.'
+                  : 'Nenhum projeto corresponde aos filtros selecionados.'}
               </TableCell>
             </TableRow>
           ) : (
-            projects.map((project) => (
+            filteredProjects.map((project) => (
               <TableRow key={project.id} className="group hover:bg-muted/50">
                 <TableCell className="font-medium">
                   <span

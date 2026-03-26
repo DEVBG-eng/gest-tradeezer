@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ProjectGrid } from '@/components/projects/ProjectGrid'
 import { ProjectDetailsSheet } from '@/components/projects/ProjectDetailsSheet'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 import { EditProjectDialog } from '@/components/projects/EditProjectDialog'
 import useProjectStore from '@/stores/useProjectStore'
+import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,16 +17,19 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2 } from 'lucide-react'
+import { Loader2, FilterX } from 'lucide-react'
 
 export default function Projects() {
   const { projects, deleteProject } = useProjectStore()
   const { toast } = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [printingId, setPrintingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const hasFilters = searchParams.getAll('status').length > 0 || searchParams.has('shipping')
 
   useEffect(() => {
     const handlePrintEvent = (e: Event) => {
@@ -83,6 +88,12 @@ export default function Projects() {
             Gerencie e acompanhe todos os projetos de forma centralizada e visual.
           </p>
         </div>
+        {hasFilters && (
+          <Button variant="outline" onClick={() => setSearchParams({})} className="gap-2 shrink-0">
+            <FilterX className="h-4 w-4" />
+            Limpar Filtros
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 pb-4">

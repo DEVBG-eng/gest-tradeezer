@@ -15,8 +15,12 @@ const chartData = [
 
 export default function Index() {
   const { projects } = useProjectStore()
-  const activeCount = projects.filter((p) => p.status !== 'Concluído').length
-  const quoteCount = projects.filter((p) => p.status === 'Orçamento').length
+  const activeCount = projects.filter((p) =>
+    ['Em Andamento', 'Em Revisão', 'Cartório'].includes(p.status),
+  ).length
+  const quoteCount = projects.filter((p) => p.status === 'Aguardando').length
+  const delayCount = projects.filter((p) => p.status === 'Atrasado/Bloqueado').length
+  const shippingCount = projects.filter((p) => p.shipping || p.internationalShipping).length
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -28,48 +32,71 @@ export default function Index() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">+2 desde ontem</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Orçamentos Pendentes</CardTitle>
-            <FileText className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quoteCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">Aguardando aprovação do cliente</p>
-          </CardContent>
-        </Card>
-        <Card className="border-warning/50 bg-warning/5 hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-warning-foreground">
-              Atrasos&nbsp;
-            </CardTitle>
-            <AlertCircle className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning-foreground">3</div>
-            <p className="text-xs text-warning-foreground/80 mt-1">Vencem nas próximas 24h</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Envios em Trânsito</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground mt-1">Via DHL / Correios</p>
-          </CardContent>
-        </Card>
+        <Link
+          to="/projects?status=Em Andamento&status=Em Revisão&status=Cartório"
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg group"
+        >
+          <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group-hover:border-primary/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activeCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">Andamento, Revisão ou Cartório</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link
+          to="/projects?status=Aguardando"
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg group"
+        >
+          <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group-hover:border-primary/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Orçamentos Pendentes</CardTitle>
+              <FileText className="h-4 w-4 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{quoteCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">Aguardando aprovação</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link
+          to="/projects?status=Atrasado/Bloqueado"
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg group"
+        >
+          <Card className="h-full border-warning/50 bg-warning/5 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group-hover:border-warning">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-warning-foreground">Atrasos</CardTitle>
+              <AlertCircle className="h-4 w-4 text-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-warning-foreground">{delayCount}</div>
+              <p className="text-xs text-warning-foreground/80 mt-1">
+                Projetos bloqueados ou atrasados
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link
+          to="/projects?shipping=true"
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg group"
+        >
+          <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group-hover:border-primary/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Envios em Trânsito</CardTitle>
+              <Truck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{shippingCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">Com frete ou DHL ativo</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
