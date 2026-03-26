@@ -24,6 +24,8 @@ export interface Project {
   urgent: boolean
   international: boolean
   physicalCopy: boolean
+  digitalCopy?: boolean
+  entryDate?: string
   dueDate: string
   laudas: number
   value: number
@@ -35,6 +37,10 @@ export interface Project {
   targetLang?: string
   documentType?: string
   observations?: string
+  hagueApostille?: boolean
+  notarization?: boolean
+  shipping?: boolean
+  internationalShipping?: boolean
 }
 
 interface ProjectStoreContext {
@@ -56,14 +62,20 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       urgent: true,
       international: false,
       physicalCopy: false,
+      digitalCopy: true,
+      entryDate: '2023-11-01',
       dueDate: '2023-11-10',
-      laudas: 15,
+      laudas: 15.5,
       value: 0,
       documents: 2,
       sourceLang: 'pt',
       targetLang: 'en',
       documentType: 'Contrato Social',
       observations: 'Prioridade alta para envio.',
+      hagueApostille: false,
+      notarization: true,
+      shipping: false,
+      internationalShipping: false,
     },
     {
       id: 'PRJ-1002',
@@ -73,13 +85,19 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       urgent: false,
       international: true,
       physicalCopy: true,
+      digitalCopy: true,
+      entryDate: '2023-11-02',
       dueDate: '2023-11-15',
-      laudas: 3,
+      laudas: 3.0,
       value: 450,
       documents: 1,
       sourceLang: 'pt',
       targetLang: 'es',
       documentType: 'Procuração Pública',
+      hagueApostille: true,
+      notarization: true,
+      shipping: true,
+      internationalShipping: true,
     },
     {
       id: 'PRJ-1003',
@@ -89,13 +107,20 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       urgent: false,
       international: true,
       physicalCopy: false,
+      digitalCopy: true,
+      entryDate: '2023-11-03',
       dueDate: '2023-11-20',
-      laudas: 120,
+      laudas: 120.0,
       value: 8400,
       documents: 5,
       sourceLang: 'de',
       targetLang: 'pt',
       documentType: 'Manual Técnico',
+      hagueApostille: false,
+      notarization: false,
+      shipping: false,
+      internationalShipping: false,
+      observations: 'Glossário técnico específico fornecido pelo cliente.',
     },
     {
       id: 'PRJ-1004',
@@ -105,13 +130,19 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       urgent: true,
       international: true,
       physicalCopy: true,
+      digitalCopy: false,
+      entryDate: '2023-11-01',
       dueDate: '2023-11-05',
-      laudas: 1,
+      laudas: 1.0,
       value: 300,
       documents: 1,
       sourceLang: 'pt',
       targetLang: 'it',
       documentType: 'Certidão',
+      hagueApostille: true,
+      notarization: false,
+      shipping: true,
+      internationalShipping: true,
     },
     {
       id: 'PRJ-1005',
@@ -121,13 +152,19 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       urgent: false,
       international: false,
       physicalCopy: false,
+      digitalCopy: true,
+      entryDate: '2023-11-04',
       dueDate: '2023-11-12',
-      laudas: 45,
+      laudas: 45.0,
       value: 0,
       documents: 1,
       sourceLang: 'en',
       targetLang: 'pt',
       documentType: 'Estatuto',
+      hagueApostille: false,
+      notarization: false,
+      shipping: false,
+      internationalShipping: false,
     },
   ])
 

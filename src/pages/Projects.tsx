@@ -1,9 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { KanbanBoard } from '@/components/projects/KanbanBoard'
 import { ProjectDetailsSheet } from '@/components/projects/ProjectDetailsSheet'
+import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
+import useProjectStore from '@/stores/useProjectStore'
 
 export default function Projects() {
+  const { projects } = useProjectStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [printingId, setPrintingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handlePrintEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<string>
+      setPrintingId(customEvent.detail)
+    }
+
+    window.addEventListener('print-project', handlePrintEvent)
+
+    return () => {
+      window.removeEventListener('print-project', handlePrintEvent)
+    }
+  }, [])
+
+  const printingProject = projects.find((p) => p.id === printingId)
 
   return (
     <div className="h-full flex flex-col space-y-4">
@@ -22,6 +41,10 @@ export default function Projects() {
 
       {selectedId && (
         <ProjectDetailsSheet projectId={selectedId} onClose={() => setSelectedId(null)} />
+      )}
+
+      {printingProject && (
+        <ProposalPrintTemplate project={printingProject} onClose={() => setPrintingId(null)} />
       )}
     </div>
   )
