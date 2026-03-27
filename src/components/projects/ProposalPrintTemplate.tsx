@@ -30,14 +30,33 @@ export interface PrintProjectData {
 }
 
 export const ProposalPrintTemplate: React.FC<{
-  data: PrintProjectData
+  data?: PrintProjectData
   autoPrint?: boolean
   onClose?: () => void
 }> = ({ data, autoPrint, onClose }) => {
+  const safeData: Partial<PrintProjectData> = data || {}
+
+  // Safe fallbacks to prevent undefined pointer exceptions
+  const refCode = safeData.referenceCode || 'N/A'
+  const clientName = safeData.client || 'Cliente não informado'
+  const status = safeData.status || 'Não definido'
+  const translationType = safeData.translationType || 'Não definida'
+  const sourceLang = safeData.sourceLang || 'pt'
+  const targetLang = safeData.targetLang || 'en'
+  const documentType = safeData.documentType || 'Não definido'
+  const documentsCount = safeData.documents || 0
+  const laudasCount = safeData.laudas || 0
+  const totalValue = safeData.value || 0
+  const entryDate = safeData.entryDate
+  const deadline = safeData.deadline
+  const items = safeData.items || []
+  const services = safeData.services || []
+  const observations = safeData.observations || ''
+
   useEffect(() => {
     if (autoPrint) {
       const originalTitle = document.title
-      document.title = `Orcamento_${data.referenceCode}`
+      document.title = `Orcamento_${refCode}`
 
       const timer = setTimeout(() => {
         window.print()
@@ -47,14 +66,20 @@ export const ProposalPrintTemplate: React.FC<{
 
       return () => clearTimeout(timer)
     }
-  }, [autoPrint, data.referenceCode, onClose])
+  }, [autoPrint, refCode, onClose])
 
   if (typeof document === 'undefined') return null
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 
-  const formatDate = (date?: Date) => (date ? format(date, 'dd/MM/yyyy') : 'Não definida')
+  const formatDate = (date?: Date) => {
+    try {
+      return date ? format(date, 'dd/MM/yyyy') : 'Não definida'
+    } catch (error) {
+      return 'Data inválida'
+    }
+  }
 
   const getLang = (code: string) => LANGUAGES.find((l) => l.value === code)?.label || code
 
@@ -79,7 +104,7 @@ export const ProposalPrintTemplate: React.FC<{
               Orçamento Comercial
             </h1>
             <p className="text-slate-500 font-medium text-sm">
-              Ref: <span className="text-slate-800 font-bold">{data.referenceCode}</span>
+              Ref: <span className="text-slate-800 font-bold">{refCode}</span>
             </p>
             <p className="text-slate-400 text-sm mt-1">Data: {formatDate(new Date())}</p>
           </div>
@@ -91,10 +116,10 @@ export const ProposalPrintTemplate: React.FC<{
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
               Para
             </h3>
-            <p className="font-semibold text-lg text-slate-800">{data.client}</p>
+            <p className="font-semibold text-lg text-slate-800">{clientName}</p>
             <div className="mt-4 space-y-2 text-sm text-slate-600">
               <p>
-                <span className="font-medium text-slate-500">Status:</span> {data.status}
+                <span className="font-medium text-slate-500">Status:</span> {status}
               </p>
             </div>
           </div>
@@ -104,20 +129,19 @@ export const ProposalPrintTemplate: React.FC<{
             </h3>
             <div className="space-y-2 text-sm text-slate-700">
               <p>
-                <span className="font-medium text-slate-500">Categoria:</span>{' '}
-                {data.translationType || 'Não definida'}
+                <span className="font-medium text-slate-500">Categoria:</span> {translationType}
               </p>
               <p>
-                <span className="font-medium text-slate-500">Idiomas:</span>{' '}
-                {getLang(data.sourceLang)} → {getLang(data.targetLang)}
+                <span className="font-medium text-slate-500">Idiomas:</span> {getLang(sourceLang)} →{' '}
+                {getLang(targetLang)}
               </p>
               <p>
                 <span className="font-medium text-slate-500">Tipo de Documento:</span>{' '}
-                {data.documentType || 'Não definido'}
+                {documentType}
               </p>
               <p>
                 <span className="font-medium text-slate-500">Qtd. Documentos:</span>{' '}
-                {data.documents}
+                {documentsCount}
               </p>
             </div>
           </div>
@@ -129,18 +153,18 @@ export const ProposalPrintTemplate: React.FC<{
             <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
               Data de Entrada
             </span>
-            <span className="text-sm font-medium text-slate-700">{formatDate(data.entryDate)}</span>
+            <span className="text-sm font-medium text-slate-700">{formatDate(entryDate)}</span>
           </div>
           <div>
             <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
               Prazo Estimado
             </span>
-            <span className="text-sm font-medium text-slate-700">{formatDate(data.deadline)}</span>
+            <span className="text-sm font-medium text-slate-700">{formatDate(deadline)}</span>
           </div>
         </div>
 
         {/* Documents Table Section */}
-        {data.items && data.items.length > 0 && (
+        {items.length > 0 && (
           <div className="mb-8 break-inside-avoid">
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
               Itens do Projeto
@@ -155,7 +179,7 @@ export const ProposalPrintTemplate: React.FC<{
                 </tr>
               </thead>
               <tbody>
-                {data.items.map((item, idx) => (
+                {items.map((item, idx) => (
                   <tr key={idx} className="border-b border-slate-100">
                     <td className="py-3 font-medium text-slate-800">{item.description}</td>
                     <td className="py-3 text-center text-slate-600">{item.laudas}</td>
@@ -178,7 +202,7 @@ export const ProposalPrintTemplate: React.FC<{
             Serviços Adicionais e Logística
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-4">
-            {data.services.map((srv, idx) => (
+            {services.map((srv, idx) => (
               <div key={idx} className="flex items-center space-x-2 text-sm">
                 {srv.active ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -190,6 +214,11 @@ export const ProposalPrintTemplate: React.FC<{
                 </span>
               </div>
             ))}
+            {services.length === 0 && (
+              <div className="col-span-full text-slate-500 italic text-sm">
+                Nenhum serviço adicional selecionado
+              </div>
+            )}
           </div>
         </div>
 
@@ -200,20 +229,20 @@ export const ProposalPrintTemplate: React.FC<{
               <span className="text-sm font-bold uppercase tracking-wider text-slate-800">
                 Investimento Total
               </span>
-              <span className="text-2xl font-bold text-teal-600">{formatCurrency(data.value)}</span>
+              <span className="text-2xl font-bold text-teal-600">{formatCurrency(totalValue)}</span>
             </div>
-            <div className="text-right text-xs text-slate-400">Total de {data.laudas} lauda(s)</div>
+            <div className="text-right text-xs text-slate-400">Total de {laudasCount} lauda(s)</div>
           </div>
         </div>
 
         {/* Observations Section */}
-        {data.observations && (
+        {observations && (
           <div className="mb-10 break-inside-avoid">
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
               Observações e Condições
             </h3>
             <p className="whitespace-pre-wrap text-slate-600 text-sm leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100">
-              {data.observations}
+              {observations}
             </p>
           </div>
         )}

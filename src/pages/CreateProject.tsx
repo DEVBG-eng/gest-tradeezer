@@ -54,6 +54,7 @@ import useSettingsStore from '@/stores/useSettingsStore'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
+import { mapProjectToPrintData } from '@/lib/project-utils'
 
 const SERVICES_OPTS = [
   { id: 'digital', label: 'Via Digital', key: 'digital' as const },
@@ -354,7 +355,11 @@ export default function CreateProject() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {showProposal && createdProject && (
-        <ProposalPrintTemplate project={createdProject} onClose={handleCloseProposal} />
+        <ProposalPrintTemplate
+          data={mapProjectToPrintData(createdProject)}
+          autoPrint={true}
+          onClose={handleCloseProposal}
+        />
       )}
 
       <div>
