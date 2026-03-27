@@ -15,6 +15,8 @@ import {
   ChevronRight,
   Trash2,
   Plus,
+  ChevronsUpDown,
+  Check,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
@@ -43,6 +45,14 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { useToast } from '@/hooks/use-toast'
 import useProjectStore, {
   CloudFile,
@@ -105,7 +115,8 @@ export default function CreateProject() {
   const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
-  const [clientRef, setClientRef] = useState<string>('none')
+  const [clientRef, setClientRef] = useState<string>('')
+  const [clientOpen, setClientOpen] = useState(false)
   const [status, setStatus] = useState<ProjectStatus>('Orçamento')
   const [sourceLang, setSourceLang] = useState('pt')
   const [targetLang, setTargetLang] = useState('en')
@@ -154,7 +165,7 @@ export default function CreateProject() {
 
   const handleClientSelect = (val: string) => {
     setClientRef(val)
-    if (val !== 'none') {
+    if (val) {
       const c = clients.find((cl) => cl.id === val)
       if (c) {
         setClientName(c.nome)
@@ -167,8 +178,30 @@ export default function CreateProject() {
             maximumFractionDigits: 2,
           })
           setItems(items.map((i) => ({ ...i, valorLauda: formatted })))
+        } else {
+          setItems(items.map((i) => ({ ...i, valorLauda: '' })))
+        }
+
+        if (c.idiomas_frequentes) {
+          const freq = c.idiomas_frequentes.toLowerCase()
+          const foundLangs = LANGUAGES.filter(
+            (l) => freq.includes(l.label.toLowerCase()) || freq.includes(l.value.toLowerCase()),
+          )
+
+          if (foundLangs.length > 0) {
+            const foreignLang = foundLangs.find((l) => l.value !== 'pt')
+            if (foreignLang) {
+              setTargetLang(foreignLang.value)
+              setSourceLang('pt')
+            } else {
+              setSourceLang('pt')
+            }
+          }
         }
       }
+    } else {
+      setClientName('')
+      setItems(items.map((i) => ({ ...i, valorLauda: '' })))
     }
   }
 
@@ -270,10 +303,10 @@ export default function CreateProject() {
         variant: 'destructive',
       })
     }
-    if (!clientName.trim()) {
+    if (!clientRef) {
       return toast({
         title: 'Erro',
-        description: 'Nome do cliente é obrigatório.',
+        description: 'A seleção do cliente é obrigatória.',
         variant: 'destructive',
       })
     }
@@ -312,7 +345,7 @@ export default function CreateProject() {
       id: reference,
       title: `Ordem de Serviço ${reference}`,
       client: clientName,
-      clientRef: clientRef !== 'none' ? clientRef : undefined,
+      clientRef: clientRef,
       status,
       urgent: false,
       international: sourceLang !== 'pt' || targetLang !== 'pt',
@@ -374,7 +407,7 @@ export default function CreateProject() {
 
   const missingFields = []
   if (!reference.trim()) missingFields.push('Cód. de referência (Aba 4)')
-  if (!clientName.trim()) missingFields.push('Nome / Razão Social (Aba 1)')
+  if (!clientRef) missingFields.push('Cliente (Aba 1)')
   if (!translationType) missingFields.push('Categoria do Serviço (Aba 2)')
   if (!startDate) missingFields.push('Data de Entrada (Aba 2)')
   if (!deadline) missingFields.push('Data de Entrega (Aba 2)')
@@ -438,24 +471,71 @@ export default function CreateProject() {
               </TabsList>
 
               <TabsContent value="client" className="space-y-6">
-                <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
-                  <Label className="text-base font-semibold">Vincular Cliente (Opcional)</Label>
-                  <Select value={clientRef} onValueChange={handleClientSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um cliente ou preencha manualmente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">-- Preenchimento Manual --</SelectItem>
-                      {clients.map((c) => (
-                        <SelectItem key={c.id!} value={c.id!}>
-                          {c.nome} {c.cnpj && `(${c.cnpj})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2 flex flex-col">
+                  <Label>
+                    Cliente <span className="text-destructive">*</span>
+                  </Label>
+                  <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={clientOpen}
+                        className={cn(
+                          'w-full justify-between font-normal',
+                          !clientRef && 'text-muted-foreground',
+                        )}
+                      >
+                        {clientRef
+                          ? clients.find((c) => c.id === clientRef)?.nome
+                          : 'Busque e selecione um cliente...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-[var(--radix-popover-trigger-width)] p-0"
+                      align="start"
+                    >
+                      <Command>
+                        <CommandInput placeholder="Buscar cliente por nome ou documento..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {clients.map((c) => (
+                              <CommandItem
+                                key={c.id!}
+                                value={`${c.nome} ${c.cnpj || ''}`}
+                                onSelect={() => {
+                                  handleClientSelect(c.id!)
+                                  setClientOpen(false)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4 shrink-0',
+                                    clientRef === c.id ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span>{c.nome}</span>
+                                  {c.cnpj && (
+                                    <span className="text-xs text-muted-foreground">{c.cnpj}</span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-sm text-muted-foreground">
+                    Os dados do cliente (valor de lauda, idiomas frequentes) serão preenchidos
+                    automaticamente.
+                  </p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 pt-2">
                   <Label className="text-base font-semibold">Tipo de Pessoa</Label>
                   <RadioGroup
                     value={clientType}
@@ -478,18 +558,7 @@ export default function CreateProject() {
                     </label>
                   </RadioGroup>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="clientName">
-                    Nome / Razão Social <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="clientName"
-                    placeholder="Ex: TechCorp Global S.A."
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    required
-                  />
-                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="status">
                     Status <span className="text-destructive">*</span>
@@ -653,10 +722,9 @@ export default function CreateProject() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const defaultValor =
-                          clientRef !== 'none'
-                            ? clients.find((c) => c.id === clientRef)?.valor_lauda_padrao
-                            : undefined
+                        const defaultValor = clientRef
+                          ? clients.find((c) => c.id === clientRef)?.valor_lauda_padrao
+                          : undefined
                         const formatted = defaultValor
                           ? defaultValor.toLocaleString('pt-BR', {
                               minimumFractionDigits: 2,
