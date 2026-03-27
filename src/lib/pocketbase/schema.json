@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-27T16:27:45.624Z",
+  "generatedAt": "2026-03-27T20:27:20.288Z",
   "collections": [
     {
       "name": "users",
@@ -230,6 +230,13 @@
           "type": "bool",
           "required": false,
           "system": false
+        },
+        {
+          "name": "cliente_ref",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "Clientes"
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX `idx_cod_referencia_unique` ON `Projetos` (cod_referencia)"]
@@ -359,6 +366,76 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_notificacoes_usuario ON Notificacoes (usuario)"]
+    },
+    {
+      "name": "Clientes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "cnpj",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "endereco",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_lauda_padrao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_documento_padrao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "idiomas_frequentes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observacoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
     }
   ]
 }

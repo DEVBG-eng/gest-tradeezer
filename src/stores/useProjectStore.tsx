@@ -67,6 +67,7 @@ export interface Project {
   id: string
   title: string
   client: string
+  clientRef?: string
   status: ProjectStatus
   urgent: boolean
   international: boolean
@@ -112,6 +113,7 @@ const mapToProject = (record: ProjetoRecord): Project => ({
   id: record.cod_referencia,
   title: `Ordem de Serviço ${record.cod_referencia}`,
   client: record.cliente,
+  clientRef: record.cliente_ref,
   status: (record.status as ProjectStatus) || 'Orçamento',
   urgent: record.urgente || false,
   international: record.internacional || false,
@@ -148,6 +150,7 @@ const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
   const data: Partial<ProjetoRecord> = {}
   if (project.id !== undefined) data.cod_referencia = project.id
   if (project.client !== undefined) data.cliente = project.client
+  if (project.clientRef !== undefined) data.cliente_ref = project.clientRef
   if (project.status !== undefined) data.status = project.status
   if (project.urgent !== undefined) data.urgente = project.urgent
   if (project.international !== undefined) data.internacional = project.international

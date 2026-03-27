@@ -15,6 +15,7 @@ export interface ProjetoRecord {
   id?: string
   cod_referencia: string
   cliente: string
+  cliente_ref?: string
   status: string
   qtd_laudas?: number
   valor_lauda?: number

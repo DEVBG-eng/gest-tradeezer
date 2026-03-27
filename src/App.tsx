@@ -11,9 +11,11 @@ import Notary from './pages/Notary'
 import Settings from './pages/Settings'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
+import Clients from './pages/Clients'
 import { ProjectStoreProvider } from './stores/useProjectStore'
 import { SettingsStoreProvider } from './stores/useSettingsStore'
 import { NotificationStoreProvider } from './stores/useNotificationStore'
+import { ClientStoreProvider } from './stores/useClientStore'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 
 function ProtectedRoutes() {
@@ -25,33 +27,36 @@ function ProtectedRoutes() {
 
 const App = () => (
   <AuthProvider>
-    <SettingsStoreProvider>
-      <ProjectStoreProvider>
-        <NotificationStoreProvider>
-          <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route element={<ProtectedRoutes />}>
-                  <Route element={<Layout />}>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/intake" element={<Navigate to="/" replace />} />
-                    <Route path="/projects" element={<Projects />} />
-                    <Route path="/projects/new" element={<CreateProject />} />
-                    <Route path="/logistics" element={<Logistics />} />
-                    <Route path="/notary" element={<Notary />} />
-                    <Route path="/settings" element={<Settings />} />
+    <ClientStoreProvider>
+      <SettingsStoreProvider>
+        <ProjectStoreProvider>
+          <NotificationStoreProvider>
+            <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route element={<ProtectedRoutes />}>
+                    <Route element={<Layout />}>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/intake" element={<Navigate to="/" replace />} />
+                      <Route path="/projects" element={<Projects />} />
+                      <Route path="/projects/new" element={<CreateProject />} />
+                      <Route path="/clients" element={<Clients />} />
+                      <Route path="/logistics" element={<Logistics />} />
+                      <Route path="/notary" element={<Notary />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Route>
                   </Route>
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TooltipProvider>
-          </BrowserRouter>
-        </NotificationStoreProvider>
-      </ProjectStoreProvider>
-    </SettingsStoreProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </TooltipProvider>
+            </BrowserRouter>
+          </NotificationStoreProvider>
+        </ProjectStoreProvider>
+      </SettingsStoreProvider>
+    </ClientStoreProvider>
   </AuthProvider>
 )
 

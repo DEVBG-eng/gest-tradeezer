@@ -7,6 +7,7 @@ import {
   Settings,
   LogOut,
   FolderPlus,
+  Users,
 } from 'lucide-react'
 import logoImg from '@/assets/design-sem-nome-ffec1.jpg'
 import { useAuth } from '@/hooks/use-auth'
@@ -28,6 +29,7 @@ const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Projetos', url: '/projects', icon: Briefcase },
   { title: 'Novo Projeto', url: '/projects/new', icon: FolderPlus },
+  { title: 'Clientes', url: '/clients', icon: Users },
   { title: 'Logística', url: '/logistics', icon: Truck },
   { title: 'Cartório', url: '/notary', icon: FileSignature },
   { title: 'Configurações', url: '/settings', icon: Settings },

@@ -51,6 +51,7 @@ import useProjectStore, {
   ALL_STATUSES,
 } from '@/stores/useProjectStore'
 import useSettingsStore from '@/stores/useSettingsStore'
+import useClientStore from '@/stores/useClientStore'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
@@ -94,6 +95,7 @@ interface ItemInput {
 export default function CreateProject() {
   const navigate = useNavigate()
   const { addProject } = useProjectStore()
+  const { clients } = useClientStore()
   const { activeCloudProvider, oneDriveNetworkLink } = useSettingsStore()
   const { toast } = useToast()
 
@@ -103,6 +105,7 @@ export default function CreateProject() {
   const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
+  const [clientRef, setClientRef] = useState<string>('none')
   const [status, setStatus] = useState<ProjectStatus>('Orçamento')
   const [sourceLang, setSourceLang] = useState('pt')
   const [targetLang, setTargetLang] = useState('en')
@@ -148,6 +151,26 @@ export default function CreateProject() {
       : activeCloudProvider === 'onedrive'
         ? 'Microsoft OneDrive / SharePoint'
         : 'Dropbox'
+
+  const handleClientSelect = (val: string) => {
+    setClientRef(val)
+    if (val !== 'none') {
+      const c = clients.find((cl) => cl.id === val)
+      if (c) {
+        setClientName(c.nome)
+        if (c.cnpj && c.cnpj.replace(/\D/g, '').length > 11) setClientType('PJ')
+        else if (c.cnpj) setClientType('PF')
+
+        if (c.valor_lauda_padrao) {
+          const formatted = c.valor_lauda_padrao.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+          setItems(items.map((i) => ({ ...i, valorLauda: formatted })))
+        }
+      }
+    }
+  }
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return
@@ -289,6 +312,7 @@ export default function CreateProject() {
       id: reference,
       title: `Ordem de Serviço ${reference}`,
       client: clientName,
+      clientRef: clientRef !== 'none' ? clientRef : undefined,
       status,
       urgent: false,
       international: sourceLang !== 'pt' || targetLang !== 'pt',
@@ -414,6 +438,23 @@ export default function CreateProject() {
               </TabsList>
 
               <TabsContent value="client" className="space-y-6">
+                <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+                  <Label className="text-base font-semibold">Vincular Cliente (Opcional)</Label>
+                  <Select value={clientRef} onValueChange={handleClientSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cliente ou preencha manualmente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">-- Preenchimento Manual --</SelectItem>
+                      {clients.map((c) => (
+                        <SelectItem key={c.id!} value={c.id!}>
+                          {c.nome} {c.cnpj && `(${c.cnpj})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-4">
                   <Label className="text-base font-semibold">Tipo de Pessoa</Label>
                   <RadioGroup
@@ -611,9 +652,19 @@ export default function CreateProject() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        setItems([...items, { description: '', laudas: '', valorLauda: '' }])
-                      }
+                      onClick={() => {
+                        const defaultValor =
+                          clientRef !== 'none'
+                            ? clients.find((c) => c.id === clientRef)?.valor_lauda_padrao
+                            : undefined
+                        const formatted = defaultValor
+                          ? defaultValor.toLocaleString('pt-BR', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          : ''
+                        setItems([...items, { description: '', laudas: '', valorLauda: formatted }])
+                      }}
                     >
                       <Plus className="h-4 w-4 mr-1" /> Adicionar Item
                     </Button>
