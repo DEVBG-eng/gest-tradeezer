@@ -234,13 +234,17 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (e: any) {
       const errors = extractFieldErrors(e)
-      if (
+      const errMsg = String(e?.message || e?.response?.message || '')
+      const isUniqueError =
         errors.cod_referencia ||
-        e?.response?.data?.cod_referencia?.code === 'validation_not_unique'
-      ) {
+        e?.response?.data?.cod_referencia?.code === 'validation_not_unique' ||
+        errMsg.includes('idx_cod_referencia_unique') ||
+        errMsg.includes('UNIQUE constraint failed')
+
+      if (isUniqueError) {
         toast({
           title: 'Erro de Validação',
-          description: 'O Cód. de Referência já existe.',
+          description: 'O código de referência já está em uso. Por favor, utilize um código único.',
           variant: 'destructive',
         })
         throw new Error('Cód. Referência duplicado')
@@ -303,13 +307,17 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (e: any) {
       const errors = extractFieldErrors(e)
-      if (
+      const errMsg = String(e?.message || e?.response?.message || '')
+      const isUniqueError =
         errors.cod_referencia ||
-        e?.response?.data?.cod_referencia?.code === 'validation_not_unique'
-      ) {
+        e?.response?.data?.cod_referencia?.code === 'validation_not_unique' ||
+        errMsg.includes('idx_cod_referencia_unique') ||
+        errMsg.includes('UNIQUE constraint failed')
+
+      if (isUniqueError) {
         toast({
           title: 'Erro de Validação',
-          description: 'O Cód. de Referência já existe.',
+          description: 'O código de referência já está em uso. Por favor, utilize um código único.',
           variant: 'destructive',
         })
         throw new Error('Cód. Referência duplicado')

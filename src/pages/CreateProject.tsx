@@ -97,6 +97,8 @@ export default function CreateProject() {
   const { activeCloudProvider, oneDriveNetworkLink } = useSettingsStore()
   const { toast } = useToast()
 
+  const [activeTab, setActiveTab] = useState('client')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
   const [clientType, setClientType] = useState('PJ')
@@ -317,6 +319,7 @@ export default function CreateProject() {
     }
 
     setSaving(true)
+    setFieldErrors({})
     try {
       await addProject(newProjectData)
 
@@ -327,8 +330,13 @@ export default function CreateProject() {
         toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
         navigate('/projects')
       }
-    } catch (e) {
-      // Error is handled and toasted in the store
+    } catch (e: any) {
+      if (e?.message === 'Cód. Referência duplicado' || String(e).includes('duplicado')) {
+        setFieldErrors({
+          reference: 'O código de referência já está em uso. Por favor, utilize um código único.',
+        })
+        setActiveTab('budget')
+      }
     } finally {
       setSaving(false)
     }
@@ -377,7 +385,7 @@ export default function CreateProject() {
       >
         <Card className="shadow-sm border-border/50">
           <CardContent className="pt-6">
-            <Tabs defaultValue="client" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 mb-6 h-auto p-1 gap-1">
                 <TabsTrigger
                   value="client"
@@ -825,17 +833,34 @@ export default function CreateProject() {
 
               <TabsContent value="budget" className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="referenceTab" className="text-base font-semibold">
+                  <Label
+                    htmlFor="referenceTab"
+                    className={cn(
+                      'text-base font-semibold',
+                      fieldErrors.reference && 'text-destructive',
+                    )}
+                  >
                     Cód. de referência <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="referenceTab"
                     value={reference}
-                    onChange={(e) => setReference(e.target.value)}
+                    onChange={(e) => {
+                      setReference(e.target.value)
+                      if (fieldErrors.reference) setFieldErrors({})
+                    }}
                     placeholder="Ex: TRD-123456"
-                    className="max-w-md font-mono font-bold text-primary bg-primary/5"
+                    className={cn(
+                      'max-w-md font-mono font-bold',
+                      fieldErrors.reference
+                        ? 'border-destructive text-destructive focus-visible:ring-destructive'
+                        : 'text-primary bg-primary/5',
+                    )}
                     required
                   />
+                  {fieldErrors.reference && (
+                    <p className="text-sm font-medium text-destructive">{fieldErrors.reference}</p>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     Código único para identificação do projeto e sincronização em nuvem.
                   </p>
