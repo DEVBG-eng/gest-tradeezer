@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Bell, Search, Menu, LogOut, User } from 'lucide-react'
+import {
+  Bell,
+  Search,
+  Menu,
+  LogOut,
+  User,
+  CalendarClock,
+  FilePlus,
+  BellRing,
+  Info,
+} from 'lucide-react'
 import { useSidebar } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -23,6 +33,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import useNotificationStore from '@/stores/useNotificationStore'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { useNavigate } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 import { UserProfileDialog } from './UserProfileDialog'
 
 export function AppHeader() {
@@ -30,6 +47,10 @@ export function AppHeader() {
   const { user, signOut } = useAuth()
   const [searchOpen, setSearchOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotificationStore()
+  const navigate = useNavigate()
+  const [notifOpen, setNotifOpen] = useState(false)
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -41,6 +62,14 @@ export function AppHeader() {
     document.addEventListener('keydown', down)
     return () => document.removeEventListener('keydown', down)
   }, [])
+
+  const handleNotificationClick = (notif: any) => {
+    if (!notif.lida) markAsRead(notif.id)
+    if (notif.projeto) {
+      navigate(`/projects`)
+      setNotifOpen(false)
+    }
+  }
 
   const avatarUrl = user?.avatar ? getFileUrl(user, user.avatar) : ''
   const initials = user?.name
@@ -74,14 +103,97 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative text-muted-foreground hover:text-foreground"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-destructive border border-white dark:border-slate-900"></span>
-        </Button>
+        <Popover open={notifOpen} onOpenChange={setNotifOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-muted-foreground hover:text-foreground"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2.5 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive border border-white dark:border-slate-900"></span>
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 sm:w-96 p-0 z-50">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h3 className="font-semibold text-sm">Notificações</h3>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={markAllAsRead}
+                  className="h-auto p-0 text-xs text-primary hover:bg-transparent hover:underline"
+                >
+                  Marcar todas como lidas
+                </Button>
+              )}
+            </div>
+            <ScrollArea className="h-[300px]">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                  <Bell className="h-8 w-8 mb-2 opacity-20" />
+                  <p className="text-sm">Nenhuma notificação no momento</p>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => handleNotificationClick(n)}
+                      className={cn(
+                        'px-4 py-3 flex gap-3 hover:bg-muted/50 cursor-pointer transition-colors border-b last:border-0',
+                        !n.lida && 'bg-primary/5',
+                      )}
+                    >
+                      <div className="mt-1 flex-shrink-0">
+                        {n.tipo === 'entrega' && (
+                          <CalendarClock className="h-5 w-5 text-amber-500" />
+                        )}
+                        {n.tipo === 'projeto_novo' && (
+                          <FilePlus className="h-5 w-5 text-blue-500" />
+                        )}
+                        {n.tipo === 'solicitacao' && (
+                          <BellRing className="h-5 w-5 text-purple-500" />
+                        )}
+                        {n.tipo === 'sistema' && <Info className="h-5 w-5 text-slate-500" />}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium leading-none">{n.titulo}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{n.mensagem}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(n.created), {
+                            addSuffix: true,
+                            locale: ptBR,
+                          })}
+                        </p>
+                      </div>
+                      {!n.lida && (
+                        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+            {notifications.length > 0 && (
+              <div className="p-2 border-t text-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAll}
+                  className="w-full text-xs text-muted-foreground"
+                >
+                  Limpar todas
+                </Button>
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
