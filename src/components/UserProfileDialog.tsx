@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, forwardRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -27,7 +27,8 @@ import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
 import { getFileUrl } from '@/lib/pocketbase/utils'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
-import { Camera, Loader2, X } from 'lucide-react'
+import { Camera, Loader2, X, Eye, EyeOff } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const profileSchema = z
   .object({
@@ -67,6 +68,37 @@ interface UserProfileDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
+
+const PasswordInput = forwardRef<HTMLInputElement, React.ComponentProps<typeof Input>>(
+  ({ className, ...props }, ref) => {
+    const [showPassword, setShowPassword] = useState(false)
+
+    return (
+      <div className="relative">
+        <Input
+          type={showPassword ? 'text' : 'password'}
+          className={cn('pr-10', className)}
+          ref={ref}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent rounded-md"
+          tabIndex={-1}
+        >
+          {showPassword ? (
+            <EyeOff className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Eye className="h-4 w-4" aria-hidden="true" />
+          )}
+          <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+        </button>
+      </div>
+    )
+  },
+)
+PasswordInput.displayName = 'PasswordInput'
 
 export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps) {
   const { user } = useAuth()
@@ -245,7 +277,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                   <FormItem>
                     <FormLabel>Senha Atual</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Digite sua senha atual" {...field} />
+                      <PasswordInput placeholder="Digite sua senha atual" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -259,7 +291,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                     <FormItem>
                       <FormLabel>Nova Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Nova senha" {...field} />
+                        <PasswordInput placeholder="Nova senha" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -272,7 +304,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                     <FormItem>
                       <FormLabel>Confirmar Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Confirme a nova senha" {...field} />
+                        <PasswordInput placeholder="Confirme a nova senha" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
