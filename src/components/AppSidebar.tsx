@@ -42,7 +42,11 @@ export function AppSidebar() {
       <SidebarHeader className="border-b px-4 py-3 h-[60px] flex flex-col justify-center">
         <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white overflow-hidden shadow-sm p-0.5">
-            <img src={logoImg} alt="Tradeezer Logo" className="h-full w-full object-contain" />
+            <img
+              src={logoImg}
+              alt="Tradeezer Logo"
+              className="h-full w-full object-contain font-normal text-left bg-transparent"
+            />
           </div>
           <div className="flex flex-col flex-1 truncate">
             <span className="truncate font-bold text-base leading-tight text-foreground">
