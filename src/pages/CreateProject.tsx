@@ -113,6 +113,7 @@ export default function CreateProject() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
+  const [clientMode, setClientMode] = useState<'registered' | 'manual'>('registered')
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
   const [clientRef, setClientRef] = useState<string>('')
@@ -303,10 +304,17 @@ export default function CreateProject() {
         variant: 'destructive',
       })
     }
-    if (!clientRef) {
+    if (clientMode === 'registered' && !clientRef) {
       return toast({
         title: 'Erro',
         description: 'A seleção do cliente é obrigatória.',
+        variant: 'destructive',
+      })
+    }
+    if (clientMode === 'manual' && !clientName.trim()) {
+      return toast({
+        title: 'Erro',
+        description: 'O nome do cliente é obrigatório.',
         variant: 'destructive',
       })
     }
@@ -345,7 +353,7 @@ export default function CreateProject() {
       id: reference,
       title: `Ordem de Serviço ${reference}`,
       client: clientName,
-      clientRef: clientRef,
+      clientRef: clientMode === 'registered' ? clientRef : '',
       status,
       urgent: false,
       international: sourceLang !== 'pt' || targetLang !== 'pt',
@@ -407,7 +415,8 @@ export default function CreateProject() {
 
   const missingFields = []
   if (!reference.trim()) missingFields.push('Cód. de referência (Aba 4)')
-  if (!clientRef) missingFields.push('Cliente (Aba 1)')
+  if (clientMode === 'registered' && !clientRef) missingFields.push('Cliente (Aba 1)')
+  if (clientMode === 'manual' && !clientName.trim()) missingFields.push('Nome do Cliente (Aba 1)')
   if (!translationType) missingFields.push('Categoria do Serviço (Aba 2)')
   if (!startDate) missingFields.push('Data de Entrada (Aba 2)')
   if (!deadline) missingFields.push('Data de Entrega (Aba 2)')
@@ -471,69 +480,130 @@ export default function CreateProject() {
               </TabsList>
 
               <TabsContent value="client" className="space-y-6">
-                <div className="space-y-2 flex flex-col">
-                  <Label>
-                    Cliente <span className="text-destructive">*</span>
-                  </Label>
-                  <Popover open={clientOpen} onOpenChange={setClientOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={clientOpen}
-                        className={cn(
-                          'w-full justify-between font-normal',
-                          !clientRef && 'text-muted-foreground',
-                        )}
-                      >
-                        {clientRef
-                          ? clients.find((c) => c.id === clientRef)?.nome
-                          : 'Busque e selecione um cliente...'}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[var(--radix-popover-trigger-width)] p-0"
-                      align="start"
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Modo de Inserção</Label>
+                  <RadioGroup
+                    value={clientMode}
+                    onValueChange={(val) => {
+                      setClientMode(val as 'registered' | 'manual')
+                      if (val === 'manual') {
+                        setClientRef('')
+                        setClientName('')
+                        setClientType('PF')
+                      } else {
+                        setClientRef('')
+                        setClientName('')
+                        setClientType('PJ')
+                      }
+                    }}
+                    className="flex flex-col sm:flex-row gap-4"
+                  >
+                    <label
+                      className={cn(
+                        'flex items-center space-x-2 border rounded-md p-3 px-4 cursor-pointer transition-colors w-full',
+                        clientMode === 'registered'
+                          ? 'border-primary bg-primary/5'
+                          : 'hover:bg-muted',
+                      )}
                     >
-                      <Command>
-                        <CommandInput placeholder="Buscar cliente por nome ou documento..." />
-                        <CommandList>
-                          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                          <CommandGroup>
-                            {clients.map((c) => (
-                              <CommandItem
-                                key={c.id!}
-                                value={`${c.nome} ${c.cnpj || ''}`}
-                                onSelect={() => {
-                                  handleClientSelect(c.id!)
-                                  setClientOpen(false)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 h-4 w-4 shrink-0',
-                                    clientRef === c.id ? 'opacity-100' : 'opacity-0',
-                                  )}
-                                />
-                                <div className="flex flex-col">
-                                  <span>{c.nome}</span>
-                                  {c.cnpj && (
-                                    <span className="text-xs text-muted-foreground">{c.cnpj}</span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-sm text-muted-foreground">
-                    Os dados do cliente (valor de lauda, idiomas frequentes) serão preenchidos
-                    automaticamente.
-                  </p>
+                      <RadioGroupItem value="registered" />
+                      <span className="flex-1 text-sm font-medium">Cliente Cadastrado</span>
+                    </label>
+                    <label
+                      className={cn(
+                        'flex items-center space-x-2 border rounded-md p-3 px-4 cursor-pointer transition-colors w-full',
+                        clientMode === 'manual' ? 'border-primary bg-primary/5' : 'hover:bg-muted',
+                      )}
+                    >
+                      <RadioGroupItem value="manual" />
+                      <span className="flex-1 text-sm font-medium">
+                        Entrada Manual (Avulso / PF)
+                      </span>
+                    </label>
+                  </RadioGroup>
                 </div>
+
+                {clientMode === 'registered' ? (
+                  <div className="space-y-2 flex flex-col">
+                    <Label>
+                      Cliente <span className="text-destructive">*</span>
+                    </Label>
+                    <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={clientOpen}
+                          className={cn(
+                            'w-full justify-between font-normal',
+                            !clientRef && 'text-muted-foreground',
+                          )}
+                        >
+                          {clientRef
+                            ? clients.find((c) => c.id === clientRef)?.nome
+                            : 'Busque e selecione um cliente...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[var(--radix-popover-trigger-width)] p-0"
+                        align="start"
+                      >
+                        <Command>
+                          <CommandInput placeholder="Buscar cliente por nome ou documento..." />
+                          <CommandList>
+                            <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {clients.map((c) => (
+                                <CommandItem
+                                  key={c.id!}
+                                  value={`${c.nome} ${c.cnpj || ''}`}
+                                  onSelect={() => {
+                                    handleClientSelect(c.id!)
+                                    setClientOpen(false)
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4 shrink-0',
+                                      clientRef === c.id ? 'opacity-100' : 'opacity-0',
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span>{c.nome}</span>
+                                    {c.cnpj && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {c.cnpj}
+                                      </span>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <p className="text-sm text-muted-foreground">
+                      Os dados do cliente (valor de lauda, idiomas frequentes) serão preenchidos
+                      automaticamente.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 flex flex-col animate-fade-in">
+                    <Label>
+                      Nome do Cliente <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      placeholder="Digite o nome completo do cliente..."
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      O cliente será salvo apenas para este projeto, sem criar cadastro.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-4 pt-2">
                   <Label className="text-base font-semibold">Tipo de Pessoa</Label>

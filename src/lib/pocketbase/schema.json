@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-27T20:30:33.560Z",
+  "generatedAt": "2026-03-28T20:19:49.833Z",
   "collections": [
     {
       "name": "users",
@@ -161,12 +161,6 @@
         },
         {
           "name": "urgente",
-          "type": "bool",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "internacional",
           "type": "bool",
           "required": false,
           "system": false
