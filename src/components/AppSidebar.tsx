@@ -47,7 +47,7 @@ export function AppSidebar() {
             <img
               src={logoImg}
               alt="Tradeezer Logo"
-              className="h-full w-full object-contain font-normal text-left bg-transparent"
+              className="h-full w-full object-contain font-normal text-left bg-transparent text-[0.37px]"
             />
           </div>
           <div className="flex flex-col flex-1 truncate">
