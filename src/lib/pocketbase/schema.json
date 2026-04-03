@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-28T20:19:49.833Z",
+  "generatedAt": "2026-04-03T16:59:47.363Z",
   "collections": [
     {
       "name": "users",
@@ -427,6 +427,84 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "razao_social",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prospeccao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "forma_pagamento",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ramo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contato",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "telefone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "informacoes_frete",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_certidao_digital",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_procuracao_digital",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_certidao_fisica",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_procuracao_fisica",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_frete",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": []

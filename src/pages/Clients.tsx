@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, Search, Edit, Trash2 } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -10,18 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import useClientStore from '@/stores/useClientStore'
-import { ClienteRecord } from '@/services/clientes'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,12 +21,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import useClientStore from '@/stores/useClientStore'
+import { ClienteRecord } from '@/services/clientes'
+import { ClientFormDialog } from '@/components/clients/ClientFormDialog'
+import { ClientImportDialog } from '@/components/clients/ClientImportDialog'
 
 export default function Clients() {
   const { clients, addClient, updateClient, deleteClient } = useClientStore()
   const [search, setSearch] = useState('')
   const [isAddOpen, setIsAddOpen] = useState(false)
-  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [currentClient, setCurrentClient] = useState<Partial<ClienteRecord>>({})
 
@@ -53,17 +46,17 @@ export default function Clients() {
     e.preventDefault()
     if (currentClient.id) {
       await updateClient(currentClient.id, currentClient)
-      setIsEditOpen(false)
     } else {
       await addClient(currentClient as any)
-      setIsAddOpen(false)
     }
+    setIsAddOpen(false)
     setCurrentClient({})
   }
 
-  const openEdit = (client: ClienteRecord) => {
-    setCurrentClient(client)
-    setIsEditOpen(true)
+  const handleImport = async (data: Partial<ClienteRecord>[]) => {
+    for (const record of data) {
+      await addClient(record as any)
+    }
   }
 
   const confirmDelete = async () => {
@@ -82,14 +75,19 @@ export default function Clients() {
             Gerencie os clientes, preços padrões e preferências.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setCurrentClient({})
-            setIsAddOpen(true)
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" /> Novo Cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" /> Importar Planilha
+          </Button>
+          <Button
+            onClick={() => {
+              setCurrentClient({})
+              setIsAddOpen(true)
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" /> Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -109,9 +107,10 @@ export default function Clients() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome / Razão Social</TableHead>
-                <TableHead>CNPJ / CPF</TableHead>
-                <TableHead>Valor Padrão (Lauda)</TableHead>
+                <TableHead>Nome Fantasia</TableHead>
+                <TableHead>CNPJ</TableHead>
+                <TableHead>Contato</TableHead>
+                <TableHead>Telefone</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -120,16 +119,17 @@ export default function Clients() {
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.nome}</TableCell>
                   <TableCell>{client.cnpj || '-'}</TableCell>
-                  <TableCell>
-                    {client.valor_lauda_padrao
-                      ? client.valor_lauda_padrao.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })
-                      : '-'}
-                  </TableCell>
+                  <TableCell>{client.contato || '-'}</TableCell>
+                  <TableCell>{client.telefone || '-'}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(client)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setCurrentClient(client)
+                        setIsAddOpen(true)
+                      }}
+                    >
                       <Edit className="h-4 w-4 text-muted-foreground" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => setDeletingId(client.id!)}>
@@ -140,7 +140,7 @@ export default function Clients() {
               ))}
               {filteredClients.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     Nenhum cliente encontrado.
                   </TableCell>
                 </TableRow>
@@ -150,118 +150,21 @@ export default function Clients() {
         </CardContent>
       </Card>
 
-      <Dialog
-        open={isAddOpen || isEditOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setIsAddOpen(false)
-            setIsEditOpen(false)
-          }
-        }}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{isEditOpen ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>
-                  Nome / Razão Social <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  required
-                  value={currentClient.nome || ''}
-                  onChange={(e) => setCurrentClient({ ...currentClient, nome: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>CNPJ / CPF</Label>
-                <Input
-                  value={currentClient.cnpj || ''}
-                  onChange={(e) => setCurrentClient({ ...currentClient, cnpj: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Endereço</Label>
-                <Input
-                  value={currentClient.endereco || ''}
-                  onChange={(e) => setCurrentClient({ ...currentClient, endereco: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Valor da Lauda (Padrão)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={currentClient.valor_lauda_padrao || ''}
-                  onChange={(e) =>
-                    setCurrentClient({
-                      ...currentClient,
-                      valor_lauda_padrao: parseFloat(e.target.value) || undefined,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Valor por Documento (Padrão)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={currentClient.valor_documento_padrao || ''}
-                  onChange={(e) =>
-                    setCurrentClient({
-                      ...currentClient,
-                      valor_documento_padrao: parseFloat(e.target.value) || undefined,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Idiomas Utilizados</Label>
-                <Input
-                  placeholder="Ex: PT-BR, EN-US, ES"
-                  value={currentClient.idiomas_frequentes || ''}
-                  onChange={(e) =>
-                    setCurrentClient({ ...currentClient, idiomas_frequentes: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Observações / Especificações</Label>
-                <Textarea
-                  placeholder="Instruções específicas para projetos deste cliente..."
-                  value={currentClient.observacoes || ''}
-                  onChange={(e) =>
-                    setCurrentClient({ ...currentClient, observacoes: e.target.value })
-                  }
-                  className="min-h-[100px]"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsAddOpen(false)
-                  setIsEditOpen(false)
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit">Salvar</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ClientFormDialog
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        client={currentClient}
+        onChange={setCurrentClient}
+        onSave={handleSave}
+      />
 
-      <AlertDialog
-        open={!!deletingId}
-        onOpenChange={(open) => {
-          if (!open) setDeletingId(null)
-        }}
-      >
+      <ClientImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onImport={handleImport}
+      />
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>

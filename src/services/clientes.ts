@@ -9,6 +9,21 @@ export interface ClienteRecord {
   valor_documento_padrao?: number
   idiomas_frequentes?: string
   observacoes?: string
+
+  razao_social?: string
+  prospeccao?: string
+  forma_pagamento?: string
+  valor_certidao_digital?: number
+  valor_procuracao_digital?: number
+  valor_certidao_fisica?: number
+  valor_procuracao_fisica?: number
+  valor_frete?: number
+  ramo?: string
+  contato?: string
+  email?: string
+  telefone?: string
+  informacoes_frete?: string
+
   created?: string
   updated?: string
 }
