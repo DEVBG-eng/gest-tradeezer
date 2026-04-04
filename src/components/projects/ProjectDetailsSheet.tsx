@@ -248,7 +248,7 @@ export function ProjectDetailsSheet({
                         className="text-xs text-muted-foreground truncate max-w-[200px]"
                         title={(project as any).pasta_url || project.cloudFolderUrl}
                       >
-                        /Projetos/Protocolos/{project.id}
+                        /Projetos/Protocolos/{(project as any).cod_referencia || project.id}
                       </p>
                     </div>
                   </div>
@@ -258,7 +258,7 @@ export function ProjectDetailsSheet({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <FolderOpen className="h-4 w-4 mr-2" /> Acessar Pasta
+                      <FolderOpen className="h-4 w-4 mr-2" /> Abrir Diretório
                     </a>
                   </Button>
                 </div>
