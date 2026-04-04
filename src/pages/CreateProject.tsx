@@ -60,7 +60,6 @@ import useProjectStore, {
   Project,
   ALL_STATUSES,
 } from '@/stores/useProjectStore'
-import useSettingsStore from '@/stores/useSettingsStore'
 import useClientStore from '@/stores/useClientStore'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
@@ -106,7 +105,6 @@ export default function CreateProject() {
   const navigate = useNavigate()
   const { addProject } = useProjectStore()
   const { clients } = useClientStore()
-  const {} = useSettingsStore()
   const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState('client')
