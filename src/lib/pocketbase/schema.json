@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T16:23:54.704Z",
+  "generatedAt": "2026-04-04T16:31:02.878Z",
   "collections": [
     {
       "name": "users",
@@ -29,14 +29,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -60,14 +65,18 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onUpdate"]
+          "autodateTriggers": [
+            "onUpdate"
+          ]
         },
         {
           "name": "cod_referencia",
@@ -239,7 +248,9 @@
           "system": false
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX `idx_cod_referencia_unique` ON `Projetos` (cod_referencia)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_cod_referencia_unique` ON `Projetos` (cod_referencia)"
+      ]
     },
     {
       "name": "ItensProjeto",
@@ -288,17 +299,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_itensprojeto_projeto ON ItensProjeto (projeto)"]
+      "indexes": [
+        "CREATE INDEX idx_itensprojeto_projeto ON ItensProjeto (projeto)"
+      ]
     },
     {
       "name": "Notificacoes",
@@ -335,7 +353,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["entrega", "projeto_novo", "solicitacao", "sistema"]
+          "selectValues": [
+            "entrega",
+            "projeto_novo",
+            "solicitacao",
+            "sistema"
+          ]
         },
         {
           "name": "lida",
@@ -355,17 +378,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_notificacoes_usuario ON Notificacoes (usuario)"]
+      "indexes": [
+        "CREATE INDEX idx_notificacoes_usuario ON Notificacoes (usuario)"
+      ]
     },
     {
       "name": "Clientes",
@@ -425,14 +455,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "razao_social",
