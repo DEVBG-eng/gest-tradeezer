@@ -93,9 +93,10 @@ export function ProjectDetailsSheet({
           name: f.name,
           size: f.size,
           status: 'uploading' as const,
-          url: project.cloudFolderUrl
-            ? `${project.cloudFolderUrl}/${f.name}`
-            : `https://example.com/view/${id}`,
+          url:
+            (project as any).pasta_url || project.cloudFolderUrl
+              ? `${(project as any).pasta_url || project.cloudFolderUrl}&FilterField1=LinkFilename&FilterValue1=${encodeURIComponent(f.name)}`
+              : `https://example.com/view/${id}`,
         }
       })
 
@@ -112,11 +113,7 @@ export function ProjectDetailsSheet({
               .projects.find((p) => p.id === projectId)
             if (!currentProject) return
 
-            const isMissingLink =
-              project.cloudProvider === 'onedrive' &&
-              (!project.cloudFolderUrl ||
-                project.cloudFolderUrl.includes('onedrive.live.com/?id=root'))
-            const isError = isMissingLink ? true : Math.random() > 0.85
+            const isError = Math.random() > 0.85
 
             updateProject(projectId, {
               files: currentProject.files?.map((p) =>
@@ -127,9 +124,7 @@ export function ProjectDetailsSheet({
             if (isError) {
               toast({
                 title: 'Erro de Sincronização',
-                description: isMissingLink
-                  ? `Falha no envio de ${cf.name}. Link de rede da Microsoft não configurado.`
-                  : `Falha de rede ao transferir ${cf.name}.`,
+                description: `Falha de rede ao transferir ${cf.name}.`,
                 variant: 'destructive',
               })
             } else {
@@ -241,34 +236,33 @@ export function ProjectDetailsSheet({
               value="docs"
               className="flex-1 py-4 flex flex-col gap-4 animate-fade-in min-h-0 overflow-y-auto pr-2 pb-16"
             >
-              {project.cloudFolderUrl && (
+              {(project as any).pasta_url || project.cloudFolderUrl ? (
                 <div className="flex items-center justify-between bg-primary/5 p-4 rounded-xl border border-primary/10 shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="bg-background p-2 rounded-lg shadow-sm">
                       <Cloud className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">Diretório na Nuvem</p>
+                      <p className="text-sm font-medium">Diretório SharePoint</p>
                       <p
                         className="text-xs text-muted-foreground truncate max-w-[200px]"
-                        title={project.cloudFolderUrl}
+                        title={(project as any).pasta_url || project.cloudFolderUrl}
                       >
-                        Via{' '}
-                        {project.cloudProvider === 'onedrive'
-                          ? 'Microsoft OneDrive'
-                          : project.cloudProvider === 'google_drive'
-                            ? 'Google Drive'
-                            : 'Dropbox'}
+                        /Projetos/Protocolos/{project.id}
                       </p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" asChild>
-                    <a href={project.cloudFolderUrl} target="_blank" rel="noreferrer">
+                    <a
+                      href={(project as any).pasta_url || project.cloudFolderUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <FolderOpen className="h-4 w-4 mr-2" /> Acessar Pasta
                     </a>
                   </Button>
                 </div>
-              )}
+              ) : null}
 
               <div
                 className="border-2 border-dashed border-border hover:border-primary/50 transition-colors rounded-xl p-6 text-center cursor-pointer bg-slate-50/30 dark:bg-slate-900/30 shrink-0"

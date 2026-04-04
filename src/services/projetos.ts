@@ -39,6 +39,7 @@ export interface ProjetoRecord {
   frete?: boolean
   dhl?: boolean
   observacoes?: string
+  pasta_url?: string
   created?: string
   updated?: string
   expand?: {

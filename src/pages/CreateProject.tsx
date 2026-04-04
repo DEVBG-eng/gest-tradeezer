@@ -106,7 +106,7 @@ export default function CreateProject() {
   const navigate = useNavigate()
   const { addProject } = useProjectStore()
   const { clients } = useClientStore()
-  const { activeCloudProvider, oneDriveNetworkLink } = useSettingsStore()
+  const {} = useSettingsStore()
   const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState('client')
@@ -148,21 +148,13 @@ export default function CreateProject() {
   const [showProposal, setShowProposal] = useState(false)
   const [createdProject, setCreatedProject] = useState<Project | null>(null)
 
-  const folderUrl =
-    activeCloudProvider === 'google_drive'
-      ? `https://drive.google.com/drive/folders/${reference}`
-      : activeCloudProvider === 'onedrive'
-        ? oneDriveNetworkLink
-          ? `${oneDriveNetworkLink.replace(/\/$/, '')}/${reference}`
-          : `https://onedrive.live.com/?id=root/Projetos/${reference}`
-        : `https://www.dropbox.com/sh/${reference}`
+  const sharepointBase =
+    'https://gbtraducoes.sharepoint.com/sites/tradeezer/Documentos%20Compartilhados/Forms/AllItems.aspx?id=%2Fsites%2Ftradeezer%2FDocumentos%20Compartilhados%2FProjetos%2FProtocolos'
+  const folderUrl = reference
+    ? `${sharepointBase}%2F${encodeURIComponent(reference)}`
+    : sharepointBase
 
-  const providerName =
-    activeCloudProvider === 'google_drive'
-      ? 'Google Drive'
-      : activeCloudProvider === 'onedrive'
-        ? 'Microsoft OneDrive / SharePoint'
-        : 'Dropbox'
+  const providerName = 'Microsoft SharePoint'
 
   const handleClientSelect = (val: string) => {
     setClientRef(val)
@@ -212,14 +204,7 @@ export default function CreateProject() {
 
     const newCloudFiles = newFiles.map((f) => {
       const id = Math.random().toString(36).substring(2, 11)
-      const url =
-        activeCloudProvider === 'google_drive'
-          ? `https://drive.google.com/file/d/${id}/view`
-          : activeCloudProvider === 'onedrive'
-            ? folderUrl
-              ? `${folderUrl}/${f.name}`
-              : `https://onedrive.live.com/view.aspx?resid=${id}`
-            : `https://www.dropbox.com/s/${id}/${f.name}`
+      const url = `${folderUrl}&FilterField1=LinkFilename&FilterValue1=${encodeURIComponent(f.name)}`
 
       return { id, name: f.name, size: f.size, status: 'uploading' as const, url }
     })
@@ -230,8 +215,7 @@ export default function CreateProject() {
     newCloudFiles.forEach((cf) => {
       setTimeout(
         () => {
-          const isMissingLink = activeCloudProvider === 'onedrive' && !oneDriveNetworkLink
-          const isError = isMissingLink ? true : Math.random() > 0.85
+          const isError = Math.random() > 0.85
 
           setCloudFiles((prev) =>
             prev.map((p) => (p.id === cf.id ? { ...p, status: isError ? 'error' : 'synced' } : p)),
@@ -240,9 +224,7 @@ export default function CreateProject() {
           if (isError) {
             toast({
               title: 'Erro de Sincronização',
-              description: isMissingLink
-                ? `Falha ao transferir ${cf.name}. Link de rede Microsoft ausente ou inválido.`
-                : `Falha ao transferir ${cf.name}. Verifique a estabilidade da rede.`,
+              description: `Falha ao transferir ${cf.name}. Verifique a estabilidade da rede.`,
               variant: 'destructive',
             })
           }
@@ -364,8 +346,9 @@ export default function CreateProject() {
       valorLauda: computedLaudas > 0 ? computedValue / computedLaudas : 0,
       value: computedValue,
       documents: Number(docCount) || cloudFiles.length || 1,
-      cloudProvider: activeCloudProvider,
+      cloudProvider: 'sharepoint',
       cloudFolderUrl: folderUrl,
+      pasta_url: folderUrl,
       files: cloudFiles,
       sourceLang,
       targetLang,
@@ -894,43 +877,23 @@ export default function CreateProject() {
               </TabsContent>
 
               <TabsContent value="docs" className="space-y-6">
-                {activeCloudProvider === 'onedrive' && !oneDriveNetworkLink && (
-                  <Alert variant="destructive" className="bg-destructive/5">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Configuração Pendente</AlertTitle>
-                    <AlertDescription className="flex items-center justify-between mt-2">
-                      <span className="text-sm">
-                        Link de rede do Microsoft SharePoint/OneDrive não configurado. As
-                        sincronizações podem falhar.
-                      </span>
-                      <Button variant="destructive" size="sm" asChild className="h-8 shrink-0">
-                        <Link to="/settings">Configurar Link</Link>
+                <Alert className="bg-primary/5 border-primary/20">
+                  <Cloud className="h-4 w-4 text-primary" />
+                  <AlertTitle>Sincronização com SharePoint</AlertTitle>
+                  <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between mt-2 gap-2">
+                    <span className="text-sm truncate max-w-[400px]">
+                      Diretório mapeado:{' '}
+                      <strong>/Projetos/Protocolos/{reference || '[Pendente]'}</strong>
+                    </span>
+                    {reference && (
+                      <Button variant="outline" size="sm" asChild className="h-8 shrink-0">
+                        <a href={folderUrl} target="_blank" rel="noreferrer">
+                          <FolderOpen className="h-3 w-3 mr-2" /> Abrir Diretório
+                        </a>
                       </Button>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {activeCloudProvider && (
-                  <Alert className="bg-primary/5 border-primary/20">
-                    <Cloud className="h-4 w-4 text-primary" />
-                    <AlertTitle>Sincronização em Nuvem Ativa</AlertTitle>
-                    <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between mt-2 gap-2">
-                      <span className="text-sm truncate max-w-[400px]">
-                        Pasta mapeada no <strong>{providerName}</strong>:{' '}
-                        {activeCloudProvider === 'onedrive' && oneDriveNetworkLink
-                          ? `.../${reference}`
-                          : `/${reference}`}
-                      </span>
-                      {!(activeCloudProvider === 'onedrive' && !oneDriveNetworkLink) && (
-                        <Button variant="outline" size="sm" asChild className="h-8 shrink-0">
-                          <a href={folderUrl} target="_blank" rel="noreferrer">
-                            <FolderOpen className="h-3 w-3 mr-2" /> Abrir Diretório
-                          </a>
-                        </Button>
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                    )}
+                  </AlertDescription>
+                </Alert>
 
                 <div
                   className="border-2 border-dashed border-border hover:border-primary/50 transition-colors rounded-xl p-10 text-center cursor-pointer bg-slate-50/30 dark:bg-slate-900/30"
