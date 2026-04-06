@@ -121,6 +121,7 @@ export function ProjectGrid({
             <TableHead className="w-[140px] font-semibold text-foreground">
               Cód. de Referência
             </TableHead>
+            <TableHead className="font-semibold text-foreground">Cliente</TableHead>
             <TableHead className="font-semibold text-foreground">Categoria de serviço</TableHead>
             <TableHead className="font-semibold text-foreground">Idiomas</TableHead>
             <TableHead className="font-semibold text-foreground">Tipo de documento</TableHead>
@@ -136,7 +137,7 @@ export function ProjectGrid({
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+              <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" /> Carregando projetos...
                 </div>
@@ -144,7 +145,7 @@ export function ProjectGrid({
             </TableRow>
           ) : sortedProjects.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+              <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
                 {projects.length === 0
                   ? 'Nenhum projeto encontrado.'
                   : 'Nenhum projeto encontrado com os filtros selecionados'}
@@ -161,6 +162,7 @@ export function ProjectGrid({
                     {project.id}
                   </span>
                 </TableCell>
+                <TableCell>{project.client || '-'}</TableCell>
                 <TableCell>{project.translationType || '-'}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1.5 text-sm">
