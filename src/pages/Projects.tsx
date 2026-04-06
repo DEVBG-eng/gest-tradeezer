@@ -23,7 +23,7 @@ import { ProjectStatusFilter } from '@/components/projects/ProjectStatusFilter'
 import { Input } from '@/components/ui/input'
 
 export default function Projects() {
-  const { projects, deleteProject } = useProjectStore()
+  const { projects, deleteProject, setSearchQuery } = useProjectStore()
   const { toast } = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -35,6 +35,14 @@ export default function Projects() {
 
   const hasFilters =
     searchParams.getAll('status').length > 0 || searchParams.has('shipping') || refSearch !== ''
+
+  useEffect(() => {
+    setSearchQuery(refSearch)
+  }, [refSearch, setSearchQuery])
+
+  useEffect(() => {
+    return () => setSearchQuery('')
+  }, [setSearchQuery])
 
   useEffect(() => {
     const handlePrintEvent = (e: Event) => {
@@ -97,10 +105,10 @@ export default function Projects() {
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por referência..."
+              placeholder="Buscar por cliente, ref. ou serviço..."
               value={refSearch}
               onChange={(e) => setRefSearch(e.target.value)}
-              className="pl-9 w-[200px] lg:w-[250px] h-10"
+              className="pl-9 w-[300px] lg:w-[350px] h-10"
             />
           </div>
           <ProjectStatusFilter />
@@ -125,7 +133,7 @@ export default function Projects() {
           onSelectProject={setSelectedId}
           onEditProject={setEditingId}
           onDeleteProject={setDeletingId}
-          referenceFilter={refSearch}
+          referenceFilter=""
         />
       </div>
 

@@ -107,6 +107,7 @@ interface ProjectStoreContext {
   updateProjectStatus: (id: string, status: ProjectStatus) => Promise<void>
   updateProject: (id: string, data: Partial<Project>) => Promise<void>
   deleteProject: (id: string) => Promise<void>
+  setSearchQuery: (query: string) => void
 }
 
 const StoreContext = createContext<ProjectStoreContext | null>(null)
@@ -185,17 +186,55 @@ const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
   return data
 }
 
+const STATUS_PRIORITY: Record<string, number> = {
+  Aprovado: 1,
+  Aguardando: 2,
+  'Em Andamento': 3,
+  Concluído: 4,
+  Orçamento: 5,
+  'Em Revisão': 6,
+  Cartório: 7,
+  Entregue: 8,
+  'Atrasado/Bloqueado': 9,
+  Cancelado: 10,
+  'Não Aprovado': 11,
+}
+
 export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
-  const [projects, setProjects] = useState<Project[]>([])
+  const [allProjects, setAllProjects] = useState<Project[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { user } = useAuth()
+
+  const projects = React.useMemo(() => {
+    let result = allProjects
+    if (searchQuery) {
+      const lowerQ = searchQuery.toLowerCase()
+      result = allProjects.filter(
+        (p) =>
+          (p.client && p.client.toLowerCase().includes(lowerQ)) ||
+          (p.id && p.id.toLowerCase().includes(lowerQ)) ||
+          (p.translationType && p.translationType.toLowerCase().includes(lowerQ)),
+      )
+    }
+
+    return [...result].sort((a, b) => {
+      const pA = STATUS_PRIORITY[a.status] || 99
+      const pB = STATUS_PRIORITY[b.status] || 99
+      if (pA !== pB) return pA - pB
+
+      const refA = a.id || ''
+      const refB = b.id || ''
+      return refA.localeCompare(refB)
+    })
+  }, [allProjects, searchQuery])
 
   const loadData = useCallback(async () => {
     if (!user) return
     try {
       const records = await getProjetos()
-      setProjects(records.map((r) => mapToProject(r)))
+      setAllProjects(records.map((r) => mapToProject(r)))
     } catch (e) {
       console.error(e)
     } finally {
@@ -222,7 +261,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     !!user,
   )
 
-  const getPbId = (id: string) => projects.find((p) => p.id === id)?.pbId
+  const getPbId = (id: string) => allProjects.find((p) => p.id === id)?.pbId
 
   const addProject = async (project: Omit<Project, 'pbId'>) => {
     try {
@@ -265,7 +304,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const updateProjectStatus = async (id: string, status: ProjectStatus) => {
     const pbId = getPbId(id)
     if (!pbId) return
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
+    setAllProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
     try {
       await updateProjeto(pbId, { status })
     } catch (e) {
@@ -282,7 +321,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       await updateProjeto(pbId, mapToPB(data))
 
       if (data.items) {
-        const currentProject = projects.find((p) => p.id === id)
+        const currentProject = allProjects.find((p) => p.id === id)
         const currentIds = (currentProject?.items || [])
           .map((i) => i.id)
           .filter(Boolean) as string[]
@@ -339,7 +378,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const deleteProject = async (id: string) => {
     const pbId = getPbId(id)
     if (!pbId) return
-    setProjects((prev) => prev.filter((p) => p.id !== id))
+    setAllProjects((prev) => prev.filter((p) => p.id !== id))
     try {
       await deleteProjeto(pbId)
     } catch (e) {
@@ -351,7 +390,15 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <StoreContext.Provider
-      value={{ projects, loading, addProject, updateProjectStatus, updateProject, deleteProject }}
+      value={{
+        projects,
+        loading,
+        addProject,
+        updateProjectStatus,
+        updateProject,
+        deleteProject,
+        setSearchQuery,
+      }}
     >
       {children}
     </StoreContext.Provider>
