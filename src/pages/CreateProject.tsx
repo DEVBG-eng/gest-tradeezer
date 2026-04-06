@@ -126,7 +126,7 @@ export default function CreateProject() {
   const [sourceLang, setSourceLang] = useState('pt')
   const [targetLang, setTargetLang] = useState('en')
 
-  const [startDate, setStartDate] = useState<Date>()
+  const [startDate, setStartDate] = useState<Date>(new Date())
   const [deadline, setDeadline] = useState<Date>()
 
   const [docCount, setDocCount] = useState('0')
