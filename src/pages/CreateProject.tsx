@@ -736,7 +736,7 @@ export default function CreateProject() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Tipo de Documento</Label>
+                      <Label>Informações/OBS*</Label>
                       <Input
                         placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
                         value={documentType}
@@ -880,7 +880,9 @@ export default function CreateProject() {
                         <TableHeader>
                           <TableRow className="bg-muted/50">
                             <TableHead>Descrição</TableHead>
-                            <TableHead className="w-[120px]">Laudas</TableHead>
+                            <TableHead className="w-[120px]">
+                              Laudas|Quantidade de Documentos
+                            </TableHead>
                             <TableHead className="w-[140px]">Valor (R$)</TableHead>
                             <TableHead className="w-[120px] text-right">Total</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
