@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-06T14:41:19.071Z",
+  "generatedAt": "2026-04-06T14:50:58.350Z",
   "collections": [
     {
       "name": "users",
@@ -594,6 +594,48 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "imposto",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_assinatura_tradutor",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_link_cartao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "comissao_venda",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "comissao_secundaria",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_revisao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_diagramacao",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_custos_projeto ON CustosProjeto (projeto)"]

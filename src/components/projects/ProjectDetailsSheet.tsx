@@ -1,11 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -72,18 +66,24 @@ export function ProjectDetailsSheet({
 
   if (!project) return null
 
+  const handleStatusChange = (val: string) => {
+    if (val === 'Concluído') {
+      window.dispatchEvent(new CustomEvent('request-complete-project', { detail: project.id }))
+    } else {
+      updateProject(projectId, { status: val })
+    }
+  }
+
   const handleSaveQuote = async () => {
     setSaving(true)
     try {
-      const parsedLaudas = parseFloat(laudas) || 0
-      const parsedRate = parseFloat(rate) || 0
       await updateProject(projectId, {
-        laudas: parsedLaudas,
-        valorLauda: parsedRate,
+        laudas: parseFloat(laudas) || 0,
+        valorLauda: parseFloat(rate) || 0,
       })
       toast({ title: 'Orçamento Atualizado', description: `Os valores foram salvos.` })
     } catch (e) {
-      // Error is handled in store
+      // Error handled
     } finally {
       setSaving(false)
     }
@@ -115,24 +115,12 @@ export function ProjectDetailsSheet({
           () => {
             const currentProject = projectsRef.current.find((p) => p.id === projectId)
             if (!currentProject) return
-
             const isError = Math.random() > 0.85
-
             updateProject(projectId, {
               files: currentProject.files?.map((p) =>
                 p.id === cf.id ? { ...p, status: isError ? 'error' : 'synced' } : p,
               ),
             }).catch(() => {})
-
-            if (isError) {
-              toast({
-                title: 'Erro de Sincronização',
-                description: `Falha de rede ao transferir ${cf.name}.`,
-                variant: 'destructive',
-              })
-            } else {
-              toast({ title: 'Sincronizado', description: `${cf.name} mapeado com sucesso.` })
-            }
           },
           1500 + Math.random() * 2000,
         )
@@ -147,12 +135,38 @@ export function ProjectDetailsSheet({
       <Sheet open={true} onOpenChange={(open) => !open && onClose()}>
         <SheetContent className="w-full sm:max-w-2xl sm:w-[600px] overflow-y-auto" side="right">
           <SheetHeader className="mb-6 pb-4 border-b">
-            <div className="flex justify-between items-start">
-              <div>
-                <SheetTitle className="text-xl">{project.title}</SheetTitle>
-                <SheetDescription className="mt-1">
-                  <span className="font-mono">{project.id}</span> • Cliente: {project.client}
-                </SheetDescription>
+            <div className="flex flex-col gap-1">
+              <SheetTitle className="text-xl">{project.title}</SheetTitle>
+              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                <span className="font-mono text-sm">{project.id}</span>
+                <span className="text-muted-foreground text-sm">•</span>
+                <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                  Cliente: {project.client}
+                </span>
+                <span className="text-muted-foreground text-sm">•</span>
+                <Select value={project.status || 'Orçamento'} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="h-7 text-xs w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      'Orçamento',
+                      'Aprovado',
+                      'Aguardando',
+                      'Em Andamento',
+                      'Em Revisão',
+                      'Cartório',
+                      'Concluído',
+                      'Atrasado/Bloqueado',
+                      'Cancelado',
+                      'Não Aprovado',
+                    ].map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </SheetHeader>
@@ -176,7 +190,6 @@ export function ProjectDetailsSheet({
                       <SelectItem value="pt">Português (BR)</SelectItem>
                       <SelectItem value="en">Inglês</SelectItem>
                       <SelectItem value="es">Espanhol</SelectItem>
-                      <SelectItem value="de">Alemão</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -190,7 +203,6 @@ export function ProjectDetailsSheet({
                       <SelectItem value="pt">Português (BR)</SelectItem>
                       <SelectItem value="en">Inglês</SelectItem>
                       <SelectItem value="es">Espanhol</SelectItem>
-                      <SelectItem value="it">Italiano</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -229,8 +241,7 @@ export function ProjectDetailsSheet({
                   <Download size={16} /> Baixar Orçamento
                 </Button>
                 <Button onClick={handleSaveQuote} disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Salvar Orçamento
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar Orçamento
                 </Button>
               </div>
             </TabsContent>
@@ -247,11 +258,8 @@ export function ProjectDetailsSheet({
                     </div>
                     <div>
                       <p className="text-sm font-medium">Diretório SharePoint</p>
-                      <p
-                        className="text-xs text-muted-foreground truncate max-w-[200px]"
-                        title={(project as any).pasta_url || project.cloudFolderUrl}
-                      >
-                        /Projetos/Protocolos/{(project as any).cod_referencia || project.id}
+                      <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        /Projetos/{(project as any).cod_referencia || project.id}
                       </p>
                     </div>
                   </div>
@@ -261,7 +269,7 @@ export function ProjectDetailsSheet({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <FolderOpen className="h-4 w-4 mr-2" /> Abrir Diretório
+                      <FolderOpen className="h-4 w-4 mr-2" /> Abrir
                     </a>
                   </Button>
                 </div>
@@ -286,7 +294,7 @@ export function ProjectDetailsSheet({
                 <UploadCloud className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                 <h3 className="font-medium text-sm mb-1">Adicionar Arquivos</h3>
                 <p className="text-xs text-muted-foreground">
-                  Arraste os documentos para sincronizar no projeto.
+                  Arraste os documentos para sincronizar.
                 </p>
               </div>
 
@@ -305,32 +313,27 @@ export function ProjectDetailsSheet({
                         <TableRow key={f.id}>
                           <TableCell className="font-medium flex items-center gap-2">
                             <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span
-                              className="truncate max-w-[150px] sm:max-w-[180px]"
-                              title={f.name}
-                            >
-                              {f.name}
-                            </span>
+                            <span className="truncate max-w-[150px]">{f.name}</span>
                           </TableCell>
                           <TableCell>
                             {f.status === 'uploading' ? (
                               <Badge
                                 variant="outline"
-                                className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1 whitespace-nowrap"
+                                className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1"
                               >
                                 <Loader2 className="h-3 w-3 animate-spin" /> Sync
                               </Badge>
                             ) : f.status === 'error' ? (
                               <Badge
                                 variant="outline"
-                                className="text-destructive border-destructive/30 bg-destructive/10 gap-1 whitespace-nowrap"
+                                className="text-destructive border-destructive/30 bg-destructive/10 gap-1"
                               >
                                 <AlertCircle className="h-3 w-3" /> Falha
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1 whitespace-nowrap"
+                                className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1"
                               >
                                 <CheckCircle2 className="h-3 w-3" /> OK
                               </Badge>
@@ -354,9 +357,9 @@ export function ProjectDetailsSheet({
                   </Table>
                 </div>
               ) : (
-                <div className="w-full h-[150px] bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-border/60 flex flex-col items-center justify-center text-muted-foreground shadow-inner shrink-0">
+                <div className="w-full h-[150px] bg-slate-100 dark:bg-slate-800/50 rounded-lg border flex flex-col items-center justify-center text-muted-foreground">
                   <FileText size={48} className="mb-4 opacity-40" />
-                  <p className="font-medium text-slate-500">Nenhum documento</p>
+                  <p className="font-medium">Nenhum documento</p>
                 </div>
               )}
             </TabsContent>

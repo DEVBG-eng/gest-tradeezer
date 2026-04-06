@@ -37,7 +37,7 @@ export function ProjectCostDialog({
   const [saving, setSaving] = useState(false)
   const [costId, setCostId] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Record<string, string>>({
     freelancer: '',
     custo_documento: '0',
     custo_laudas: '0',
@@ -47,118 +47,110 @@ export function ProjectCostDialog({
     custo_apostilamento: '0',
     custo_reconhecimento: '0',
     custo_envio_cliente: '0',
+    imposto: '0',
+    custo_assinatura_tradutor: '0',
+    custo_link_cartao: '0',
+    comissao_venda: '0',
+    comissao_secundaria: '0',
+    custo_revisao: '0',
+    custo_diagramacao: '0',
   })
 
   useEffect(() => {
-    if (open && project) {
-      loadCost()
-    }
+    if (open && project) loadCost()
   }, [open, project])
 
   const loadCost = async () => {
     setLoading(true)
     try {
-      const cost = await getCustoProjetoByProjeto(project.pbId)
+      const cost = (await getCustoProjetoByProjeto(project.pbId)) as any
       if (cost) {
         setCostId(cost.id || null)
-        setFormData({
-          freelancer: cost.freelancer || '',
-          custo_documento: (cost.custo_documento || 0).toString(),
-          custo_laudas: (cost.custo_laudas || 0).toString(),
-          custo_frete: (cost.custo_frete || 0).toString(),
-          custo_envio_cartorio: (cost.custo_envio_cartorio || 0).toString(),
-          custo_cartorio: (cost.custo_cartorio || 0).toString(),
-          custo_apostilamento: (cost.custo_apostilamento || 0).toString(),
-          custo_reconhecimento: (cost.custo_reconhecimento || 0).toString(),
-          custo_envio_cliente: (cost.custo_envio_cliente || 0).toString(),
+        const newForm = { freelancer: cost.freelancer || '' } as any
+        Object.keys(formData).forEach((k) => {
+          if (k !== 'freelancer') newForm[k] = (cost[k] || 0).toString()
         })
+        setFormData(newForm)
       } else {
         setCostId(null)
-        setFormData({
-          freelancer: '',
-          custo_documento: '0',
-          custo_laudas: '0',
-          custo_frete: '0',
-          custo_envio_cartorio: '0',
-          custo_cartorio: '0',
-          custo_apostilamento: '0',
-          custo_reconhecimento: '0',
-          custo_envio_cliente: '0',
+        const empty = { freelancer: '' } as any
+        Object.keys(formData).forEach((k) => {
+          if (k !== 'freelancer') empty[k] = '0'
         })
+        setFormData(empty)
       }
-    } catch (error) {
-      console.error(error)
+    } catch (e) {
+      console.error(e)
     } finally {
       setLoading(false)
     }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.freelancer.trim()) {
-      toast({
-        title: 'Erro de validação',
+      return toast({
+        title: 'Erro',
         description: 'O nome do freelancer é obrigatório.',
         variant: 'destructive',
       })
-      return
     }
 
     setSaving(true)
     try {
-      const payload = {
-        projeto: project.pbId,
-        freelancer: formData.freelancer,
-        custo_documento: parseFloat(formData.custo_documento) || 0,
-        custo_laudas: parseFloat(formData.custo_laudas) || 0,
-        custo_frete: parseFloat(formData.custo_frete) || 0,
-        custo_envio_cartorio: parseFloat(formData.custo_envio_cartorio) || 0,
-        custo_cartorio: parseFloat(formData.custo_cartorio) || 0,
-        custo_apostilamento: parseFloat(formData.custo_apostilamento) || 0,
-        custo_reconhecimento: parseFloat(formData.custo_reconhecimento) || 0,
-        custo_envio_cliente: parseFloat(formData.custo_envio_cliente) || 0,
-      }
+      const payload: any = { projeto: project.pbId, freelancer: formData.freelancer }
+      Object.keys(formData).forEach((k) => {
+        if (k !== 'freelancer') payload[k] = parseFloat(formData[k]) || 0
+      })
 
       if (costId) {
         await updateCustoProjeto(costId, payload)
-        toast({ title: 'Sucesso', description: 'Custos atualizados com sucesso.' })
+        toast({ title: 'Sucesso', description: 'Custos atualizados.' })
       } else {
         await createCustoProjeto(payload)
-        toast({ title: 'Sucesso', description: 'Custos registrados com sucesso.' })
+        toast({ title: 'Sucesso', description: 'Custos registrados.' })
       }
       onSaved()
     } catch (error) {
-      toast({
-        title: 'Erro',
-        description: 'Falha ao salvar os custos do projeto.',
-        variant: 'destructive',
-      })
+      toast({ title: 'Erro', description: 'Falha ao salvar.', variant: 'destructive' })
     } finally {
       setSaving(false)
     }
   }
 
+  const NumberInput = ({ name, label }: { name: string; label: string }) => (
+    <div className="space-y-2">
+      <Label htmlFor={name}>{label}</Label>
+      <Input
+        type="number"
+        step="0.01"
+        min="0"
+        id={name}
+        name={name}
+        value={formData[name]}
+        onChange={handleChange}
+      />
+    </div>
+  )
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Custos do Projeto: {project.id}</DialogTitle>
-          <DialogDescription>
-            Insira os custos referentes a este projeto para manter o painel financeiro atualizado.
-          </DialogDescription>
+          <DialogDescription>Insira os custos referentes a este projeto.</DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : (
-          <form id="cost-form" onSubmit={handleSubmit} className="space-y-4 py-4">
+          <form id="cost-form" onSubmit={handleSubmit} className="space-y-6 py-4">
             <div className="space-y-2">
               <Label htmlFor="freelancer">Freelancer *</Label>
               <Input
@@ -166,108 +158,26 @@ export function ProjectCostDialog({
                 name="freelancer"
                 value={formData.freelancer}
                 onChange={handleChange}
-                placeholder="Nome do profissional"
                 required
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="custo_documento">Custo Documento (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  id="custo_documento"
-                  name="custo_documento"
-                  value={formData.custo_documento}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custo_laudas">Custo de Laudas (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  id="custo_laudas"
-                  name="custo_laudas"
-                  value={formData.custo_laudas}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custo_frete">Custo de Frete Físico (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  id="custo_frete"
-                  name="custo_frete"
-                  value={formData.custo_frete}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custo_envio_cartorio">Envio para Cartório (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  id="custo_envio_cartorio"
-                  name="custo_envio_cartorio"
-                  value={formData.custo_envio_cartorio}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custo_cartorio">Custo do Cartório (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  id="custo_cartorio"
-                  name="custo_cartorio"
-                  value={formData.custo_cartorio}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custo_apostilamento">Custo Apostilamento (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  id="custo_apostilamento"
-                  name="custo_apostilamento"
-                  value={formData.custo_apostilamento}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custo_reconhecimento">Rec. de Firma (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  id="custo_reconhecimento"
-                  name="custo_reconhecimento"
-                  value={formData.custo_reconhecimento}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custo_envio_cliente">Envio para o Cliente (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  id="custo_envio_cliente"
-                  name="custo_envio_cliente"
-                  value={formData.custo_envio_cliente}
-                  onChange={handleChange}
-                />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <NumberInput name="imposto" label="Imposto (R$)" />
+              <NumberInput name="custo_documento" label="Custo Documento (R$)" />
+              <NumberInput name="custo_laudas" label="Custo de Laudas (R$)" />
+              <NumberInput name="custo_assinatura_tradutor" label="Assinatura Tradutor (R$)" />
+              <NumberInput name="custo_revisao" label="Custo de Revisão (R$)" />
+              <NumberInput name="custo_diagramacao" label="Custo de Diagramação (R$)" />
+              <NumberInput name="custo_frete" label="Frete Físico (R$)" />
+              <NumberInput name="custo_envio_cartorio" label="Envio para Cartório (R$)" />
+              <NumberInput name="custo_cartorio" label="Custo do Cartório (R$)" />
+              <NumberInput name="custo_apostilamento" label="Custo Apostilamento (R$)" />
+              <NumberInput name="custo_reconhecimento" label="Rec. de Firma (R$)" />
+              <NumberInput name="custo_envio_cliente" label="Envio para Cliente (R$)" />
+              <NumberInput name="custo_link_cartao" label="Custo Link de Cartão (R$)" />
+              <NumberInput name="comissao_venda" label="Comissão de Venda (R$)" />
+              <NumberInput name="comissao_secundaria" label="Comissão Secundária (R$)" />
             </div>
           </form>
         )}

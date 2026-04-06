@@ -18,6 +18,7 @@ import { SettingsStoreProvider } from './stores/useSettingsStore'
 import { NotificationStoreProvider } from './stores/useNotificationStore'
 import { ClientStoreProvider } from './stores/useClientStore'
 import { AuthProvider, useAuth } from './hooks/use-auth'
+import { GlobalCostDialogHandler } from './components/projects/GlobalCostDialogHandler'
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
@@ -36,6 +37,7 @@ const App = () => (
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
+                <GlobalCostDialogHandler />
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route element={<ProtectedRoutes />}>

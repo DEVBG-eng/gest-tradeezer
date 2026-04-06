@@ -9,7 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { AlertCircle, Globe, FileText, Download, MoreHorizontal, Edit, Trash } from 'lucide-react'
+import {
+  AlertCircle,
+  Globe,
+  FileText,
+  Download,
+  MoreHorizontal,
+  Edit,
+  Trash,
+  CheckCircle,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -29,6 +38,10 @@ export function ProjectCard({ project, onDragStart, onClick }: Props) {
 
   const handleDelete = () => {
     window.dispatchEvent(new CustomEvent('delete-project', { detail: project.id }))
+  }
+
+  const handleComplete = () => {
+    window.dispatchEvent(new CustomEvent('request-complete-project', { detail: project.id }))
   }
 
   return (
@@ -57,6 +70,10 @@ export function ProjectCard({ project, onDragStart, onClick }: Props) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onSelect={handleComplete}>
+                  <CheckCircle className="h-4 w-4 mr-2" /> Marcar como Concluído
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={handleEdit}>
                   <Edit className="h-4 w-4 mr-2" /> Editar Projeto
                 </DropdownMenuItem>

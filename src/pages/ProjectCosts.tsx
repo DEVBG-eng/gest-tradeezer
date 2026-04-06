@@ -13,18 +13,28 @@ import { Badge } from '@/components/ui/badge'
 import { getCustosProjeto, CustoProjetoRecord } from '@/services/projetos'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
-import { Loader2, Search, DollarSign, TrendingUp } from 'lucide-react'
+import { Loader2, Search, DollarSign, TrendingUp, Percent } from 'lucide-react'
+
+interface ExtendedCusto extends CustoProjetoRecord {
+  imposto?: number
+  custo_assinatura_tradutor?: number
+  custo_link_cartao?: number
+  comissao_venda?: number
+  comissao_secundaria?: number
+  custo_revisao?: number
+  custo_diagramacao?: number
+}
 
 export default function ProjectCosts() {
   const { user } = useAuth()
-  const [costs, setCosts] = useState<CustoProjetoRecord[]>([])
+  const [costs, setCosts] = useState<ExtendedCusto[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
   const loadData = async () => {
     if (!user) return
     try {
-      const records = await getCustosProjeto()
+      const records = (await getCustosProjeto()) as ExtendedCusto[]
       setCosts(records)
     } catch (e) {
       console.error(e)
@@ -37,20 +47,8 @@ export default function ProjectCosts() {
     loadData()
   }, [user])
 
-  useRealtime(
-    'CustosProjeto',
-    () => {
-      loadData()
-    },
-    !!user,
-  )
-  useRealtime(
-    'Projetos',
-    () => {
-      loadData()
-    },
-    !!user,
-  )
+  useRealtime('CustosProjeto', () => loadData(), !!user)
+  useRealtime('Projetos', () => loadData(), !!user)
 
   const filteredCosts = costs.filter((cost) => {
     if (!searchTerm) return true
@@ -63,7 +61,7 @@ export default function ProjectCosts() {
     )
   })
 
-  const calculateTotalCost = (cost: CustoProjetoRecord) => {
+  const calculateTotalCost = (cost: ExtendedCusto) => {
     return (
       (cost.custo_documento || 0) +
       (cost.custo_laudas || 0) +
@@ -72,7 +70,14 @@ export default function ProjectCosts() {
       (cost.custo_cartorio || 0) +
       (cost.custo_apostilamento || 0) +
       (cost.custo_reconhecimento || 0) +
-      (cost.custo_envio_cliente || 0)
+      (cost.custo_envio_cliente || 0) +
+      (cost.imposto || 0) +
+      (cost.custo_assinatura_tradutor || 0) +
+      (cost.custo_link_cartao || 0) +
+      (cost.comissao_venda || 0) +
+      (cost.comissao_secundaria || 0) +
+      (cost.custo_revisao || 0) +
+      (cost.custo_diagramacao || 0)
     )
   }
 
@@ -85,6 +90,7 @@ export default function ProjectCosts() {
   )
   const totalCostsValue = filteredCosts.reduce((acc, cost) => acc + calculateTotalCost(cost), 0)
   const totalProfit = totalProjectsValue - totalCostsValue
+  const avgMargin = totalProjectsValue > 0 ? (totalProfit / totalProjectsValue) * 100 : 0
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1200px] mx-auto w-full animate-fade-in-up">
@@ -95,12 +101,12 @@ export default function ProjectCosts() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-primary/5 border-primary/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-primary" />
-              Valor Total dos Projetos
+              Total dos Projetos
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -111,7 +117,7 @@ export default function ProjectCosts() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2 text-destructive">
               <TrendingUp className="h-4 w-4 text-destructive rotate-180" />
-              Custo Total Acumulado
+              Custo Acumulado
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -130,6 +136,19 @@ export default function ProjectCosts() {
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-500">
               {formatCurrency(totalProfit)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-blue-500/5 border-blue-500/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-600 dark:text-blue-500">
+              <Percent className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+              Margem Média
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-500">
+              {avgMargin.toFixed(1)}%
             </div>
           </CardContent>
         </Card>
@@ -157,7 +176,7 @@ export default function ProjectCosts() {
                 <TableHead>Freelancer</TableHead>
                 <TableHead className="text-right">Valor Projeto</TableHead>
                 <TableHead className="text-right">Custo Total</TableHead>
-                <TableHead className="text-right">Lucro</TableHead>
+                <TableHead className="text-right">Lucro Líquido</TableHead>
                 <TableHead className="w-[100px] text-center">Margem</TableHead>
               </TableRow>
             </TableHeader>
