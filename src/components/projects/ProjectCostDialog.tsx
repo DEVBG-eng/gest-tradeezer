@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   getCustoProjetoByProjeto,
   createCustoProjeto,
@@ -54,6 +55,12 @@ export function ProjectCostDialog({
     comissao_secundaria: '0',
     custo_revisao: '0',
     custo_diagramacao: '0',
+    emissao_certidao: '0',
+    custo_portador: '0',
+    custo_copia_autenticada: '0',
+    autenticacao_digital: '0',
+    percentual_custo_operacional: '0',
+    observacoes_extras: '',
   })
 
   useEffect(() => {
@@ -68,14 +75,17 @@ export function ProjectCostDialog({
         setCostId(cost.id || null)
         const newForm = { freelancer: cost.freelancer || '' } as any
         Object.keys(formData).forEach((k) => {
-          if (k !== 'freelancer') newForm[k] = (cost[k] || 0).toString()
+          if (k !== 'freelancer' && k !== 'observacoes_extras')
+            newForm[k] = (cost[k] || 0).toString()
+          if (k === 'observacoes_extras') newForm[k] = cost[k] || ''
         })
         setFormData(newForm)
       } else {
         setCostId(null)
         const empty = { freelancer: '' } as any
         Object.keys(formData).forEach((k) => {
-          if (k !== 'freelancer') empty[k] = '0'
+          if (k !== 'freelancer' && k !== 'observacoes_extras') empty[k] = '0'
+          if (k === 'observacoes_extras') empty[k] = ''
         })
         setFormData(empty)
       }
@@ -104,7 +114,9 @@ export function ProjectCostDialog({
     try {
       const payload: any = { projeto: project.pbId, freelancer: formData.freelancer }
       Object.keys(formData).forEach((k) => {
-        if (k !== 'freelancer') payload[k] = parseFloat(formData[k]) || 0
+        if (k !== 'freelancer' && k !== 'observacoes_extras')
+          payload[k] = parseFloat(formData[k]) || 0
+        if (k === 'observacoes_extras') payload[k] = formData[k]
       })
 
       if (costId) {
@@ -139,7 +151,7 @@ export function ProjectCostDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Custos do Projeto: {project.id}</DialogTitle>
           <DialogDescription>Insira os custos referentes a este projeto.</DialogDescription>
@@ -178,6 +190,30 @@ export function ProjectCostDialog({
               <NumberInput name="custo_link_cartao" label="Custo Link de Cartão (R$)" />
               <NumberInput name="comissao_venda" label="Comissão de Venda (R$)" />
               <NumberInput name="comissao_secundaria" label="Comissão Secundária (R$)" />
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="font-semibold text-lg">Custos Extras</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <NumberInput name="emissao_certidao" label="Emissão de Certidão (R$)" />
+                <NumberInput name="custo_portador" label="Portador (Motoboy) (R$)" />
+                <NumberInput name="custo_copia_autenticada" label="Cópia Autenticada (R$)" />
+                <NumberInput name="autenticacao_digital" label="Autenticação Digital (R$)" />
+                <NumberInput name="percentual_custo_operacional" label="Custo Operacional %" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="observacoes_extras">Observações/Custos Extras</Label>
+                <Textarea
+                  id="observacoes_extras"
+                  name="observacoes_extras"
+                  value={formData.observacoes_extras}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, observacoes_extras: e.target.value }))
+                  }
+                  placeholder="Detalhes sobre os custos extras..."
+                />
+              </div>
             </div>
           </form>
         )}

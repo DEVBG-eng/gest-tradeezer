@@ -15,15 +15,7 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
 import { Loader2, Search, DollarSign, TrendingUp, Percent } from 'lucide-react'
 
-interface ExtendedCusto extends CustoProjetoRecord {
-  imposto?: number
-  custo_assinatura_tradutor?: number
-  custo_link_cartao?: number
-  comissao_venda?: number
-  comissao_secundaria?: number
-  custo_revisao?: number
-  custo_diagramacao?: number
-}
+type ExtendedCusto = CustoProjetoRecord
 
 export default function ProjectCosts() {
   const { user } = useAuth()
@@ -61,8 +53,8 @@ export default function ProjectCosts() {
     )
   })
 
-  const calculateTotalCost = (cost: ExtendedCusto) => {
-    return (
+  const calculateTotalCost = (cost: ExtendedCusto, projectValue: number) => {
+    const baseCost =
       (cost.custo_documento || 0) +
       (cost.custo_laudas || 0) +
       (cost.custo_frete || 0) +
@@ -77,8 +69,16 @@ export default function ProjectCosts() {
       (cost.comissao_venda || 0) +
       (cost.comissao_secundaria || 0) +
       (cost.custo_revisao || 0) +
-      (cost.custo_diagramacao || 0)
-    )
+      (cost.custo_diagramacao || 0) +
+      (cost.emissao_certidao || 0) +
+      (cost.custo_portador || 0) +
+      (cost.custo_copia_autenticada || 0) +
+      (cost.autenticacao_digital || 0)
+
+    const opCostPerc = cost.percentual_custo_operacional || 0
+    const opCostValue = projectValue * (opCostPerc / 100)
+
+    return baseCost + opCostValue
   }
 
   const formatCurrency = (val: number) =>
@@ -88,7 +88,10 @@ export default function ProjectCosts() {
     (acc, cost) => acc + (cost.expand?.projeto?.valor_total || 0),
     0,
   )
-  const totalCostsValue = filteredCosts.reduce((acc, cost) => acc + calculateTotalCost(cost), 0)
+  const totalCostsValue = filteredCosts.reduce((acc, cost) => {
+    const projValue = cost.expand?.projeto?.valor_total || 0
+    return acc + calculateTotalCost(cost, projValue)
+  }, 0)
   const totalProfit = totalProjectsValue - totalCostsValue
   const avgMargin = totalProjectsValue > 0 ? (totalProfit / totalProjectsValue) * 100 : 0
 
@@ -199,7 +202,7 @@ export default function ProjectCosts() {
                 filteredCosts.map((cost) => {
                   const proj = cost.expand?.projeto
                   const projectValue = proj?.valor_total || 0
-                  const totalCost = calculateTotalCost(cost)
+                  const totalCost = calculateTotalCost(cost, projectValue)
                   const profit = projectValue - totalCost
                   const margin = projectValue > 0 ? (profit / projectValue) * 100 : 0
 
