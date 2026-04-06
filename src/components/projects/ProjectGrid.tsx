@@ -47,6 +47,14 @@ const STATUS_COLORS: Record<ProjectStatus, string> = {
   Entregue: 'bg-teal-500 hover:bg-teal-600 text-white',
 }
 
+const STATUS_PRIORITY: Record<string, number> = {
+  Aprovado: 1,
+  Aguardando: 2,
+  'Em Andamento': 3,
+  Concluído: 4,
+  Orçamento: 5,
+}
+
 interface ProjectGridProps {
   onSelectProject: (id: string) => void
   onEditProject: (id: string) => void
@@ -83,9 +91,14 @@ export function ProjectGrid({
   })
 
   const sortedProjects = [...filteredProjects].sort((a, b) => {
-    if (a.status === 'Aguardando' && b.status !== 'Aguardando') return -1
-    if (b.status === 'Aguardando' && a.status !== 'Aguardando') return 1
-    return 0
+    const priorityA = STATUS_PRIORITY[a.status] || 99
+    const priorityB = STATUS_PRIORITY[b.status] || 99
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB
+    }
+
+    return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' })
   })
 
   const handleStatusChange = async (project: Project, status: ProjectStatus) => {
