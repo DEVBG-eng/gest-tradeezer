@@ -64,7 +64,7 @@ export default function Index() {
         >
           <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group-hover:border-primary/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
+              <CardTitle className="text-sm font-medium">Projetos Ativos/Aprovados</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -116,7 +116,7 @@ export default function Index() {
         >
           <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group-hover:border-primary/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Envios em Trânsito</CardTitle>
+              <CardTitle className="text-sm font-medium">Projeto em Andamento/Trânsito</CardTitle>
               <Truck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
