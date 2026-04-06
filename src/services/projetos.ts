@@ -67,10 +67,15 @@ export interface CustoProjetoRecord {
   custo_laudas?: number
   custo_frete?: number
   custo_envio_cartorio?: number
-  custo_cartorio?: number
-  custo_apostilamento?: number
+  custo_autenticacao?: number
   custo_reconhecimento?: number
+  custo_emissao
+  de
+  certidao?: number
+  custo_apostilamento?: number
+  custo_portador?: number
   custo_envio_cliente?: number
+  custos_extras_cliente_campo_observacao?: string
   created?: string
   updated?: string
   expand?: {
