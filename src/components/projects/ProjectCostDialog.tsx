@@ -134,13 +134,14 @@ export function ProjectCostDialog({
     }
   }
 
-  const NumberInput = ({ name, label }: { name: string; label: string }) => (
+  const NumberInput = ({ name, label, max }: { name: string; label: string; max?: string }) => (
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
       <Input
         type="number"
         step="0.01"
         min="0"
+        max={max}
         id={name}
         name={name}
         value={formData[name]}
@@ -175,7 +176,7 @@ export function ProjectCostDialog({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <NumberInput name="imposto" label="Imposto (R$)" />
+              <NumberInput name="imposto" label="Imposto (%)" max="100" />
               <NumberInput name="custo_documento" label="Custo Documento (R$)" />
               <NumberInput name="custo_laudas" label="Custo de Laudas (R$)" />
               <NumberInput name="custo_assinatura_tradutor" label="Assinatura Tradutor (R$)" />
@@ -188,7 +189,7 @@ export function ProjectCostDialog({
               <NumberInput name="custo_reconhecimento" label="Rec. de Firma (R$)" />
               <NumberInput name="custo_envio_cliente" label="Envio para Cliente (R$)" />
               <NumberInput name="custo_link_cartao" label="Custo Link de Cartão (R$)" />
-              <NumberInput name="comissao_venda" label="Comissão de Venda (R$)" />
+              <NumberInput name="comissao_venda" label="Comissão de Venda (%)" max="100" />
               <NumberInput name="comissao_secundaria" label="Comissão Secundária (R$)" />
             </div>
 
@@ -199,7 +200,11 @@ export function ProjectCostDialog({
                 <NumberInput name="custo_portador" label="Portador (Motoboy) (R$)" />
                 <NumberInput name="custo_copia_autenticada" label="Cópia Autenticada (R$)" />
                 <NumberInput name="autenticacao_digital" label="Autenticação Digital (R$)" />
-                <NumberInput name="percentual_custo_operacional" label="Custo Operacional %" />
+                <NumberInput
+                  name="percentual_custo_operacional"
+                  label="Custo Operacional %"
+                  max="100"
+                />
               </div>
 
               <div className="space-y-2">

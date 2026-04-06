@@ -63,10 +63,8 @@ export default function ProjectCosts() {
       (cost.custo_apostilamento || 0) +
       (cost.custo_reconhecimento || 0) +
       (cost.custo_envio_cliente || 0) +
-      (cost.imposto || 0) +
       (cost.custo_assinatura_tradutor || 0) +
       (cost.custo_link_cartao || 0) +
-      (cost.comissao_venda || 0) +
       (cost.comissao_secundaria || 0) +
       (cost.custo_revisao || 0) +
       (cost.custo_diagramacao || 0) +
@@ -75,10 +73,11 @@ export default function ProjectCosts() {
       (cost.custo_copia_autenticada || 0) +
       (cost.autenticacao_digital || 0)
 
-    const opCostPerc = cost.percentual_custo_operacional || 0
-    const opCostValue = projectValue * (opCostPerc / 100)
+    const impostoValue = projectValue * ((cost.imposto || 0) / 100)
+    const comissaoVendaValue = projectValue * ((cost.comissao_venda || 0) / 100)
+    const opCostValue = projectValue * ((cost.percentual_custo_operacional || 0) / 100)
 
-    return baseCost + opCostValue
+    return baseCost + impostoValue + comissaoVendaValue + opCostValue
   }
 
   const formatCurrency = (val: number) =>
