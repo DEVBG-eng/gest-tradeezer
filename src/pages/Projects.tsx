@@ -19,6 +19,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, FilterX } from 'lucide-react'
 import { mapProjectToPrintData } from '@/lib/project-utils'
+import { ProjectStatusFilter } from '@/components/projects/ProjectStatusFilter'
 
 export default function Projects() {
   const { projects, deleteProject } = useProjectStore()
@@ -89,12 +90,15 @@ export default function Projects() {
             Gerencie e acompanhe todos os projetos de forma centralizada e visual.
           </p>
         </div>
-        {hasFilters && (
-          <Button variant="outline" onClick={() => setSearchParams({})} className="gap-2 shrink-0">
-            <FilterX className="h-4 w-4" />
-            Limpar Filtros
-          </Button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <ProjectStatusFilter />
+          {hasFilters && (
+            <Button variant="ghost" onClick={() => setSearchParams({})} className="gap-2 shrink-0">
+              <FilterX className="h-4 w-4" />
+              Limpar Todos
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 pb-4">

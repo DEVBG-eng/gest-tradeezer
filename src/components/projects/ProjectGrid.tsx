@@ -120,7 +120,7 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
               <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                 {projects.length === 0
                   ? 'Nenhum projeto encontrado.'
-                  : 'Nenhum projeto corresponde aos filtros selecionados.'}
+                  : 'Nenhum projeto encontrado com os filtros selecionados'}
               </TableCell>
             </TableRow>
           ) : (
