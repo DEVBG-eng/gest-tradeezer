@@ -44,15 +44,22 @@ const STATUS_COLORS: Record<ProjectStatus, string> = {
   'Atrasado/Bloqueado': 'bg-rose-500 hover:bg-rose-600 text-white',
   Cancelado: 'bg-zinc-500 hover:bg-zinc-600 text-white',
   'Não Aprovado': 'bg-red-500 hover:bg-red-600 text-white',
+  Entregue: 'bg-teal-500 hover:bg-teal-600 text-white',
 }
 
 interface ProjectGridProps {
   onSelectProject: (id: string) => void
   onEditProject: (id: string) => void
   onDeleteProject: (id: string) => void
+  referenceFilter?: string
 }
 
-export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }: ProjectGridProps) {
+export function ProjectGrid({
+  onSelectProject,
+  onEditProject,
+  onDeleteProject,
+  referenceFilter,
+}: ProjectGridProps) {
   const { projects, updateProjectStatus, loading } = useProjectStore()
   const [searchParams] = useSearchParams()
 
@@ -70,8 +77,15 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
 
     if (statusParams.length > 0 && !statusParams.includes(p.status)) return false
     if (shippingParam && !(p.shipping || p.internationalShipping)) return false
+    if (referenceFilter && !p.id.toLowerCase().includes(referenceFilter.toLowerCase())) return false
 
     return true
+  })
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    if (a.status === 'Aguardando' && b.status !== 'Aguardando') return -1
+    if (b.status === 'Aguardando' && a.status !== 'Aguardando') return 1
+    return 0
   })
 
   const handleStatusChange = async (project: Project, status: ProjectStatus) => {
@@ -115,7 +129,7 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
                 </div>
               </TableCell>
             </TableRow>
-          ) : filteredProjects.length === 0 ? (
+          ) : sortedProjects.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                 {projects.length === 0
@@ -124,7 +138,7 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
               </TableCell>
             </TableRow>
           ) : (
-            filteredProjects.map((project) => (
+            sortedProjects.map((project) => (
               <TableRow key={project.id} className="group hover:bg-muted/50">
                 <TableCell className="font-medium">
                   <span

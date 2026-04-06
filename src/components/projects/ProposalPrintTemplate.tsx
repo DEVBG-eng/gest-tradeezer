@@ -94,24 +94,26 @@ export const ProposalPrintTemplate: React.FC<{
         `}
       </style>
       <div className="w-full max-w-[210mm] mx-auto text-slate-900 font-sans bg-white">
-        {/* Header Section with Logo */}
-        <div className="flex justify-between items-start border-b-2 border-slate-200 pb-6 mb-8 mt-4">
-          <div className="flex-shrink-0">
-            <img src={logoUrl} alt="Tradeezer Logo" className="h-16 w-auto object-contain" />
-          </div>
-          <div className="text-right">
-            <h1 className="text-2xl font-light text-slate-800 tracking-tight mb-1">
-              Orçamento Comercial
-            </h1>
-            <p className="text-slate-500 font-medium text-sm">
-              Ref: <span className="text-slate-800 font-bold">{refCode}</span>
-            </p>
-            <p className="text-slate-400 text-sm mt-1">Data: {formatDate(new Date())}</p>
+        {/* Header Section with Logo - Centered */}
+        <div className="flex flex-col items-center border-b-2 border-slate-200 pb-4 mb-6 mt-2">
+          <img src={logoUrl} alt="Tradeezer Logo" className="h-20 w-auto object-contain mb-4" />
+          <div className="w-full flex justify-between items-end">
+            <div className="text-left">
+              <h1 className="text-2xl font-light text-slate-800 tracking-tight mb-1">
+                Orçamento Comercial
+              </h1>
+            </div>
+            <div className="text-right">
+              <p className="text-slate-500 font-medium text-sm">
+                Ref: <span className="text-slate-800 font-bold">{refCode}</span>
+              </p>
+              <p className="text-slate-400 text-sm mt-1">Data: {formatDate(new Date())}</p>
+            </div>
           </div>
         </div>
 
         {/* Primary Info Grid */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-2 gap-8 mb-6">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
               Para
@@ -234,18 +236,6 @@ export const ProposalPrintTemplate: React.FC<{
             <div className="text-right text-xs text-slate-400">Total de {laudasCount} lauda(s)</div>
           </div>
         </div>
-
-        {/* Observations Section */}
-        {observations && (
-          <div className="mb-10 break-inside-avoid">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
-              Observações e Condições
-            </h3>
-            <p className="whitespace-pre-wrap text-slate-600 text-sm leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100">
-              {observations}
-            </p>
-          </div>
-        )}
 
         {/* Footer */}
         <div className="mt-auto pt-8 border-t border-slate-200 text-center text-xs text-slate-400 space-y-1 break-inside-avoid">

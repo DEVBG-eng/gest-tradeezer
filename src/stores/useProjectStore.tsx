@@ -29,6 +29,7 @@ export type ProjectStatus =
   | 'Em Revisão'
   | 'Cartório'
   | 'Concluído'
+  | 'Entregue'
   | 'Atrasado/Bloqueado'
   | 'Cancelado'
   | 'Não Aprovado'
@@ -41,6 +42,7 @@ export const ALL_STATUSES: ProjectStatus[] = [
   'Em Revisão',
   'Cartório',
   'Concluído',
+  'Entregue',
   'Atrasado/Bloqueado',
   'Cancelado',
   'Não Aprovado',
@@ -93,6 +95,7 @@ export interface Project {
   digitalAuthentication?: boolean
   shipping?: boolean
   internationalShipping?: boolean
+  freteJk?: boolean
   translationType?: string
   items?: ProjectItem[]
 }
@@ -137,6 +140,7 @@ const mapToProject = (record: ProjetoRecord): Project => ({
   digitalAuthentication: record.autenticacao_digital,
   shipping: record.frete,
   internationalShipping: record.dhl,
+  freteJk: record.frete_jk,
   items: (record.expand?.ItensProjeto_via_projeto || []).map((i) => ({
     id: i.id as string,
     description: i.descricao,
@@ -177,6 +181,7 @@ const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
     data.autenticacao_digital = project.digitalAuthentication
   if (project.shipping !== undefined) data.frete = project.shipping
   if (project.internationalShipping !== undefined) data.dhl = project.internationalShipping
+  if (project.freteJk !== undefined) data.frete_jk = project.freteJk
   return data
 }
 

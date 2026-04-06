@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-06T16:45:19.840Z",
+  "generatedAt": "2026-04-06T17:26:21.469Z",
   "collections": [
     {
       "name": "users",
@@ -94,6 +94,7 @@
             "Em Revisão",
             "Cartório",
             "Concluído",
+            "Entregue",
             "Atrasado/Bloqueado",
             "Cancelado",
             "Não Aprovado"
@@ -237,9 +238,18 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "frete_jk",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX `idx_cod_referencia_unique` ON `Projetos` (cod_referencia)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_cod_referencia_unique` ON `Projetos` (cod_referencia)",
+        "CREATE INDEX `idx_projetos_status` ON `Projetos` (status)"
+      ]
     },
     {
       "name": "ItensProjeto",

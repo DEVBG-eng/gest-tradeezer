@@ -38,6 +38,7 @@ export interface ProjetoRecord {
   autenticacao_digital?: boolean
   frete?: boolean
   dhl?: boolean
+  frete_jk?: boolean
   observacoes?: string
   pasta_url?: string
   created?: string

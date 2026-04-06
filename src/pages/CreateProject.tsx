@@ -84,6 +84,7 @@ const SERVICES_OPTS = [
   },
   { id: 'frete', label: 'Frete', key: 'frete' as const },
   { id: 'dhl', label: 'DHL (envio para fora do Brasil)', key: 'dhl' as const },
+  { id: 'frete-jk', label: 'Frete JK', key: 'freteJk' as const },
 ]
 
 const TRANSLATION_TYPES = [
@@ -160,6 +161,7 @@ export default function CreateProject() {
     autenticacaoDigital: false,
     frete: false,
     dhl: false,
+    freteJk: false,
   })
 
   const [showProposal, setShowProposal] = useState(false)
@@ -189,6 +191,13 @@ export default function CreateProject() {
           setItems(items.map((i) => ({ ...i, valorLauda: formatted })))
         } else {
           setItems(items.map((i) => ({ ...i, valorLauda: '' })))
+        }
+
+        if (c.observacoes) {
+          setObservations((prev) => {
+            const newObs = `[Cliente CRM]: ${c.observacoes}`
+            return prev ? `${prev}\n\n${newObs}` : newObs
+          })
         }
 
         if (c.idiomas_frequentes) {
@@ -401,6 +410,7 @@ export default function CreateProject() {
       digitalAuthentication: services.autenticacaoDigital,
       shipping: services.frete,
       internationalShipping: services.dhl,
+      freteJk: services.freteJk,
       items: projectItems,
     }
 

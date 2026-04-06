@@ -17,9 +17,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, FilterX } from 'lucide-react'
+import { Loader2, FilterX, Search } from 'lucide-react'
 import { mapProjectToPrintData } from '@/lib/project-utils'
 import { ProjectStatusFilter } from '@/components/projects/ProjectStatusFilter'
+import { Input } from '@/components/ui/input'
 
 export default function Projects() {
   const { projects, deleteProject } = useProjectStore()
@@ -30,8 +31,10 @@ export default function Projects() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [refSearch, setRefSearch] = useState('')
 
-  const hasFilters = searchParams.getAll('status').length > 0 || searchParams.has('shipping')
+  const hasFilters =
+    searchParams.getAll('status').length > 0 || searchParams.has('shipping') || refSearch !== ''
 
   useEffect(() => {
     const handlePrintEvent = (e: Event) => {
@@ -90,10 +93,26 @@ export default function Projects() {
             Gerencie e acompanhe todos os projetos de forma centralizada e visual.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por referência..."
+              value={refSearch}
+              onChange={(e) => setRefSearch(e.target.value)}
+              className="pl-9 w-[200px] lg:w-[250px] h-10"
+            />
+          </div>
           <ProjectStatusFilter />
           {hasFilters && (
-            <Button variant="ghost" onClick={() => setSearchParams({})} className="gap-2 shrink-0">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSearchParams({})
+                setRefSearch('')
+              }}
+              className="gap-2 shrink-0"
+            >
               <FilterX className="h-4 w-4" />
               Limpar Todos
             </Button>
@@ -106,6 +125,7 @@ export default function Projects() {
           onSelectProject={setSelectedId}
           onEditProject={setEditingId}
           onDeleteProject={setDeletingId}
+          referenceFilter={refSearch}
         />
       </div>
 

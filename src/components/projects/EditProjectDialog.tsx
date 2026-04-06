@@ -66,6 +66,7 @@ const SERVICES_OPTS = [
   },
   { id: 'edit-frete', label: 'Frete', key: 'frete' as const },
   { id: 'edit-dhl', label: 'DHL (Exterior)', key: 'dhl' as const },
+  { id: 'edit-frete-jk', label: 'Frete JK', key: 'freteJk' as const },
 ]
 
 interface ItemInput {
@@ -113,6 +114,7 @@ export function EditProjectDialog({
     autenticacaoDigital: project?.digitalAuthentication ?? false,
     frete: project?.shipping ?? false,
     dhl: project?.internationalShipping ?? false,
+    freteJk: project?.freteJk ?? false,
   })
 
   const [items, setItems] = useState<ItemInput[]>(
@@ -214,6 +216,7 @@ export function EditProjectDialog({
         digitalAuthentication: services.autenticacaoDigital,
         shipping: services.frete,
         internationalShipping: services.dhl,
+        freteJk: services.freteJk,
         items: projectItems,
       })
       toast({ title: 'Projeto atualizado', description: 'As alterações foram salvas com sucesso.' })
