@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import {
   Calendar as CalendarIcon,
@@ -18,7 +18,6 @@ import {
   ChevronsUpDown,
   Check,
 } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -94,6 +93,13 @@ const TRANSLATION_TYPES = [
   'Locação de Equipamentos',
 ]
 
+const STEPS = [
+  { id: 'client', label: 'Dados do Cliente' },
+  { id: 'specs', label: 'Especificações' },
+  { id: 'docs', label: 'Documentos' },
+  { id: 'budget', label: 'Resumo' },
+]
+
 interface ItemInput {
   id?: string
   description: string
@@ -107,8 +113,8 @@ export default function CreateProject() {
   const { clients } = useClientStore()
   const { toast } = useToast()
 
-  const [activeTab, setActiveTab] = useState('client')
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [currentStep, setCurrentStep] = useState(0)
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
   const [clientMode, setClientMode] = useState<'registered' | 'manual'>('registered')
@@ -152,10 +158,9 @@ export default function CreateProject() {
     ? `${sharepointBase}%2F${encodeURIComponent(reference)}`
     : sharepointBase
 
-  const providerName = 'Microsoft SharePoint'
-
   const handleClientSelect = (val: string) => {
     setClientRef(val)
+    setStepErrors((p) => ({ ...p, clientRef: '' }))
     if (val) {
       const c = clients.find((cl) => cl.id === val)
       if (c) {
@@ -236,6 +241,7 @@ export default function CreateProject() {
     const newItems = [...items]
     newItems[index][field] = value
     setItems(newItems)
+    setStepErrors((p) => ({ ...p, items: '' }))
   }
 
   const handleValorChange = (index: number, val: string) => {
@@ -264,6 +270,52 @@ export default function CreateProject() {
     }
   }
 
+  const handleNext = () => {
+    const errors: Record<string, string> = {}
+    let isValid = true
+
+    if (currentStep === 0) {
+      if (clientMode === 'registered' && !clientRef) {
+        errors.clientRef = 'A seleção do cliente é obrigatória.'
+        isValid = false
+      }
+      if (clientMode === 'manual' && !clientName.trim()) {
+        errors.clientName = 'O nome do cliente é obrigatório.'
+        isValid = false
+      }
+    } else if (currentStep === 1) {
+      if (!translationType) {
+        errors.translationType = 'A Categoria do Serviço é obrigatória.'
+        isValid = false
+      }
+      if (!startDate) {
+        errors.startDate = 'A Data de Entrada é obrigatória.'
+        isValid = false
+      }
+      if (!deadline) {
+        errors.deadline = 'A Data de Entrega é obrigatória.'
+        isValid = false
+      }
+      const hasInvalidItem = items.some((i) => !i.description.trim() || !i.laudas || !i.valorLauda)
+      if (hasInvalidItem) {
+        errors.items = 'Todos os campos dos Itens do Projeto devem estar preenchidos.'
+        isValid = false
+      }
+    }
+
+    setStepErrors(errors)
+
+    if (isValid) {
+      setCurrentStep((prev) => prev + 1)
+    } else {
+      toast({
+        title: 'Atenção',
+        description: 'Preencha os campos obrigatórios antes de avançar.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const computedLaudas = items.reduce(
     (acc, item) => acc + (Number(item.laudas.replace(',', '.')) || 0),
     0,
@@ -277,47 +329,22 @@ export default function CreateProject() {
   )
 
   const handleSave = async (generatePdf: boolean) => {
+    const errors: Record<string, string> = {}
+    let isValid = true
+
     if (!reference.trim()) {
-      return toast({
-        title: 'Erro',
-        description: 'Código de Referência é obrigatório.',
-        variant: 'destructive',
-      })
+      errors.reference = 'Código de Referência é obrigatório.'
+      isValid = false
     }
-    if (clientMode === 'registered' && !clientRef) {
-      return toast({
-        title: 'Erro',
-        description: 'A seleção do cliente é obrigatória.',
+
+    if (!isValid) {
+      setStepErrors(errors)
+      toast({
+        title: 'Atenção',
+        description: 'Preencha os campos obrigatórios.',
         variant: 'destructive',
       })
-    }
-    if (clientMode === 'manual' && !clientName.trim()) {
-      return toast({
-        title: 'Erro',
-        description: 'O nome do cliente é obrigatório.',
-        variant: 'destructive',
-      })
-    }
-    if (!translationType) {
-      return toast({
-        title: 'Erro',
-        description: 'A Categoria do Serviço é obrigatória.',
-        variant: 'destructive',
-      })
-    }
-    if (!startDate) {
-      return toast({
-        title: 'Erro',
-        description: 'Data de Entrada é obrigatória.',
-        variant: 'destructive',
-      })
-    }
-    if (!deadline) {
-      return toast({
-        title: 'Erro',
-        description: 'Data de Entrega é obrigatória.',
-        variant: 'destructive',
-      })
+      return
     }
 
     const projectItems = items.map((i) => ({
@@ -338,8 +365,8 @@ export default function CreateProject() {
       urgent: false,
       international: sourceLang !== 'pt' || targetLang !== 'pt',
       physicalCopy: services.fisico,
-      dueDate: deadline.toISOString(),
-      entryDate: startDate.toISOString(),
+      dueDate: deadline!.toISOString(),
+      entryDate: startDate!.toISOString(),
       laudas: computedLaudas,
       valorLauda: computedLaudas > 0 ? computedValue / computedLaudas : 0,
       value: computedValue,
@@ -365,7 +392,7 @@ export default function CreateProject() {
     }
 
     setSaving(true)
-    setFieldErrors({})
+    setStepErrors({})
     try {
       await addProject(newProjectData)
 
@@ -378,10 +405,11 @@ export default function CreateProject() {
       }
     } catch (e: any) {
       if (e?.message === 'Cód. Referência duplicado' || String(e).includes('duplicado')) {
-        setFieldErrors({
+        setStepErrors({
           reference: 'O código de referência já está em uso. Por favor, utilize um código único.',
         })
-        setActiveTab('budget')
+      } else {
+        toast({ title: 'Erro ao criar', description: String(e), variant: 'destructive' })
       }
     } finally {
       setSaving(false)
@@ -393,19 +421,6 @@ export default function CreateProject() {
     toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
     navigate('/projects')
   }, [navigate, reference, toast])
-
-  const missingFields = []
-  if (!reference.trim()) missingFields.push('Cód. de referência (Aba 4)')
-  if (clientMode === 'registered' && !clientRef) missingFields.push('Cliente (Aba 1)')
-  if (clientMode === 'manual' && !clientName.trim()) missingFields.push('Nome do Cliente (Aba 1)')
-  if (!translationType) missingFields.push('Categoria do Serviço (Aba 2)')
-  if (!startDate) missingFields.push('Data de Entrada (Aba 2)')
-  if (!deadline) missingFields.push('Data de Entrega (Aba 2)')
-  if (items.some((i) => !i.description.trim() || !i.laudas || !i.valorLauda)) {
-    missingFields.push('Todos os campos dos Itens do Projeto devem estar preenchidos (Aba 2)')
-  }
-
-  const isFormValid = missingFields.length === 0
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
@@ -427,766 +442,840 @@ export default function CreateProject() {
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          handleSave(false)
+          if (currentStep === STEPS.length - 1) handleSave(false)
+          else handleNext()
         }}
       >
         <Card className="shadow-sm border-border/50">
-          <CardContent className="pt-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 mb-6 h-auto p-1 gap-1">
-                <TabsTrigger
-                  value="client"
-                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
-                >
-                  1. Dados do Cliente
-                </TabsTrigger>
-                <TabsTrigger
-                  value="specs"
-                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
-                >
-                  2. Especificações / Orçamento
-                </TabsTrigger>
-                <TabsTrigger
-                  value="docs"
-                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
-                >
-                  3. Documentos
-                </TabsTrigger>
-                <TabsTrigger
-                  value="budget"
-                  className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
-                >
-                  4. Resumo
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="client" className="space-y-6">
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">Modo de Inserção</Label>
-                  <RadioGroup
-                    value={clientMode}
-                    onValueChange={(val) => {
-                      setClientMode(val as 'registered' | 'manual')
-                      if (val === 'manual') {
-                        setClientRef('')
-                        setClientName('')
-                        setClientType('PF')
-                      } else {
-                        setClientRef('')
-                        setClientName('')
-                        setClientType('PJ')
-                      }
-                    }}
-                    className="flex flex-col sm:flex-row gap-4"
-                  >
-                    <label
+          <CardContent className="pt-8">
+            {/* Visual Stepper */}
+            <div className="mb-10 px-2 sm:px-8">
+              <div className="flex items-center justify-between relative z-0">
+                <div className="absolute left-0 top-[15px] transform w-full h-0.5 bg-muted -z-10" />
+                {STEPS.map((step, index) => (
+                  <div key={step.id} className="flex flex-col items-center gap-2 bg-card px-2">
+                    <div
                       className={cn(
-                        'flex items-center space-x-2 border rounded-md p-3 px-4 cursor-pointer transition-colors w-full',
-                        clientMode === 'registered'
-                          ? 'border-primary bg-primary/5'
-                          : 'hover:bg-muted',
+                        'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors',
+                        currentStep > index
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : currentStep === index
+                            ? 'border-primary text-primary bg-background'
+                            : 'border-muted bg-muted text-muted-foreground',
                       )}
                     >
-                      <RadioGroupItem value="registered" />
-                      <span className="flex-1 text-sm font-medium">Cliente Cadastrado</span>
-                    </label>
-                    <label
+                      {currentStep > index ? <Check className="w-4 h-4" /> : index + 1}
+                    </div>
+                    <span
                       className={cn(
-                        'flex items-center space-x-2 border rounded-md p-3 px-4 cursor-pointer transition-colors w-full',
-                        clientMode === 'manual' ? 'border-primary bg-primary/5' : 'hover:bg-muted',
+                        'text-xs font-medium hidden sm:block',
+                        currentStep >= index ? 'text-foreground' : 'text-muted-foreground',
                       )}
                     >
-                      <RadioGroupItem value="manual" />
-                      <span className="flex-1 text-sm font-medium">
-                        Entrada Manual (Avulso / PF)
-                      </span>
-                    </label>
-                  </RadioGroup>
-                </div>
-
-                {clientMode === 'registered' ? (
-                  <div className="space-y-2 flex flex-col">
-                    <Label>
-                      Cliente <span className="text-destructive">*</span>
-                    </Label>
-                    <Popover open={clientOpen} onOpenChange={setClientOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={clientOpen}
-                          className={cn(
-                            'w-full justify-between font-normal',
-                            !clientRef && 'text-muted-foreground',
-                          )}
-                        >
-                          {clientRef
-                            ? clients.find((c) => c.id === clientRef)?.nome
-                            : 'Busque e selecione um cliente...'}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-[var(--radix-popover-trigger-width)] p-0"
-                        align="start"
-                      >
-                        <Command>
-                          <CommandInput placeholder="Buscar cliente por nome ou documento..." />
-                          <CommandList>
-                            <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                            <CommandGroup>
-                              {clients.map((c) => (
-                                <CommandItem
-                                  key={c.id!}
-                                  value={`${c.nome} ${c.cnpj || ''}`}
-                                  onSelect={() => {
-                                    handleClientSelect(c.id!)
-                                    setClientOpen(false)
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      'mr-2 h-4 w-4 shrink-0',
-                                      clientRef === c.id ? 'opacity-100' : 'opacity-0',
-                                    )}
-                                  />
-                                  <div className="flex flex-col">
-                                    <span>{c.nome}</span>
-                                    {c.cnpj && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {c.cnpj}
-                                      </span>
-                                    )}
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <p className="text-sm text-muted-foreground">
-                      Os dados do cliente (valor de lauda, idiomas frequentes) serão preenchidos
-                      automaticamente.
-                    </p>
+                      {step.label}
+                    </span>
                   </div>
-                ) : (
-                  <div className="space-y-2 flex flex-col animate-fade-in">
-                    <Label>
-                      Nome do Cliente <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      placeholder="Digite o nome completo do cliente..."
-                      value={clientName}
-                      onChange={(e) => setClientName(e.target.value)}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      O cliente será salvo apenas para este projeto, sem criar cadastro.
-                    </p>
-                  </div>
-                )}
+                ))}
+              </div>
+            </div>
 
-                <div className="space-y-4 pt-2">
-                  <Label className="text-base font-semibold">Tipo de Pessoa</Label>
-                  <RadioGroup
-                    value={clientType}
-                    onValueChange={setClientType}
-                    className="flex gap-6"
-                  >
-                    <label
-                      htmlFor="pj"
-                      className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full"
+            <div className="w-full mt-4">
+              {currentStep === 0 && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Modo de Inserção</Label>
+                    <RadioGroup
+                      value={clientMode}
+                      onValueChange={(val) => {
+                        setClientMode(val as 'registered' | 'manual')
+                        setStepErrors({})
+                        if (val === 'manual') {
+                          setClientRef('')
+                          setClientName('')
+                          setClientType('PF')
+                        } else {
+                          setClientRef('')
+                          setClientName('')
+                          setClientType('PJ')
+                        }
+                      }}
+                      className="flex flex-col sm:flex-row gap-4"
                     >
-                      <RadioGroupItem value="PJ" id="pj" />
-                      <span className="flex-1 text-sm font-medium">Pessoa Jurídica (PJ)</span>
-                    </label>
-                    <label
-                      htmlFor="pf"
-                      className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full"
-                    >
-                      <RadioGroupItem value="PF" id="pf" />
-                      <span className="flex-1 text-sm font-medium">Pessoa Física (PF)</span>
-                    </label>
-                  </RadioGroup>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">
-                    Status <span className="text-destructive">*</span>
-                  </Label>
-                  <Select value={status} onValueChange={(val) => setStatus(val as ProjectStatus)}>
-                    <SelectTrigger id="status">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ALL_STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="specs" className="space-y-6">
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">
-                    Categoria do Serviço <span className="text-destructive">*</span>
-                  </Label>
-                  <RadioGroup
-                    value={translationType}
-                    onValueChange={setTranslationType}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                  >
-                    {TRANSLATION_TYPES.map((type) => (
                       <label
-                        key={type}
-                        htmlFor={`type-${type}`}
                         className={cn(
-                          'flex items-center space-x-2 border rounded-md p-4 cursor-pointer transition-colors w-full',
-                          translationType === type
+                          'flex items-center space-x-2 border rounded-md p-3 px-4 cursor-pointer transition-colors w-full',
+                          clientMode === 'registered'
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-muted',
                         )}
                       >
-                        <RadioGroupItem value={type} id={`type-${type}`} />
-                        <span className="flex-1 text-sm font-medium leading-none">{type}</span>
+                        <RadioGroupItem value="registered" />
+                        <span className="flex-1 text-sm font-medium">Cliente Cadastrado</span>
                       </label>
-                    ))}
-                  </RadioGroup>
-                </div>
+                      <label
+                        className={cn(
+                          'flex items-center space-x-2 border rounded-md p-3 px-4 cursor-pointer transition-colors w-full',
+                          clientMode === 'manual'
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:bg-muted',
+                        )}
+                      >
+                        <RadioGroupItem value="manual" />
+                        <span className="flex-1 text-sm font-medium">
+                          Entrada Manual (Avulso / PF)
+                        </span>
+                      </label>
+                    </RadioGroup>
+                  </div>
 
-                <div className="flex items-end gap-2 sm:gap-4">
-                  <div className="flex-1">
-                    <LanguageCombobox
-                      label="Idioma de Origem *"
-                      value={sourceLang}
-                      onChange={setSourceLang}
-                    />
-                  </div>
-                  <div className="flex items-center justify-center h-10 shrink-0 text-muted-foreground">
-                    <ChevronRight className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <LanguageCombobox
-                      label="Idioma de Destino *"
-                      value={targetLang}
-                      onChange={setTargetLang}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Tipo de Documento</Label>
-                    <Input
-                      placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
-                      value={documentType}
-                      onChange={(e) => setDocumentType(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Quantidade de Documentos (Estimado)</Label>
-                    <Input
-                      type="number"
-                      placeholder="Ex: 1"
-                      value={docCount}
-                      onChange={(e) => setDocCount(e.target.value)}
-                      min="0"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2 flex flex-col">
-                    <Label>
-                      Data de Entrada <span className="text-destructive">*</span>
-                    </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !startDate && 'text-muted-foreground',
-                          )}
+                  {clientMode === 'registered' ? (
+                    <div className="space-y-2 flex flex-col">
+                      <Label className={cn(stepErrors.clientRef && 'text-destructive')}>
+                        Cliente <span className="text-destructive">*</span>
+                      </Label>
+                      <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={clientOpen}
+                            className={cn(
+                              'w-full justify-between font-normal',
+                              !clientRef && 'text-muted-foreground',
+                              stepErrors.clientRef && 'border-destructive',
+                            )}
+                          >
+                            {clientRef
+                              ? clients.find((c) => c.id === clientRef)?.nome
+                              : 'Busque e selecione um cliente...'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-[var(--radix-popover-trigger-width)] p-0"
+                          align="start"
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? (
-                            format(startDate, 'dd/MM/yyyy')
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={startDate}
-                          onSelect={setStartDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2 flex flex-col">
-                    <Label>
-                      Data de Entrega <span className="text-destructive">*</span>
-                    </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !deadline && 'text-muted-foreground',
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {deadline ? (
-                            format(deadline, 'dd/MM/yyyy')
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={deadline}
-                          onSelect={setDeadline}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <Label className="text-base font-semibold">
-                      Itens do Projeto <span className="text-destructive">*</span>
-                    </Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const defaultValor = clientRef
-                          ? clients.find((c) => c.id === clientRef)?.valor_lauda_padrao
-                          : undefined
-                        const formatted = defaultValor
-                          ? defaultValor.toLocaleString('pt-BR', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
-                          : ''
-                        setItems([...items, { description: '', laudas: '', valorLauda: formatted }])
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Adicionar Item
-                    </Button>
-                  </div>
-                  <div className="bg-card border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead>Descrição</TableHead>
-                          <TableHead className="w-[120px]">Laudas</TableHead>
-                          <TableHead className="w-[140px]">Valor (R$)</TableHead>
-                          <TableHead className="w-[120px] text-right">Total</TableHead>
-                          <TableHead className="w-[50px]"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {items.map((item, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell className="p-2">
-                              <Input
-                                value={item.description}
-                                onChange={(e) => updateItem(idx, 'description', e.target.value)}
-                                placeholder="Ex: Certidão..."
-                              />
-                            </TableCell>
-                            <TableCell className="p-2">
-                              <Input
-                                type="text"
-                                inputMode="decimal"
-                                value={item.laudas}
-                                onChange={(e) => handleLaudasChange(idx, e.target.value)}
-                                placeholder="0"
-                              />
-                            </TableCell>
-                            <TableCell className="p-2">
-                              <Input
-                                type="text"
-                                inputMode="decimal"
-                                value={item.valorLauda}
-                                onChange={(e) => handleValorChange(idx, e.target.value)}
-                                placeholder="0,00"
-                              />
-                            </TableCell>
-                            <TableCell className="p-2 text-right font-medium">
-                              {(
-                                (Number(item.laudas.replace(',', '.')) || 0) *
-                                (Number(item.valorLauda.replace(/\./g, '').replace(',', '.')) || 0)
-                              ).toLocaleString('pt-BR', {
-                                minimumFractionDigits: 2,
-                                style: 'currency',
-                                currency: 'BRL',
-                              })}
-                            </TableCell>
-                            <TableCell className="p-2 text-right">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeItem(idx)}
-                                disabled={items.length === 1}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-2">
-                  <Label className="text-base font-semibold">Serviços e Logística</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border rounded-lg p-4 bg-slate-50/50 dark:bg-slate-900/50">
-                    {SERVICES_OPTS.map(({ id, label, key }) => (
-                      <div key={id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={id}
-                          checked={services[key]}
-                          onCheckedChange={(c) => setServices((prev) => ({ ...prev, [key]: !!c }))}
-                        />
-                        <Label htmlFor={id} className="font-normal cursor-pointer">
-                          {label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="docs" className="space-y-6">
-                <Alert className="bg-primary/5 border-primary/20">
-                  <Cloud className="h-4 w-4 text-primary" />
-                  <AlertTitle>Sincronização com SharePoint</AlertTitle>
-                  <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between mt-2 gap-2">
-                    <span className="text-sm truncate max-w-[400px]">
-                      Diretório mapeado:{' '}
-                      <strong>/Projetos/Protocolos/{reference || '[Pendente]'}</strong>
-                    </span>
-                    {reference && (
-                      <Button variant="outline" size="sm" asChild className="h-8 shrink-0">
-                        <a href={folderUrl} target="_blank" rel="noreferrer">
-                          <FolderOpen className="h-3 w-3 mr-2" /> Abrir Diretório
-                        </a>
-                      </Button>
-                    )}
-                  </AlertDescription>
-                </Alert>
-
-                <div
-                  className="border-2 border-dashed border-border hover:border-primary/50 transition-colors rounded-xl p-10 text-center cursor-pointer bg-slate-50/30 dark:bg-slate-900/30"
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    handleFiles({ target: { files: e.dataTransfer.files } } as any)
-                  }}
-                >
-                  <input
-                    type="file"
-                    id="file-upload"
-                    className="hidden"
-                    multiple
-                    onChange={handleFiles}
-                  />
-                  <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="font-medium text-lg mb-1">Upload de Arquivos</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Arraste os documentos aqui para sincronizar direto com a nuvem.
-                  </p>
-                </div>
-
-                {cloudFiles.length > 0 && (
-                  <div className="bg-card border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Arquivo</TableHead>
-                          <TableHead>Tamanho</TableHead>
-                          <TableHead>Status Nuvem</TableHead>
-                          <TableHead className="text-right">Ação</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {cloudFiles.map((f) => (
-                          <TableRow key={f.id}>
-                            <TableCell className="font-medium flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <span className="truncate max-w-[200px]" title={f.name}>
-                                {f.name}
-                              </span>
-                            </TableCell>
-                            <TableCell>{(f.size / 1024).toFixed(1)} KB</TableCell>
-                            <TableCell>
-                              {f.status === 'uploading' ? (
-                                <Badge
-                                  variant="outline"
-                                  className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1 whitespace-nowrap"
-                                >
-                                  <Loader2 className="h-3 w-3 animate-spin" /> Sincronizando
-                                </Badge>
-                              ) : f.status === 'error' ? (
-                                <Badge
-                                  variant="outline"
-                                  className="text-destructive border-destructive/30 bg-destructive/10 gap-1 whitespace-nowrap"
-                                >
-                                  <AlertCircle className="h-3 w-3" /> Falha
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1 whitespace-nowrap"
-                                >
-                                  <CheckCircle2 className="h-3 w-3" /> Sincronizado
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                asChild
-                                disabled={f.status !== 'synced'}
-                              >
-                                <a href={f.url} target="_blank" rel="noreferrer">
-                                  <ExternalLink className="h-4 w-4" />
-                                </a>
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="budget" className="space-y-6">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="referenceTab"
-                    className={cn(
-                      'text-base font-semibold',
-                      fieldErrors.reference && 'text-destructive',
-                    )}
-                  >
-                    Cód. de referência <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="referenceTab"
-                    value={reference}
-                    onChange={(e) => {
-                      setReference(e.target.value)
-                      if (fieldErrors.reference) setFieldErrors({})
-                    }}
-                    placeholder="Ex: TRD-123456"
-                    className={cn(
-                      'max-w-md font-mono font-bold',
-                      fieldErrors.reference
-                        ? 'border-destructive text-destructive focus-visible:ring-destructive'
-                        : 'text-primary bg-primary/5',
-                    )}
-                    required
-                  />
-                  {fieldErrors.reference && (
-                    <p className="text-sm font-medium text-destructive">{fieldErrors.reference}</p>
+                          <Command>
+                            <CommandInput placeholder="Buscar cliente por nome ou documento..." />
+                            <CommandList>
+                              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                {clients.map((c) => (
+                                  <CommandItem
+                                    key={c.id!}
+                                    value={`${c.nome} ${c.cnpj || ''}`}
+                                    onSelect={() => {
+                                      handleClientSelect(c.id!)
+                                      setClientOpen(false)
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4 shrink-0',
+                                        clientRef === c.id ? 'opacity-100' : 'opacity-0',
+                                      )}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span>{c.nome}</span>
+                                      {c.cnpj && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {c.cnpj}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {stepErrors.clientRef && (
+                        <p className="text-sm font-medium text-destructive">
+                          {stepErrors.clientRef}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        Os dados do cliente (valor de lauda, idiomas frequentes) serão preenchidos
+                        automaticamente.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 flex flex-col animate-fade-in">
+                      <Label className={cn(stepErrors.clientName && 'text-destructive')}>
+                        Nome do Cliente <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        placeholder="Digite o nome completo do cliente..."
+                        value={clientName}
+                        onChange={(e) => {
+                          setClientName(e.target.value)
+                          setStepErrors((p) => ({ ...p, clientName: '' }))
+                        }}
+                        className={cn(
+                          stepErrors.clientName &&
+                            'border-destructive focus-visible:ring-destructive',
+                        )}
+                      />
+                      {stepErrors.clientName && (
+                        <p className="text-sm font-medium text-destructive">
+                          {stepErrors.clientName}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        O cliente será salvo apenas para este projeto, sem criar cadastro.
+                      </p>
+                    </div>
                   )}
-                  <p className="text-sm text-muted-foreground">
-                    Código único para identificação do projeto e sincronização em nuvem.
-                  </p>
-                </div>
 
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Textarea
-                    placeholder="Instruções especiais, notas internas, ou outras observações do documento..."
-                    value={observations}
-                    onChange={(e) => setObservations(e.target.value)}
-                    className="min-h-[100px] resize-y"
-                  />
-                </div>
+                  <div className="space-y-4 pt-2">
+                    <Label className="text-base font-semibold">Tipo de Pessoa</Label>
+                    <RadioGroup
+                      value={clientType}
+                      onValueChange={setClientType}
+                      className="flex gap-6"
+                    >
+                      <label
+                        htmlFor="pj"
+                        className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full"
+                      >
+                        <RadioGroupItem value="PJ" id="pj" />
+                        <span className="flex-1 text-sm font-medium">Pessoa Jurídica (PJ)</span>
+                      </label>
+                      <label
+                        htmlFor="pf"
+                        className="flex items-center space-x-2 border rounded-md p-3 px-4 hover:bg-muted cursor-pointer transition-colors w-full"
+                      >
+                        <RadioGroupItem value="PF" id="pf" />
+                        <span className="flex-1 text-sm font-medium">Pessoa Física (PF)</span>
+                      </label>
+                    </RadioGroup>
+                  </div>
 
-                {missingFields.length > 0 ? (
-                  <Alert variant="destructive" className="bg-destructive/5">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Informações Pendentes</AlertTitle>
-                    <AlertDescription>
-                      Preencha os seguintes campos obrigatórios antes de finalizar o projeto:
-                      <ul className="list-disc list-inside mt-2 space-y-1 text-sm font-medium">
-                        {missingFields.map((field) => (
-                          <li key={field}>{field}</li>
+                  <div className="space-y-2">
+                    <Label htmlFor="status">
+                      Status <span className="text-destructive">*</span>
+                    </Label>
+                    <Select value={status} onValueChange={(val) => setStatus(val as ProjectStatus)}>
+                      <SelectTrigger id="status">
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ALL_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
                         ))}
-                      </ul>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 1 && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="space-y-4">
+                    <Label
+                      className={cn(
+                        'text-base font-semibold',
+                        stepErrors.translationType && 'text-destructive',
+                      )}
+                    >
+                      Categoria do Serviço <span className="text-destructive">*</span>
+                    </Label>
+                    {stepErrors.translationType && (
+                      <p className="text-sm font-medium text-destructive -mt-2 mb-2">
+                        {stepErrors.translationType}
+                      </p>
+                    )}
+                    <RadioGroup
+                      value={translationType}
+                      onValueChange={(val) => {
+                        setTranslationType(val)
+                        setStepErrors((p) => ({ ...p, translationType: '' }))
+                      }}
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                    >
+                      {TRANSLATION_TYPES.map((type) => (
+                        <label
+                          key={type}
+                          htmlFor={`type-${type}`}
+                          className={cn(
+                            'flex items-center space-x-2 border rounded-md p-4 cursor-pointer transition-colors w-full',
+                            translationType === type
+                              ? 'border-primary bg-primary/5'
+                              : 'hover:bg-muted',
+                          )}
+                        >
+                          <RadioGroupItem value={type} id={`type-${type}`} />
+                          <span className="flex-1 text-sm font-medium leading-none">{type}</span>
+                        </label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  <div className="flex items-end gap-2 sm:gap-4">
+                    <div className="flex-1">
+                      <LanguageCombobox
+                        label="Idioma de Origem *"
+                        value={sourceLang}
+                        onChange={setSourceLang}
+                      />
+                    </div>
+                    <div className="flex items-center justify-center h-10 shrink-0 text-muted-foreground">
+                      <ChevronRight className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                      <LanguageCombobox
+                        label="Idioma de Destino *"
+                        value={targetLang}
+                        onChange={setTargetLang}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Tipo de Documento</Label>
+                      <Input
+                        placeholder="Ex: Certidão de Nascimento, Manual Técnico, Contrato"
+                        value={documentType}
+                        onChange={(e) => setDocumentType(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Quantidade de Documentos (Estimado)</Label>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 1"
+                        value={docCount}
+                        onChange={(e) => setDocCount(e.target.value)}
+                        min="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2 flex flex-col">
+                      <Label className={cn(stepErrors.startDate && 'text-destructive')}>
+                        Data de Entrada <span className="text-destructive">*</span>
+                      </Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              'w-full justify-start text-left font-normal',
+                              !startDate && 'text-muted-foreground',
+                              stepErrors.startDate && 'border-destructive',
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {startDate ? (
+                              format(startDate, 'dd/MM/yyyy')
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={startDate}
+                            onSelect={(d) => {
+                              setStartDate(d)
+                              setStepErrors((p) => ({ ...p, startDate: '' }))
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {stepErrors.startDate && (
+                        <p className="text-sm font-medium text-destructive">
+                          {stepErrors.startDate}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2 flex flex-col">
+                      <Label className={cn(stepErrors.deadline && 'text-destructive')}>
+                        Data de Entrega <span className="text-destructive">*</span>
+                      </Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              'w-full justify-start text-left font-normal',
+                              !deadline && 'text-muted-foreground',
+                              stepErrors.deadline && 'border-destructive',
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {deadline ? (
+                              format(deadline, 'dd/MM/yyyy')
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={deadline}
+                            onSelect={(d) => {
+                              setDeadline(d)
+                              setStepErrors((p) => ({ ...p, deadline: '' }))
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {stepErrors.deadline && (
+                        <p className="text-sm font-medium text-destructive">
+                          {stepErrors.deadline}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <Label
+                        className={cn(
+                          'text-base font-semibold',
+                          stepErrors.items && 'text-destructive',
+                        )}
+                      >
+                        Itens do Projeto <span className="text-destructive">*</span>
+                      </Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const defaultValor = clientRef
+                            ? clients.find((c) => c.id === clientRef)?.valor_lauda_padrao
+                            : undefined
+                          const formatted = defaultValor
+                            ? defaultValor.toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                            : ''
+                          setItems([
+                            ...items,
+                            { description: '', laudas: '', valorLauda: formatted },
+                          ])
+                          setStepErrors((p) => ({ ...p, items: '' }))
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Adicionar Item
+                      </Button>
+                    </div>
+                    {stepErrors.items && (
+                      <p className="text-sm font-medium text-destructive">{stepErrors.items}</p>
+                    )}
+                    <div className="bg-card border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead>Descrição</TableHead>
+                            <TableHead className="w-[120px]">Laudas</TableHead>
+                            <TableHead className="w-[140px]">Valor (R$)</TableHead>
+                            <TableHead className="w-[120px] text-right">Total</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {items.map((item, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="p-2">
+                                <Input
+                                  value={item.description}
+                                  onChange={(e) => updateItem(idx, 'description', e.target.value)}
+                                  placeholder="Ex: Certidão..."
+                                />
+                              </TableCell>
+                              <TableCell className="p-2">
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={item.laudas}
+                                  onChange={(e) => handleLaudasChange(idx, e.target.value)}
+                                  placeholder="0"
+                                />
+                              </TableCell>
+                              <TableCell className="p-2">
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={item.valorLauda}
+                                  onChange={(e) => handleValorChange(idx, e.target.value)}
+                                  placeholder="0,00"
+                                />
+                              </TableCell>
+                              <TableCell className="p-2 text-right font-medium">
+                                {(
+                                  (Number(item.laudas.replace(',', '.')) || 0) *
+                                  (Number(item.valorLauda.replace(/\./g, '').replace(',', '.')) ||
+                                    0)
+                                ).toLocaleString('pt-BR', {
+                                  minimumFractionDigits: 2,
+                                  style: 'currency',
+                                  currency: 'BRL',
+                                })}
+                              </TableCell>
+                              <TableCell className="p-2 text-right">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeItem(idx)}
+                                  disabled={items.length === 1}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-2">
+                    <Label className="text-base font-semibold">Serviços e Logística</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border rounded-lg p-4 bg-slate-50/50 dark:bg-slate-900/50">
+                      {SERVICES_OPTS.map(({ id, label, key }) => (
+                        <div key={id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={id}
+                            checked={services[key]}
+                            onCheckedChange={(c) =>
+                              setServices((prev) => ({ ...prev, [key]: !!c }))
+                            }
+                          />
+                          <Label htmlFor={id} className="font-normal cursor-pointer">
+                            {label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 2 && (
+                <div className="space-y-6 animate-fade-in">
+                  <Alert className="bg-primary/5 border-primary/20">
+                    <Cloud className="h-4 w-4 text-primary" />
+                    <AlertTitle>Sincronização com SharePoint</AlertTitle>
+                    <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between mt-2 gap-2">
+                      <span className="text-sm truncate max-w-[400px]">
+                        Diretório mapeado:{' '}
+                        <strong>/Projetos/Protocolos/{reference || '[Pendente]'}</strong>
+                      </span>
+                      {reference && (
+                        <Button variant="outline" size="sm" asChild className="h-8 shrink-0">
+                          <a href={folderUrl} target="_blank" rel="noreferrer">
+                            <FolderOpen className="h-3 w-3 mr-2" /> Abrir Diretório
+                          </a>
+                        </Button>
+                      )}
                     </AlertDescription>
                   </Alert>
-                ) : (
+
+                  <div
+                    className="border-2 border-dashed border-border hover:border-primary/50 transition-colors rounded-xl p-10 text-center cursor-pointer bg-slate-50/30 dark:bg-slate-900/30"
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      handleFiles({ target: { files: e.dataTransfer.files } } as any)
+                    }}
+                  >
+                    <input
+                      type="file"
+                      id="file-upload"
+                      className="hidden"
+                      multiple
+                      onChange={handleFiles}
+                    />
+                    <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="font-medium text-lg mb-1">Upload de Arquivos</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Arraste os documentos aqui para sincronizar direto com a nuvem.
+                    </p>
+                  </div>
+
+                  {cloudFiles.length > 0 && (
+                    <div className="bg-card border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Arquivo</TableHead>
+                            <TableHead>Tamanho</TableHead>
+                            <TableHead>Status Nuvem</TableHead>
+                            <TableHead className="text-right">Ação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {cloudFiles.map((f) => (
+                            <TableRow key={f.id}>
+                              <TableCell className="font-medium flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="truncate max-w-[200px]" title={f.name}>
+                                  {f.name}
+                                </span>
+                              </TableCell>
+                              <TableCell>{(f.size / 1024).toFixed(1)} KB</TableCell>
+                              <TableCell>
+                                {f.status === 'uploading' ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1 whitespace-nowrap"
+                                  >
+                                    <Loader2 className="h-3 w-3 animate-spin" /> Sincronizando
+                                  </Badge>
+                                ) : f.status === 'error' ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-destructive border-destructive/30 bg-destructive/10 gap-1 whitespace-nowrap"
+                                  >
+                                    <AlertCircle className="h-3 w-3" /> Falha
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1 whitespace-nowrap"
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" /> Sincronizado
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  asChild
+                                  disabled={f.status !== 'synced'}
+                                >
+                                  <a href={f.url} target="_blank" rel="noreferrer">
+                                    <ExternalLink className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentStep === 3 && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="referenceTab"
+                      className={cn(
+                        'text-base font-semibold',
+                        stepErrors.reference && 'text-destructive',
+                      )}
+                    >
+                      Cód. de referência <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="referenceTab"
+                      value={reference}
+                      onChange={(e) => {
+                        setReference(e.target.value)
+                        setStepErrors((p) => ({ ...p, reference: '' }))
+                      }}
+                      placeholder="Ex: TRD-123456"
+                      className={cn(
+                        'max-w-md font-mono font-bold',
+                        stepErrors.reference
+                          ? 'border-destructive text-destructive focus-visible:ring-destructive'
+                          : 'text-primary bg-primary/5',
+                      )}
+                    />
+                    {stepErrors.reference && (
+                      <p className="text-sm font-medium text-destructive">{stepErrors.reference}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      Código único para identificação do projeto e sincronização em nuvem.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Observações</Label>
+                    <Textarea
+                      placeholder="Instruções especiais, notas internas, ou outras observações do documento..."
+                      value={observations}
+                      onChange={(e) => setObservations(e.target.value)}
+                      className="min-h-[100px] resize-y"
+                    />
+                  </div>
+
                   <Alert className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
                     <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     <AlertTitle>Validação Concluída</AlertTitle>
                     <AlertDescription>
-                      Todos os campos obrigatórios foram preenchidos. Você pode registrar o projeto
-                      ou gerar a proposta.
+                      Todos os passos anteriores foram validados. Você pode registrar o projeto ou
+                      gerar a proposta.
                     </AlertDescription>
                   </Alert>
-                )}
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium tracking-tight border-b pb-2">
-                    Painel de Sincronização e Resumo
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card className="shadow-sm">
-                      <CardHeader className="pb-3 bg-muted/30">
-                        <CardTitle className="text-base">Cliente e Especificações</CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-4 space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Nome/Razão Social</span>
-                          <span className="font-medium text-right">
-                            {clientName || '-'} {clientName && `(${clientType})`}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Status</span>
-                          <span className="font-medium text-right">{status}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Categoria do Serviço</span>
-                          <span className="font-medium text-right">{translationType || '-'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Tipo de Documento</span>
-                          <span className="font-medium text-right">{documentType || '-'}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium tracking-tight border-b pb-2">
+                      Painel de Sincronização e Resumo
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className="shadow-sm">
+                        <CardHeader className="pb-3 bg-muted/30">
+                          <CardTitle className="text-base">Cliente e Especificações</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Nome/Razão Social</span>
+                            <span className="font-medium text-right">
+                              {clientName || '-'} {clientName && `(${clientType})`}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Status</span>
+                            <span className="font-medium text-right">{status}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Categoria do Serviço</span>
+                            <span className="font-medium text-right">{translationType || '-'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Tipo de Documento</span>
+                            <span className="font-medium text-right">{documentType || '-'}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                    <Card className="shadow-sm">
-                      <CardHeader className="pb-3 bg-muted/30">
-                        <CardTitle className="text-base">Prazos e Idiomas</CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-4 space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Data de Entrada</span>
-                          <span className="font-medium text-right">
-                            {startDate ? format(startDate, 'dd/MM/yyyy') : '-'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Prazo de Entrega</span>
-                          <span className="font-medium text-right">
-                            {deadline ? format(deadline, 'dd/MM/yyyy') : '-'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Idioma de Origem</span>
-                          <span className="font-medium text-right">
-                            {LANGUAGES.find((l) => l.value === sourceLang)?.label || sourceLang}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Idioma de Destino</span>
-                          <span className="font-medium text-right">
-                            {LANGUAGES.find((l) => l.value === targetLang)?.label || targetLang}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      <Card className="shadow-sm">
+                        <CardHeader className="pb-3 bg-muted/30">
+                          <CardTitle className="text-base">Prazos e Idiomas</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Data de Entrada</span>
+                            <span className="font-medium text-right">
+                              {startDate ? format(startDate, 'dd/MM/yyyy') : '-'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Prazo de Entrega</span>
+                            <span className="font-medium text-right">
+                              {deadline ? format(deadline, 'dd/MM/yyyy') : '-'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Idioma de Origem</span>
+                            <span className="font-medium text-right">
+                              {LANGUAGES.find((l) => l.value === sourceLang)?.label || sourceLang}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Idioma de Destino</span>
+                            <span className="font-medium text-right">
+                              {LANGUAGES.find((l) => l.value === targetLang)?.label || targetLang}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                    <Card className="shadow-sm md:col-span-2">
-                      <CardHeader className="pb-3 bg-muted/30">
-                        <CardTitle className="text-base">Serviços e Valores</CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-4 space-y-4 text-sm">
-                        <div className="flex flex-col gap-2">
-                          <span className="text-muted-foreground">
-                            Logística e Serviços Adicionais:
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            {SERVICES_OPTS.filter((s) => services[s.key]).map((s) => (
-                              <Badge
-                                key={s.id}
-                                variant="secondary"
-                                className="bg-primary/10 text-primary hover:bg-primary/20"
-                              >
-                                {s.label}
-                              </Badge>
-                            ))}
-                            {Object.values(services).every((v) => !v) && (
-                              <span className="text-muted-foreground italic">
-                                Nenhum serviço adicional selecionado
+                      <Card className="shadow-sm md:col-span-2">
+                        <CardHeader className="pb-3 bg-muted/30">
+                          <CardTitle className="text-base">Serviços e Valores</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-4 text-sm">
+                          <div className="flex flex-col gap-2">
+                            <span className="text-muted-foreground">
+                              Logística e Serviços Adicionais:
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {SERVICES_OPTS.filter((s) => services[s.key]).map((s) => (
+                                <Badge
+                                  key={s.id}
+                                  variant="secondary"
+                                  className="bg-primary/10 text-primary hover:bg-primary/20"
+                                >
+                                  {s.label}
+                                </Badge>
+                              ))}
+                              {Object.values(services).every((v) => !v) && (
+                                <span className="text-muted-foreground italic">
+                                  Nenhum serviço adicional selecionado
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <span className="text-muted-foreground block">
+                                Quantidade de Laudas (Itens)
                               </span>
-                            )}
+                              <span className="font-medium text-base">{computedLaudas || '-'}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-muted-foreground block">
+                                Valor Total do Projeto
+                              </span>
+                              <span className="font-bold text-2xl text-emerald-600 dark:text-emerald-400">
+                                {computedValue.toLocaleString('pt-BR', {
+                                  style: 'currency',
+                                  currency: 'BRL',
+                                })}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div>
-                            <span className="text-muted-foreground block">
-                              Quantidade de Laudas (Itens)
-                            </span>
-                            <span className="font-medium text-base">{computedLaudas || '-'}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-muted-foreground block">
-                              Valor Total do Projeto
-                            </span>
-                            <span className="font-bold text-2xl text-emerald-600 dark:text-emerald-400">
-                              {computedValue.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
+              )}
+            </div>
           </CardContent>
           <CardFooter className="bg-muted/30 border-t p-6 flex justify-between">
-            <Button variant="ghost" type="button" onClick={() => navigate(-1)} disabled={saving}>
-              Cancelar
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={
+                currentStep === 0 ? () => navigate(-1) : () => setCurrentStep((prev) => prev - 1)
+              }
+              disabled={saving}
+            >
+              {currentStep === 0 ? 'Cancelar' : 'Voltar'}
             </Button>
             <div className="flex space-x-3">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => handleSave(true)}
-                disabled={!isFormValid || saving}
-              >
-                Gerar Proposta
-              </Button>
-              <Button
-                type="submit"
-                size="lg"
-                className="min-w-[150px]"
-                disabled={!isFormValid || saving}
-              >
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Registrar Projeto
-              </Button>
+              {currentStep === STEPS.length - 1 ? (
+                <>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => handleSave(true)}
+                    disabled={saving}
+                  >
+                    Gerar Proposta
+                  </Button>
+                  <Button type="submit" size="lg" className="min-w-[150px]" disabled={saving}>
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Registrar Projeto
+                  </Button>
+                </>
+              ) : (
+                <Button type="button" size="lg" onClick={handleNext} className="min-w-[150px]">
+                  Próxima Etapa
+                </Button>
+              )}
             </div>
           </CardFooter>
         </Card>
