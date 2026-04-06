@@ -12,6 +12,7 @@ import Settings from './pages/Settings'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 import Clients from './pages/Clients'
+import ProjectCosts from './pages/ProjectCosts'
 import { ProjectStoreProvider } from './stores/useProjectStore'
 import { SettingsStoreProvider } from './stores/useSettingsStore'
 import { NotificationStoreProvider } from './stores/useNotificationStore'
@@ -43,6 +44,7 @@ const App = () => (
                       <Route path="/intake" element={<Navigate to="/" replace />} />
                       <Route path="/projects" element={<Projects />} />
                       <Route path="/projects/new" element={<CreateProject />} />
+                      <Route path="/project-costs" element={<ProjectCosts />} />
                       <Route path="/clients" element={<Clients />} />
                       <Route path="/logistics" element={<Logistics />} />
                       <Route path="/notary" element={<Notary />} />

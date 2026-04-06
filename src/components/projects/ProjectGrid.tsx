@@ -1,6 +1,15 @@
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { MoreHorizontal, Edit, Trash2, ChevronRight, Loader2, Download } from 'lucide-react'
+import {
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  ChevronRight,
+  Loader2,
+  Download,
+  DollarSign,
+} from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -18,9 +27,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import useProjectStore, { ProjectStatus, ALL_STATUSES } from '@/stores/useProjectStore'
+import useProjectStore, { ProjectStatus, ALL_STATUSES, Project } from '@/stores/useProjectStore'
 import { LANGUAGES } from '@/components/LanguageCombobox'
 import { cn } from '@/lib/utils'
+import { getCustoProjetoByProjeto } from '@/services/projetos'
+import { ProjectCostDialog } from './ProjectCostDialog'
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
   Orçamento: 'bg-slate-400 hover:bg-slate-500 text-white',
@@ -45,6 +56,9 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
   const { projects, updateProjectStatus, loading } = useProjectStore()
   const [searchParams] = useSearchParams()
 
+  const [costDialogOpenForProject, setCostDialogOpenForProject] = useState<Project | null>(null)
+  const [pendingStatus, setPendingStatus] = useState<ProjectStatus | null>(null)
+
   const getLanguageLabel = (code?: string) => {
     if (!code) return '-'
     return LANGUAGES.find((l) => l.value === code)?.label || code
@@ -59,6 +73,18 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
 
     return true
   })
+
+  const handleStatusChange = async (project: Project, status: ProjectStatus) => {
+    if (status === 'Concluído') {
+      const custo = await getCustoProjetoByProjeto(project.pbId)
+      if (!custo) {
+        setCostDialogOpenForProject(project)
+        setPendingStatus('Concluído')
+        return
+      }
+    }
+    updateProjectStatus(project.id, status)
+  }
 
   return (
     <div className="rounded-md border bg-card overflow-hidden h-full flex flex-col">
@@ -150,7 +176,7 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
                       {ALL_STATUSES.map((status) => (
                         <DropdownMenuItem
                           key={status}
-                          onClick={() => updateProjectStatus(project.id, status)}
+                          onClick={() => handleStatusChange(project, status)}
                           className={cn(
                             'flex items-center gap-2 cursor-pointer',
                             project.status === status && 'bg-muted font-medium',
@@ -197,6 +223,16 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
                         <Download className="mr-2 h-4 w-4" />
                         Baixar Orçamento
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setPendingStatus(null)
+                          setCostDialogOpenForProject(project)
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Lançar Custos
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => onDeleteProject(project.id)}
@@ -213,6 +249,26 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
           )}
         </TableBody>
       </Table>
+
+      {costDialogOpenForProject && (
+        <ProjectCostDialog
+          project={costDialogOpenForProject}
+          open={!!costDialogOpenForProject}
+          onOpenChange={(open) => {
+            if (!open) {
+              setCostDialogOpenForProject(null)
+              setPendingStatus(null)
+            }
+          }}
+          onSaved={() => {
+            if (pendingStatus) {
+              updateProjectStatus(costDialogOpenForProject.id, pendingStatus)
+            }
+            setCostDialogOpenForProject(null)
+            setPendingStatus(null)
+          }}
+        />
+      )}
     </div>
   )
 }

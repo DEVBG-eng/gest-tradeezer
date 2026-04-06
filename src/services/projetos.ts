@@ -59,6 +59,43 @@ export const updateProjeto = (id: string, data: Partial<ProjetoRecord>) =>
   pb.collection('Projetos').update<ProjetoRecord>(id, data)
 export const deleteProjeto = (id: string) => pb.collection('Projetos').delete(id)
 
+export interface CustoProjetoRecord {
+  id?: string
+  projeto: string
+  freelancer: string
+  custo_documento?: number
+  custo_laudas?: number
+  custo_frete?: number
+  custo_envio_cartorio?: number
+  custo_cartorio?: number
+  custo_apostilamento?: number
+  custo_reconhecimento?: number
+  custo_envio_cliente?: number
+  created?: string
+  updated?: string
+  expand?: {
+    projeto?: ProjetoRecord
+  }
+}
+
+export const getCustosProjeto = () =>
+  pb
+    .collection('CustosProjeto')
+    .getFullList<CustoProjetoRecord>({ sort: '-created', expand: 'projeto' })
+export const getCustoProjetoByProjeto = async (projetoId: string) => {
+  try {
+    return await pb
+      .collection('CustosProjeto')
+      .getFirstListItem<CustoProjetoRecord>(`projeto="${projetoId}"`)
+  } catch (e) {
+    return null
+  }
+}
+export const createCustoProjeto = (data: Partial<CustoProjetoRecord>) =>
+  pb.collection('CustosProjeto').create<CustoProjetoRecord>(data)
+export const updateCustoProjeto = (id: string, data: Partial<CustoProjetoRecord>) =>
+  pb.collection('CustosProjeto').update<CustoProjetoRecord>(id, data)
+
 export const createItemProjeto = (data: Partial<ItemProjetoRecord>) =>
   pb.collection('ItensProjeto').create<ItemProjetoRecord>(data)
 export const updateItemProjeto = (id: string, data: Partial<ItemProjetoRecord>) =>

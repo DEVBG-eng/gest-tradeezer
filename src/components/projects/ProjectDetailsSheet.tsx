@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -52,6 +52,11 @@ export function ProjectDetailsSheet({
   const { projects, updateProject } = useProjectStore()
   const { toast } = useToast()
   const project = projects.find((p) => p.id === projectId)
+
+  const projectsRef = useRef(projects)
+  useEffect(() => {
+    projectsRef.current = projects
+  }, [projects])
 
   const [saving, setSaving] = useState(false)
   const [laudas, setLaudas] = useState(project?.laudas?.toString() || '0')
@@ -108,9 +113,7 @@ export function ProjectDetailsSheet({
       newFiles.forEach((cf) => {
         setTimeout(
           () => {
-            const currentProject = useProjectStore
-              .getState()
-              .projects.find((p) => p.id === projectId)
+            const currentProject = projectsRef.current.find((p) => p.id === projectId)
             if (!currentProject) return
 
             const isError = Math.random() > 0.85

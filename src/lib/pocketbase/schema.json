@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T16:31:02.878Z",
+  "generatedAt": "2026-04-06T14:41:19.071Z",
   "collections": [
     {
       "name": "users",
@@ -508,6 +508,95 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "CustosProjeto",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "projeto",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "Projetos"
+        },
+        {
+          "name": "freelancer",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "custo_documento",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_laudas",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_frete",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_envio_cartorio",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_cartorio",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_apostilamento",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_reconhecimento",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo_envio_cliente",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_custos_projeto ON CustosProjeto (projeto)"]
     }
   ]
 }
