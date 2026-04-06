@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import {
@@ -60,6 +60,7 @@ import useProjectStore, {
   ALL_STATUSES,
 } from '@/stores/useProjectStore'
 import useClientStore from '@/stores/useClientStore'
+import { getNextProjectReference } from '@/services/projetos'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
@@ -116,8 +117,20 @@ export default function CreateProject() {
   const [currentStep, setCurrentStep] = useState(0)
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
-  const [reference, setReference] = useState(`TRD-${Date.now().toString().slice(-6)}`)
+  const [reference, setReference] = useState('')
   const [clientMode, setClientMode] = useState<'registered' | 'manual'>('registered')
+
+  useEffect(() => {
+    let mounted = true
+    getNextProjectReference().then((ref) => {
+      if (mounted && !reference) {
+        setReference(ref)
+      }
+    })
+    return () => {
+      mounted = false
+    }
+  }, [reference])
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
   const [clientRef, setClientRef] = useState<string>('')

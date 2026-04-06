@@ -51,6 +51,30 @@ export const getProjetos = () =>
   pb
     .collection('Projetos')
     .getFullList<ProjetoRecord>({ sort: '-created', expand: 'ItensProjeto_via_projeto' })
+
+export const getNextProjectReference = async (): Promise<string> => {
+  try {
+    const result = await pb.collection('Projetos').getFullList<{ cod_referencia: string }>({
+      filter: 'cod_referencia ~ "TRD-"',
+      fields: 'cod_referencia',
+    })
+
+    let maxNum = 7412
+    for (const item of result) {
+      const match = item.cod_referencia.match(/TRD-(\d+)/)
+      if (match) {
+        const num = parseInt(match[1], 10)
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num
+        }
+      }
+    }
+
+    return `TRD-${maxNum + 1}`
+  } catch (e) {
+    return 'TRD-7413'
+  }
+}
 export const getProjeto = (id: string) =>
   pb.collection('Projetos').getOne<ProjetoRecord>(id, { expand: 'ItensProjeto_via_projeto' })
 export const createProjeto = (data: Partial<ProjetoRecord>) =>
