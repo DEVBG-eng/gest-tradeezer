@@ -10,7 +10,7 @@ export default function Layout() {
         <AppSidebar />
         <SidebarInset className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden">
           <AppHeader />
-          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 animate-fade-in custom-scrollbar">
+          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 animate-fade-in custom-scrollbar bg-[#ffffff]">
             <Outlet />
           </main>
         </SidebarInset>

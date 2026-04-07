@@ -126,9 +126,6 @@ export default function Projects() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Quadro de Projetos</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie e acompanhe todos os projetos de forma centralizada e visual.
-          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
           <div className="relative">

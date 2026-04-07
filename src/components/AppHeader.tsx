@@ -82,24 +82,12 @@ export function AppHeader() {
     : user?.email?.substring(0, 2).toUpperCase() || 'U'
 
   return (
-    <header className="h-16 flex items-center justify-between px-4 md:px-6 bg-white dark:bg-slate-900 border-b z-10 sticky top-0">
+    <header className="h-16 flex items-center justify-between px-4 md:px-6 dark:bg-slate-900 border-b z-10 sticky top-0 bg-[#8cecc3]">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="hidden md:flex items-center">
-          <Button
-            variant="outline"
-            className="w-64 justify-start text-muted-foreground shadow-sm"
-            onClick={() => setSearchOpen(true)}
-          >
-            <Search className="mr-2 h-4 w-4" />
-            Buscar projetos, clientes...
-            <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-          </Button>
-        </div>
+        <div className="hidden md:flex items-center"></div>
       </div>
 
       <div className="flex items-center gap-4">
