@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
@@ -31,10 +31,16 @@ import {
   AlertCircle,
   UploadCloud,
 } from 'lucide-react'
+import { formatDistanceToNow, format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import useProjectStore from '@/stores/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
 import { ProposalPrintTemplate } from './ProposalPrintTemplate'
 import { mapProjectToPrintData } from '@/lib/project-utils'
+import { getProjectHistory, ProjectHistory } from '@/services/history'
+import { useRealtime } from '@/hooks/use-realtime'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import pb from '@/lib/pocketbase/client'
 
 export function ProjectDetailsSheet({
   projectId,
@@ -56,6 +62,34 @@ export function ProjectDetailsSheet({
   const [laudas, setLaudas] = useState(project?.laudas?.toString() || '0')
   const [rate, setRate] = useState((project?.valorLauda || 0).toFixed(2))
   const [isPrinting, setIsPrinting] = useState(false)
+
+  const [history, setHistory] = useState<ProjectHistory[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
+  const loadHistory = useCallback(async () => {
+    if (!projectId) return
+    try {
+      setLoadingHistory(true)
+      const data = await getProjectHistory(projectId)
+      setHistory(data)
+    } catch (error) {
+      console.error('Failed to load history', error)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }, [projectId])
+
+  useEffect(() => {
+    if (projectId) {
+      loadHistory()
+    }
+  }, [projectId, loadHistory])
+
+  useRealtime('HistoricoAtividade', (e) => {
+    if (e.record.projeto === projectId) {
+      loadHistory()
+    }
+  })
 
   useEffect(() => {
     if (project) {
@@ -364,23 +398,70 @@ export function ProjectDetailsSheet({
               )}
             </TabsContent>
 
-            <TabsContent value="history" className="py-4 animate-fade-in shrink-0">
-              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-200 text-slate-500 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                    <span className="text-xs font-bold">1</span>
-                  </div>
-                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded border bg-card shadow-sm">
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-semibold">Projeto Criado</span>
-                      <span className="text-xs text-muted-foreground">Ontem</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Documento inserido via Intake OCR.
-                    </p>
-                  </div>
+            <TabsContent value="history" className="py-4 animate-fade-in shrink-0 min-h-[300px]">
+              {loadingHistory && history.length === 0 ? (
+                <div className="flex justify-center p-8 text-muted-foreground h-full items-center">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-              </div>
+              ) : history.length === 0 ? (
+                <div className="text-center p-8 text-muted-foreground bg-muted/20 rounded-lg border border-dashed mt-4">
+                  Nenhum histórico registrado para este projeto.
+                </div>
+              ) : (
+                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                  {history.map((item) => {
+                    const user = item.expand?.usuario
+                    const userName = user?.name || 'Sistema'
+                    const avatarUrl = user?.avatar
+                      ? pb.files.getUrl(user as any, user.avatar, { thumb: '100x100' })
+                      : undefined
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-6 last:mb-0"
+                      >
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-muted text-muted-foreground shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 overflow-hidden">
+                          <Avatar className="h-full w-full">
+                            <AvatarImage src={avatarUrl} />
+                            <AvatarFallback className="text-xs font-semibold">
+                              {userName.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-start mb-2 gap-2">
+                            <span className="text-sm font-semibold text-foreground leading-tight">
+                              {item.acao}
+                            </span>
+                            <span
+                              className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full whitespace-nowrap shrink-0"
+                              title={format(new Date(item.created), 'dd/MM/yyyy HH:mm:ss')}
+                            >
+                              {formatDistanceToNow(new Date(item.created), {
+                                addSuffix: true,
+                                locale: ptBR,
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            {item.detalhes && (
+                              <p className="text-xs text-muted-foreground/80 bg-muted/30 p-2 rounded-md border border-border/50">
+                                {item.detalhes}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="text-[11px] font-medium text-muted-foreground">
+                                por {userName}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </SheetContent>
