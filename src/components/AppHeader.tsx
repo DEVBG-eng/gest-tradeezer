@@ -66,7 +66,7 @@ export function AppHeader() {
   const handleNotificationClick = (notif: any) => {
     if (!notif.lida) markAsRead(notif.id)
     if (notif.projeto) {
-      navigate(`/projects`)
+      navigate(`/projects?projectId=${notif.projeto}`)
       setNotifOpen(false)
     }
   }

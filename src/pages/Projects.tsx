@@ -19,6 +19,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, FilterX, Search } from 'lucide-react'
 import { mapProjectToPrintData } from '@/lib/project-utils'
+import pb from '@/lib/pocketbase/client'
 import { ProjectStatusFilter } from '@/components/projects/ProjectStatusFilter'
 import { Input } from '@/components/ui/input'
 
@@ -43,6 +44,34 @@ export default function Projects() {
   useEffect(() => {
     return () => setSearchQuery('')
   }, [setSearchQuery])
+
+  useEffect(() => {
+    const projectId = searchParams.get('projectId')
+    if (!projectId) return
+
+    const verifyAndOpen = async () => {
+      try {
+        await pb.collection('Projetos').getOne(projectId)
+        setSelectedId(projectId)
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Projeto não encontrado',
+          description: 'O projeto que você tentou acessar não existe ou foi removido.',
+        })
+      } finally {
+        setSearchParams(
+          (prev) => {
+            prev.delete('projectId')
+            return prev
+          },
+          { replace: true },
+        )
+      }
+    }
+
+    verifyAndOpen()
+  }, [searchParams, setSearchParams, toast])
 
   useEffect(() => {
     const handlePrintEvent = (e: Event) => {
