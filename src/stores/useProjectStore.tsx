@@ -98,6 +98,8 @@ export interface Project {
   freteJk?: boolean
   translationType?: string
   items?: ProjectItem[]
+  created?: string
+  updated?: string
 }
 
 interface ProjectStoreContext {
@@ -149,6 +151,8 @@ const mapToProject = (record: ProjetoRecord): Project => ({
     valorLauda: i.valor_lauda,
     total: i.valor_total,
   })),
+  created: record.created,
+  updated: record.updated,
 })
 
 const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {

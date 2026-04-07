@@ -51,10 +51,7 @@ export default function Index() {
   }, [projects])
 
   const approvedTodayCount = approvedToday.length
-  const approvedTodayTotal = approvedToday.reduce(
-    (acc: number, p: any) => acc + (p.valor_total || 0),
-    0,
-  )
+  const approvedTodayTotal = approvedToday.reduce((acc: number, p: any) => acc + (p.value || 0), 0)
 
   const STATUSES = [
     { title: 'Orçamento', status: 'Orçamento', icon: FileText, color: 'text-blue-500' },
@@ -80,7 +77,7 @@ export default function Index() {
     return STATUSES.map((m) => {
       const filtered = projects.filter((p: any) => p.status === m.status)
       const count = filtered.length
-      const total = filtered.reduce((acc: number, p: any) => acc + (p.valor_total || 0), 0)
+      const total = filtered.reduce((acc: number, p: any) => acc + (p.value || 0), 0)
       return { ...m, count, total }
     })
   }, [projects])
