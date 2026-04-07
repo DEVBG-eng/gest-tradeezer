@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-07T00:50:27.342Z",
+  "generatedAt": "2026-04-07T15:42:41.308Z",
   "collections": [
     {
       "name": "users",
@@ -97,7 +97,8 @@
             "Entregue",
             "Atrasado/Bloqueado",
             "Cancelado",
-            "Não Aprovado"
+            "Não Aprovado",
+            "Rascunho"
           ]
         },
         {

@@ -17,6 +17,7 @@ import {
   Plus,
   ChevronsUpDown,
   Check,
+  Info,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -191,13 +192,6 @@ export default function CreateProject() {
           setItems(items.map((i) => ({ ...i, valorLauda: formatted })))
         } else {
           setItems(items.map((i) => ({ ...i, valorLauda: '' })))
-        }
-
-        if (c.observacoes) {
-          setObservations((prev) => {
-            const newObs = `[Cliente CRM]: ${c.observacoes}`
-            return prev ? `${prev}\n\n${newObs}` : newObs
-          })
         }
 
         if (c.idiomas_frequentes) {
@@ -697,6 +691,63 @@ export default function CreateProject() {
 
               {currentStep === 1 && (
                 <div className="space-y-6 animate-fade-in">
+                  {clientMode === 'registered' &&
+                    clientRef &&
+                    (() => {
+                      const selectedClient = clients.find((c) => c.id === clientRef)
+                      if (!selectedClient) return null
+
+                      const hasObs = !!selectedClient.observacoes?.trim()
+                      const hasFrete = !!selectedClient.informacoes_frete?.trim()
+
+                      if (!hasObs && !hasFrete) {
+                        return (
+                          <Alert className="bg-muted/30 border-border border-dashed text-muted-foreground">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                            <AlertTitle className="text-sm font-medium">
+                              Informações do Cliente
+                            </AlertTitle>
+                            <AlertDescription className="text-xs mt-1">
+                              Nenhuma observação cadastrada para este cliente no CRM.
+                            </AlertDescription>
+                          </Alert>
+                        )
+                      }
+
+                      return (
+                        <Alert className="bg-primary/5 border-primary/20">
+                          <Info className="h-4 w-4 text-primary" />
+                          <AlertTitle className="text-primary font-semibold">
+                            Informações do Cliente (Referência)
+                          </AlertTitle>
+                          <AlertDescription className="space-y-3 mt-3 text-foreground">
+                            {hasObs && (
+                              <div className="bg-background/50 rounded-md p-3 border border-primary/10">
+                                <span className="font-semibold text-[10px] uppercase text-primary/80 tracking-wider flex items-center gap-1 mb-1">
+                                  <FileText className="w-3 h-3" />
+                                  Observações do CRM
+                                </span>
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                                  {selectedClient.observacoes}
+                                </p>
+                              </div>
+                            )}
+                            {hasFrete && (
+                              <div className="bg-background/50 rounded-md p-3 border border-primary/10">
+                                <span className="font-semibold text-[10px] uppercase text-primary/80 tracking-wider flex items-center gap-1 mb-1">
+                                  <Info className="w-3 h-3" />
+                                  Regras de Frete/Endereço
+                                </span>
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                                  {selectedClient.informacoes_frete}
+                                </p>
+                              </div>
+                            )}
+                          </AlertDescription>
+                        </Alert>
+                      )
+                    })()}
+
                   <div className="space-y-4">
                     <Label
                       className={cn(
