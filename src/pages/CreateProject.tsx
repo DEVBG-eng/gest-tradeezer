@@ -70,6 +70,11 @@ import { mapProjectToPrintData } from '@/lib/project-utils'
 const SERVICES_OPTS = [
   { id: 'digital', label: 'Via Digital', key: 'digital' as const },
   { id: 'fisico', label: 'Via Física', key: 'fisico' as const },
+  { id: 'certidao', label: 'Certidão', key: 'certidao' as const },
+  { id: 'divorcio', label: 'Divórcio', key: 'divorcio' as const },
+  { id: 'declaracao', label: 'Declaração', key: 'declaracao' as const },
+  { id: 'procuracao', label: 'Procuração', key: 'procuracao' as const },
+  { id: 'certidaoObjetoPe', label: 'Certidão Objeto e pé', key: 'certidao_objeto_pe' as const },
   { id: 'apostilamento', label: 'Apostilamento de Haia', key: 'apostilamento' as const },
   {
     id: 'apostilamentoDigital',
@@ -108,6 +113,8 @@ interface ItemInput {
   description: string
   laudas: string
   valorLauda: string
+  _sourceServiceKey?: string
+  _isDirty?: boolean
 }
 
 export default function CreateProject() {
@@ -155,6 +162,11 @@ export default function CreateProject() {
   const [services, setServices] = useState({
     digital: true,
     fisico: false,
+    certidao: false,
+    divorcio: false,
+    declaracao: false,
+    procuracao: false,
+    certidao_objeto_pe: false,
     apostilamento: false,
     apostilamentoDigital: false,
     apostilamentoFisico: false,
@@ -189,9 +201,9 @@ export default function CreateProject() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })
-          setItems(items.map((i) => ({ ...i, valorLauda: formatted })))
+          setItems(items.map((i) => ({ ...i, valorLauda: formatted, _isDirty: true })))
         } else {
-          setItems(items.map((i) => ({ ...i, valorLauda: '' })))
+          setItems(items.map((i) => ({ ...i, valorLauda: '', _isDirty: true })))
         }
 
         if (c.idiomas_frequentes) {
@@ -213,7 +225,7 @@ export default function CreateProject() {
       }
     } else {
       setClientName('')
-      setItems(items.map((i) => ({ ...i, valorLauda: '' })))
+      setItems(items.map((i) => ({ ...i, valorLauda: '', _isDirty: true })))
     }
   }
 
@@ -255,7 +267,7 @@ export default function CreateProject() {
 
   const updateItem = (index: number, field: keyof ItemInput, value: string) => {
     const newItems = [...items]
-    newItems[index][field] = value
+    newItems[index] = { ...newItems[index], [field]: value, _isDirty: true }
     setItems(newItems)
     setStepErrors((p) => ({ ...p, items: '' }))
   }
@@ -283,6 +295,108 @@ export default function CreateProject() {
   const removeItem = (index: number) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== index))
+    } else {
+      setItems([{ description: '', laudas: '', valorLauda: '' }])
+    }
+  }
+
+  const handleServiceToggle = (key: keyof typeof services, checked: boolean, label: string) => {
+    setServices((prev) => ({ ...prev, [key]: checked }))
+
+    if (checked) {
+      let price = 0
+      const clientObj = clientRef ? clients.find((c) => c.id === clientRef) : null
+
+      if (clientObj) {
+        if (key === 'certidao') {
+          price = services.digital
+            ? clientObj.valor_certidao_digital || 0
+            : services.fisico
+              ? clientObj.valor_certidao_fisica || 0
+              : 0
+        } else if (key === 'procuracao') {
+          price = services.digital
+            ? clientObj.valor_procuracao_digital || 0
+            : services.fisico
+              ? clientObj.valor_procuracao_fisica || 0
+              : 0
+        } else if (key === 'frete') {
+          price = clientObj.valor_frete || 0
+        }
+      }
+
+      const formattedPrice = price.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+
+      setItems((prevItems) => {
+        const isFirstEmpty =
+          prevItems.length === 1 &&
+          !prevItems[0].description &&
+          !prevItems[0].laudas &&
+          !prevItems[0].valorLauda
+
+        const newItem: ItemInput = {
+          description: label,
+          laudas: '1',
+          valorLauda: formattedPrice,
+          _sourceServiceKey: key,
+          _isDirty: false,
+        }
+
+        return isFirstEmpty ? [newItem] : [...prevItems, newItem]
+      })
+    } else {
+      setItems((prevItems) => {
+        const filtered = prevItems.filter(
+          (item) =>
+            !(item._sourceServiceKey === key && item.description === label && !item._isDirty),
+        )
+        return filtered.length === 0 ? [{ description: '', laudas: '', valorLauda: '' }] : filtered
+      })
+    }
+
+    if (key === 'digital' || key === 'fisico') {
+      setItems((prevItems) =>
+        prevItems.map((item) => {
+          if (item._isDirty) return item
+          const clientObj = clientRef ? clients.find((c) => c.id === clientRef) : null
+          if (!clientObj) return item
+
+          if (item._sourceServiceKey === 'certidao' && item.description === 'Certidão') {
+            const isDigital = key === 'digital' ? checked : services.digital
+            const isFisico = key === 'fisico' ? checked : services.fisico
+            const newPrice = isDigital
+              ? clientObj.valor_certidao_digital || 0
+              : isFisico
+                ? clientObj.valor_certidao_fisica || 0
+                : 0
+            const formatted = newPrice.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+            return { ...item, valorLauda: formatted }
+          }
+
+          if (item._sourceServiceKey === 'procuracao' && item.description === 'Procuração') {
+            const isDigital = key === 'digital' ? checked : services.digital
+            const isFisico = key === 'fisico' ? checked : services.fisico
+            const newPrice = isDigital
+              ? clientObj.valor_procuracao_digital || 0
+              : isFisico
+                ? clientObj.valor_procuracao_fisica || 0
+                : 0
+            const formatted = newPrice.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+            return { ...item, valorLauda: formatted }
+          }
+
+          return item
+        }),
+      )
     }
   }
 
@@ -397,6 +511,11 @@ export default function CreateProject() {
       translationType,
       observations,
       digitalCopy: services.digital,
+      certidao: services.certidao,
+      divorcio: services.divorcio,
+      declaracao: services.declaracao,
+      procuracao: services.procuracao,
+      certidao_objeto_pe: services.certidao_objeto_pe,
       hagueApostille: services.apostilamento,
       digitalApostille: services.apostilamentoDigital,
       physicalApostille: services.apostilamentoFisico,
@@ -411,10 +530,10 @@ export default function CreateProject() {
     setSaving(true)
     setStepErrors({})
     try {
-      await addProject(newProjectData)
+      await addProject(newProjectData as any)
 
       if (generatePdf) {
-        setCreatedProject({ ...newProjectData, pbId: '' } as Project)
+        setCreatedProject({ ...newProjectData, pbId: '' } as unknown as Project)
         setShowProposal(true)
       } else {
         toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
@@ -857,7 +976,7 @@ export default function CreateProject() {
                             mode="single"
                             selected={startDate}
                             onSelect={(d) => {
-                              setStartDate(d)
+                              if (d) setStartDate(d)
                               setStepErrors((p) => ({ ...p, startDate: '' }))
                             }}
                             initialFocus
@@ -938,7 +1057,7 @@ export default function CreateProject() {
                             : ''
                           setItems([
                             ...items,
-                            { description: '', laudas: '', valorLauda: formatted },
+                            { description: '', laudas: '', valorLauda: formatted, _isDirty: true },
                           ])
                           setStepErrors((p) => ({ ...p, items: '' }))
                         }}
@@ -1007,7 +1126,6 @@ export default function CreateProject() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removeItem(idx)}
-                                  disabled={items.length === 1}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
@@ -1027,9 +1145,7 @@ export default function CreateProject() {
                           <Checkbox
                             id={id}
                             checked={services[key]}
-                            onCheckedChange={(c) =>
-                              setServices((prev) => ({ ...prev, [key]: !!c }))
-                            }
+                            onCheckedChange={(c) => handleServiceToggle(key, !!c, label)}
                           />
                           <Label htmlFor={id} className="font-normal cursor-pointer">
                             {label}

@@ -39,6 +39,11 @@ export interface ProjetoRecord {
   frete?: boolean
   dhl?: boolean
   frete_jk?: boolean
+  certidao?: boolean
+  divorcio?: boolean
+  declaracao?: boolean
+  procuracao?: boolean
+  certidao_objeto_pe?: boolean
   observacoes?: string
   pasta_url?: string
   created?: string

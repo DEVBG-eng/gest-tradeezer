@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-07T15:42:41.308Z",
+  "generatedAt": "2026-04-07T16:01:38.088Z",
   "collections": [
     {
       "name": "users",
@@ -242,6 +242,36 @@
         },
         {
           "name": "frete_jk",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "certidao",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "divorcio",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "declaracao",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "procuracao",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "certidao_objeto_pe",
           "type": "bool",
           "required": false,
           "system": false

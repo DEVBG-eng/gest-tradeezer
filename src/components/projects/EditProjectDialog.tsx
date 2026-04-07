@@ -34,6 +34,7 @@ import { CalendarIcon, ChevronRight, Loader2, Download, Trash2, Plus } from 'luc
 import { cn } from '@/lib/utils'
 import { LanguageCombobox } from '@/components/LanguageCombobox'
 import useProjectStore, { ProjectStatus, ALL_STATUSES } from '@/stores/useProjectStore'
+import useClientStore from '@/stores/useClientStore'
 import { useToast } from '@/hooks/use-toast'
 import { ProposalPrintTemplate } from './ProposalPrintTemplate'
 
@@ -47,6 +48,15 @@ const TRANSLATION_TYPES = [
 const SERVICES_OPTS = [
   { id: 'edit-digital', label: 'Via Digital', key: 'digital' as const },
   { id: 'edit-fisico', label: 'Via Física', key: 'fisico' as const },
+  { id: 'edit-certidao', label: 'Certidão', key: 'certidao' as const },
+  { id: 'edit-divorcio', label: 'Divórcio', key: 'divorcio' as const },
+  { id: 'edit-declaracao', label: 'Declaração', key: 'declaracao' as const },
+  { id: 'edit-procuracao', label: 'Procuração', key: 'procuracao' as const },
+  {
+    id: 'edit-certidao-objeto-pe',
+    label: 'Certidão Objeto e pé',
+    key: 'certidao_objeto_pe' as const,
+  },
   { id: 'edit-apostilamento', label: 'Apostilamento de Haia', key: 'apostilamento' as const },
   {
     id: 'edit-apostilamento-digital',
@@ -58,7 +68,11 @@ const SERVICES_OPTS = [
     label: 'Apostilamento Físico',
     key: 'apostilamentoFisico' as const,
   },
-  { id: 'edit-reconhecimento', label: 'Reconhecimento', key: 'reconhecimentoFirma' as const },
+  {
+    id: 'edit-reconhecimento',
+    label: 'Reconhecimento de Firma',
+    key: 'reconhecimentoFirma' as const,
+  },
   {
     id: 'edit-autenticacao-digital',
     label: 'Autenticação documento Digital',
@@ -74,6 +88,8 @@ interface ItemInput {
   description: string
   laudas: string
   valorLauda: string
+  _sourceServiceKey?: string
+  _isDirty?: boolean
 }
 
 export function EditProjectDialog({
@@ -84,6 +100,7 @@ export function EditProjectDialog({
   onClose: () => void
 }) {
   const { projects, updateProject } = useProjectStore()
+  const { clients } = useClientStore()
   const { toast } = useToast()
   const project = projects.find((p) => p.id === projectId)
 
@@ -107,6 +124,11 @@ export function EditProjectDialog({
   const [services, setServices] = useState({
     digital: project?.digitalCopy ?? true,
     fisico: project?.physicalCopy ?? false,
+    certidao: (project as any)?.certidao ?? false,
+    divorcio: (project as any)?.divorcio ?? false,
+    declaracao: (project as any)?.declaracao ?? false,
+    procuracao: (project as any)?.procuracao ?? false,
+    certidao_objeto_pe: (project as any)?.certidao_objeto_pe ?? false,
     apostilamento: project?.hagueApostille ?? false,
     apostilamentoDigital: project?.digitalApostille ?? false,
     apostilamentoFisico: project?.physicalApostille ?? false,
@@ -127,15 +149,118 @@ export function EditProjectDialog({
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           }),
+          _isDirty: true,
         }))
       : [{ description: '', laudas: '', valorLauda: '' }],
   )
 
   if (!project) return null
 
+  const clientRef = (project as any)?.clientRef || (project as any)?.cliente_ref
+
+  const handleServiceToggle = (key: keyof typeof services, checked: boolean, label: string) => {
+    setServices((prev) => ({ ...prev, [key]: checked }))
+
+    if (checked) {
+      let price = 0
+      const clientObj = clientRef ? clients.find((c) => c.id === clientRef) : null
+
+      if (clientObj) {
+        if (key === 'certidao') {
+          price = services.digital
+            ? clientObj.valor_certidao_digital || 0
+            : services.fisico
+              ? clientObj.valor_certidao_fisica || 0
+              : 0
+        } else if (key === 'procuracao') {
+          price = services.digital
+            ? clientObj.valor_procuracao_digital || 0
+            : services.fisico
+              ? clientObj.valor_procuracao_fisica || 0
+              : 0
+        } else if (key === 'frete') {
+          price = clientObj.valor_frete || 0
+        }
+      }
+
+      const formattedPrice = price.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+
+      setItems((prevItems) => {
+        const isFirstEmpty =
+          prevItems.length === 1 &&
+          !prevItems[0].description &&
+          !prevItems[0].laudas &&
+          !prevItems[0].valorLauda
+
+        const newItem: ItemInput = {
+          description: label,
+          laudas: '1',
+          valorLauda: formattedPrice,
+          _sourceServiceKey: key,
+          _isDirty: false,
+        }
+
+        return isFirstEmpty ? [newItem] : [...prevItems, newItem]
+      })
+    } else {
+      setItems((prevItems) => {
+        const filtered = prevItems.filter(
+          (item) =>
+            !(item._sourceServiceKey === key && item.description === label && !item._isDirty),
+        )
+        return filtered.length === 0 ? [{ description: '', laudas: '', valorLauda: '' }] : filtered
+      })
+    }
+
+    if (key === 'digital' || key === 'fisico') {
+      setItems((prevItems) =>
+        prevItems.map((item) => {
+          if (item._isDirty) return item
+          const clientObj = clientRef ? clients.find((c) => c.id === clientRef) : null
+          if (!clientObj) return item
+
+          if (item._sourceServiceKey === 'certidao' && item.description === 'Certidão') {
+            const isDigital = key === 'digital' ? checked : services.digital
+            const isFisico = key === 'fisico' ? checked : services.fisico
+            const newPrice = isDigital
+              ? clientObj.valor_certidao_digital || 0
+              : isFisico
+                ? clientObj.valor_certidao_fisica || 0
+                : 0
+            const formatted = newPrice.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+            return { ...item, valorLauda: formatted }
+          }
+
+          if (item._sourceServiceKey === 'procuracao' && item.description === 'Procuração') {
+            const isDigital = key === 'digital' ? checked : services.digital
+            const isFisico = key === 'fisico' ? checked : services.fisico
+            const newPrice = isDigital
+              ? clientObj.valor_procuracao_digital || 0
+              : isFisico
+                ? clientObj.valor_procuracao_fisica || 0
+                : 0
+            const formatted = newPrice.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+            return { ...item, valorLauda: formatted }
+          }
+
+          return item
+        }),
+      )
+    }
+  }
+
   const updateItem = (index: number, field: keyof ItemInput, value: string) => {
     const newItems = [...items]
-    newItems[index][field] = value
+    newItems[index] = { ...newItems[index], [field]: value, _isDirty: true }
     setItems(newItems)
   }
 
@@ -162,6 +287,8 @@ export function EditProjectDialog({
   const removeItem = (index: number) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== index))
+    } else {
+      setItems([{ description: '', laudas: '', valorLauda: '' }])
     }
   }
 
@@ -209,6 +336,11 @@ export function EditProjectDialog({
         observations,
         digitalCopy: services.digital,
         physicalCopy: services.fisico,
+        certidao: services.certidao,
+        divorcio: services.divorcio,
+        declaracao: services.declaracao,
+        procuracao: services.procuracao,
+        certidao_objeto_pe: services.certidao_objeto_pe,
         hagueApostille: services.apostilamento,
         digitalApostille: services.apostilamentoDigital,
         physicalApostille: services.apostilamentoFisico,
@@ -218,7 +350,7 @@ export function EditProjectDialog({
         internationalShipping: services.dhl,
         freteJk: services.freteJk,
         items: projectItems,
-      })
+      } as any)
       toast({ title: 'Projeto atualizado', description: 'As alterações foram salvas com sucesso.' })
       onClose()
     } catch (e) {
@@ -430,7 +562,10 @@ export function EditProjectDialog({
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    setItems([...items, { description: '', laudas: '', valorLauda: '' }])
+                    setItems([
+                      ...items,
+                      { description: '', laudas: '', valorLauda: '', _isDirty: true },
+                    ])
                   }
                 >
                   <Plus className="h-4 w-4 mr-1" /> Adicionar Item
@@ -491,7 +626,6 @@ export function EditProjectDialog({
                             variant="ghost"
                             size="icon"
                             onClick={() => removeItem(idx)}
-                            disabled={items.length === 1}
                             className="h-8 w-8"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -535,7 +669,7 @@ export function EditProjectDialog({
                     <Checkbox
                       id={id}
                       checked={services[key]}
-                      onCheckedChange={(c) => setServices((prev) => ({ ...prev, [key]: !!c }))}
+                      onCheckedChange={(c) => handleServiceToggle(key, !!c, label)}
                     />
                     <Label htmlFor={id} className="font-normal text-xs cursor-pointer">
                       {label}
