@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import {
@@ -32,6 +32,15 @@ import { LANGUAGES } from '@/components/LanguageCombobox'
 import { cn } from '@/lib/utils'
 import { getCustoProjetoByProjeto } from '@/services/projetos'
 import { ProjectCostDialog } from './ProjectCostDialog'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
   Orçamento: 'bg-slate-400 hover:bg-slate-500 text-white',
@@ -73,6 +82,12 @@ export function ProjectGrid({
 
   const [costDialogOpenForProject, setCostDialogOpenForProject] = useState<Project | null>(null)
   const [pendingStatus, setPendingStatus] = useState<ProjectStatus | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 15
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchParams, referenceFilter, projects])
 
   const getLanguageLabel = (code?: string) => {
     if (!code) return '-'
@@ -113,6 +128,26 @@ export function ProjectGrid({
     updateProjectStatus(project.id, status)
   }
 
+  const totalPages = Math.ceil(sortedProjects.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const paginatedProjects = sortedProjects.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+
+  const getPageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+    let start = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+    let end = Math.min(totalPages, start + maxVisiblePages - 1)
+
+    if (end - start + 1 < maxVisiblePages) {
+      start = Math.max(1, end - maxVisiblePages + 1)
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+    return pages
+  }
+
   return (
     <div className="rounded-md border bg-card overflow-hidden h-full flex flex-col">
       <Table>
@@ -126,6 +161,7 @@ export function ProjectGrid({
             <TableHead className="font-semibold text-foreground">Idiomas</TableHead>
             <TableHead className="font-semibold text-foreground">Tipo de documento</TableHead>
             <TableHead className="font-semibold text-foreground">Quantidades</TableHead>
+            <TableHead className="font-semibold text-foreground">Data de entrada</TableHead>
             <TableHead className="font-semibold text-foreground">Data de entrega</TableHead>
             <TableHead className="text-right font-semibold text-foreground">Valor final</TableHead>
             <TableHead className="w-[160px] font-semibold text-foreground">Status</TableHead>
@@ -137,22 +173,22 @@ export function ProjectGrid({
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
+              <TableCell colSpan={11} className="h-32 text-center text-muted-foreground">
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" /> Carregando projetos...
                 </div>
               </TableCell>
             </TableRow>
-          ) : sortedProjects.length === 0 ? (
+          ) : paginatedProjects.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
+              <TableCell colSpan={11} className="h-32 text-center text-muted-foreground">
                 {projects.length === 0
                   ? 'Nenhum projeto encontrado.'
                   : 'Nenhum projeto encontrado com os filtros selecionados'}
               </TableCell>
             </TableRow>
           ) : (
-            sortedProjects.map((project) => (
+            paginatedProjects.map((project) => (
               <TableRow key={project.id} className="group hover:bg-muted/50">
                 <TableCell className="font-medium">
                   <span
@@ -178,6 +214,9 @@ export function ProjectGrid({
                     <ChevronRight className="h-3 w-3 shrink-0" />
                     <span className="font-medium text-foreground">{project.laudas}</span> laudas
                   </div>
+                </TableCell>
+                <TableCell>
+                  {project.entryDate ? format(parseISO(project.entryDate), 'dd/MM/yyyy') : '-'}
                 </TableCell>
                 <TableCell>
                   {project.dueDate ? format(parseISO(project.dueDate), 'dd/MM/yyyy') : '-'}
@@ -278,6 +317,42 @@ export function ProjectGrid({
           )}
         </TableBody>
       </Table>
+
+      {totalPages > 1 && (
+        <div className="p-4 border-t mt-auto">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className={
+                    currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                  }
+                />
+              </PaginationItem>
+              {getPageNumbers().map((pageNum) => (
+                <PaginationItem key={pageNum}>
+                  <PaginationLink
+                    isActive={currentPage === pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className="cursor-pointer"
+                  >
+                    {pageNum}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className={
+                    currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       {costDialogOpenForProject && (
         <ProjectCostDialog
