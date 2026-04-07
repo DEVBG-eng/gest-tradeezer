@@ -388,7 +388,20 @@ export function ProjectDetailsSheet({
 
       {isPrinting && (
         <ProposalPrintTemplate
-          data={mapProjectToPrintData(project)}
+          data={{
+            ...mapProjectToPrintData(project),
+            urgent: project.urgent,
+            international: project.international,
+            digitalCopy: project.digitalCopy,
+            physicalCopy: project.physicalCopy,
+            hagueApostille: project.hagueApostille,
+            digitalApostille: project.digitalApostille,
+            physicalApostille: project.physicalApostille,
+            notarization: project.notarization,
+            digitalAuthentication: project.digitalAuthentication,
+            shipping: project.shipping,
+            internationalShipping: project.internationalShipping,
+          }}
           autoPrint={true}
           onClose={() => setIsPrinting(false)}
         />
