@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Download, Loader2, Plus, Trash2 } from 'lucide-react'
 import {
   Dialog,
@@ -41,7 +41,13 @@ export function EditableProposalPreview({
   const [isSaving, setIsSaving] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
 
-  // Recalculate totals
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(initialData)
+      setShowPrint(false)
+    }
+  }, [initialData, isOpen])
+
   const totals = useMemo(() => {
     let totalLaudas = 0
     let totalValue = 0
@@ -79,7 +85,7 @@ export function EditableProposalPreview({
     })
   }
 
-  const handleSaveAndPrint = async () => {
+  const handleSaveAndGenerateJPG = async () => {
     setIsSaving(true)
     try {
       const finalDraft = {
@@ -91,7 +97,7 @@ export function EditableProposalPreview({
       await onSave(finalDraft)
       setShowPrint(true)
     } catch (e) {
-      // Error handled by parent / store
+      console.error(e)
     } finally {
       setIsSaving(false)
     }
@@ -99,15 +105,29 @@ export function EditableProposalPreview({
 
   if (showPrint) {
     return (
-      <ProposalPrintTemplate
-        project={draft}
-        items={draft.items}
-        autoPrint={true}
-        onClose={() => {
-          setShowPrint(false)
-          onPrintClose()
-        }}
-      />
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div className="bg-white p-8 rounded-xl flex flex-col items-center gap-6 shadow-2xl animate-in zoom-in-95">
+          <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
+          <div className="text-center">
+            <p className="text-lg font-bold text-slate-800">Gerando Imagem...</p>
+            <p className="text-sm text-slate-500">Por favor, aguarde um momento.</p>
+          </div>
+        </div>
+        <div
+          className="absolute pointer-events-none overflow-hidden"
+          style={{ width: '800px', left: '-9999px', top: '-9999px' }}
+        >
+          <ProposalPrintTemplate
+            project={draft}
+            items={draft.items}
+            autoGenerateJPG={true}
+            onClose={() => {
+              setShowPrint(false)
+              onPrintClose()
+            }}
+          />
+        </div>
+      </div>
     )
   }
 
@@ -115,7 +135,7 @@ export function EditableProposalPreview({
     <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
       <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-6 bg-slate-50/50">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Revisar e Gerar Orçamento</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Revisar e Gerar Orçamento (JPG)</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-4 space-y-6 px-1">
@@ -124,14 +144,14 @@ export function EditableProposalPreview({
               <div className="space-y-2">
                 <Label>Nome do Cliente</Label>
                 <Input
-                  value={draft.client}
+                  value={draft.client || ''}
                   onChange={(e) => setDraft({ ...draft, client: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Cód. Referência</Label>
                 <Input
-                  value={draft.id}
+                  value={draft.id || ''}
                   onChange={(e) => setDraft({ ...draft, id: e.target.value })}
                 />
               </div>
@@ -156,7 +176,7 @@ export function EditableProposalPreview({
                 />
               </div>
               <div className="space-y-2">
-                <Label>Prazo de Entrega</Label>
+                <Label>Prazo Estimado</Label>
                 <Input
                   type="date"
                   value={draft.dueDate ? draft.dueDate.split('T')[0] : ''}
@@ -188,7 +208,7 @@ export function EditableProposalPreview({
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead>Descrição</TableHead>
-                      <TableHead className="w-[120px]">Qtd. Laudas</TableHead>
+                      <TableHead className="w-[120px]">Qtd.</TableHead>
                       <TableHead className="w-[150px]">Valor Unit. (R$)</TableHead>
                       <TableHead className="w-[150px] text-right">Subtotal</TableHead>
                       <TableHead className="w-[60px]"></TableHead>
@@ -199,7 +219,7 @@ export function EditableProposalPreview({
                       <TableRow key={index}>
                         <TableCell>
                           <Input
-                            value={item.description}
+                            value={item.description || ''}
                             onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                           />
                         </TableCell>
@@ -208,7 +228,7 @@ export function EditableProposalPreview({
                             type="number"
                             min="0"
                             step="0.01"
-                            value={item.laudas || ''}
+                            value={item.laudas === undefined ? '' : item.laudas}
                             onChange={(e) =>
                               handleItemChange(index, 'laudas', Number(e.target.value))
                             }
@@ -219,7 +239,7 @@ export function EditableProposalPreview({
                             type="number"
                             min="0"
                             step="0.01"
-                            value={item.valorLauda || ''}
+                            value={item.valorLauda === undefined ? '' : item.valorLauda}
                             onChange={(e) =>
                               handleItemChange(index, 'valorLauda', Number(e.target.value))
                             }
@@ -269,13 +289,13 @@ export function EditableProposalPreview({
             <Button variant="ghost" onClick={onClose} disabled={isSaving}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveAndPrint} disabled={isSaving} size="lg">
+            <Button onClick={handleSaveAndGenerateJPG} disabled={isSaving} size="lg">
               {isSaving ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <Download className="w-4 h-4 mr-2" />
               )}
-              Finalizar e Baixar Orçamento
+              Gerar JPG
             </Button>
           </div>
         </DialogFooter>

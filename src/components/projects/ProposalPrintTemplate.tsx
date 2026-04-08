@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import {
   Table,
   TableBody,
@@ -8,241 +9,214 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import logoUrl from '@/assets/image-ab962.png'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import logoUrl from '@/assets/logo-para-orcamento-fe7a9.png'
+import * as htmlToImage from 'html-to-image'
 
 export function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-export function ProposalPrintTemplate({ project, items, autoPrint, onClose }: any) {
+export function ProposalPrintTemplate({
+  project,
+  items,
+  orcamento,
+  autoGenerateJPG,
+  onClose,
+}: any) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    if (autoPrint) {
+    if (autoGenerateJPG && containerRef.current) {
       const timer = setTimeout(() => {
-        window.print()
-        if (onClose) onClose()
+        htmlToImage
+          .toJpeg(containerRef.current!, {
+            quality: 0.95,
+            backgroundColor: '#ffffff',
+            pixelRatio: 2,
+          })
+          .then((dataUrl) => {
+            const link = document.createElement('a')
+            const refId = project?.cod_referencia || project?.id || orcamento?.id || 'Tradeezer'
+            link.download = `Orcamento_${refId.replace('TRD-', '')}.jpg`
+            link.href = dataUrl
+            link.click()
+          })
+          .catch((err) => {
+            console.error('Failed to generate JPG', err)
+          })
+          .finally(() => {
+            if (onClose) onClose()
+          })
       }, 800)
       return () => clearTimeout(timer)
     }
-  }, [autoPrint, onClose])
+  }, [autoGenerateJPG, onClose, project, orcamento])
 
-  // Extract variables, supporting both DB format and Client (Project) format
   const clientName =
+    orcamento?.cliente_nome ||
     project?.client ||
     project?.expand?.cliente?.nome_fantasia ||
     project?.expand?.cliente?.razao_social ||
     'CLIENTE NÃO INFORMADO'
-  const ref = project?.id || project?.cod_referencia || '----'
-  const status = project?.status || '-'
-  const serviceType = project?.translationType || project?.tipo_servico || '-'
-  const sourceLang = project?.sourceLang || project?.idioma_origem || '-'
-  const targetLang = project?.targetLang || project?.idioma_destino || '-'
-  const docType = project?.documentType || project?.tipo_documento || 'Não definido'
-  const docCount = project?.documents || project?.qtd_documentos || '1'
-  const paymentMethod = project?.paymentMethod || project?.forma_pagamento || 'Não definida'
-  const entryDate = project?.entryDate || project?.data_entrada
-  const dueDate = project?.dueDate || project?.data_entrega
+  const clientEmail = orcamento?.cliente_email || project?.expand?.cliente?.email || '-'
+  const clientPhone = orcamento?.cliente_telefone || project?.expand?.cliente?.telefone || '-'
+  const ref = project?.cod_referencia || project?.id || orcamento?.id || '----'
 
-  const isInternacional =
-    (sourceLang.toLowerCase() !== 'português' && sourceLang !== 'pt') ||
-    (targetLang.toLowerCase() !== 'português' && targetLang !== 'pt')
+  const rawItems = items || project?.items || orcamento?.itens || []
 
-  const additionalServices = [
-    { label: 'Urgente', active: project?.urgent || project?.urgente },
-    { label: 'Internacional', active: isInternacional },
-    { label: 'Via Digital', active: project?.digitalCopy || project?.digital },
-    { label: 'Via Física', active: project?.physicalCopy || project?.fisico },
-    { label: 'Apostilamento de Haia', active: project?.hagueApostille || project?.apostilamento },
-    {
-      label: 'Apostilamento Digital',
-      active: project?.digitalApostille || project?.apostilamento_digital,
-    },
-    {
-      label: 'Apostilamento Físico',
-      active: project?.physicalApostille || project?.apostilamento_fisico,
-    },
-    { label: 'Reconhecimento', active: project?.notarization || project?.reconhecimento },
-    {
-      label: 'Autenticação documento Digital',
-      active: project?.digitalAuthentication || project?.autenticacao_digital,
-    },
-    { label: 'Frete', active: project?.shipping || project?.frete },
-    { label: 'DHL (Exterior)', active: project?.internationalShipping || project?.dhl },
-  ]
+  const printItems = useMemo(() => {
+    return [...rawItems].sort((a: any, b: any) => {
+      const dateA = a.created || a.created_at
+      const dateB = b.created || b.created_at
+      if (dateA && dateB) return new Date(dateA).getTime() - new Date(dateB).getTime()
+      return (a.id || '').localeCompare(b.id || '')
+    })
+  }, [rawItems])
 
-  const printItems = items || project?.items || []
-  const total = printItems.reduce((acc: number, item: any) => {
-    const itemTotal =
-      item.total ||
-      item.valor_total ||
-      (item.laudas || item.quantidade || 0) * (item.valorLauda || item.valor_unitario || 0)
-    return acc + itemTotal
-  }, 0)
+  const total = useMemo(() => {
+    return printItems.reduce((acc: number, item: any) => {
+      const itemTotal =
+        item.subtotal ||
+        item.total ||
+        item.valor_total ||
+        (item.laudas || item.quantidade || 0) * (item.valorLauda || item.valor_unitario || 0)
+      return acc + Number(itemTotal)
+    }, 0)
+  }, [printItems])
 
   return (
     <div
-      className={`bg-white p-8 max-w-4xl mx-auto text-slate-800 font-sans shadow-sm border border-slate-200 print:shadow-none print:border-none print:p-0 ${
-        autoPrint ? 'fixed inset-0 z-[9999] overflow-auto' : ''
-      }`}
+      ref={containerRef}
+      id="orcamento-preview"
+      className="bg-white p-10 mx-auto text-slate-800 font-sans shadow-sm border border-slate-200 print:shadow-none print:border-none print:p-0 w-[800px] min-h-[1100px] relative"
     >
       {/* Header */}
       <div className="flex flex-col items-center mb-10">
-        <img src={logoUrl} alt="Tradeezer" className="h-24 object-contain mb-8" />
-
-        <div className="w-full flex justify-between items-end border-b border-slate-200 pb-4">
-          <h1 className="text-2xl font-medium text-slate-800">Orçamento Comercial</h1>
-          <div className="text-right text-sm text-slate-500">
-            <p className="font-medium text-slate-700 mb-1">
-              Ref: <span className="font-bold text-slate-800">TRD-{ref.replace('TRD-', '')}</span>
-            </p>
-            <p>Data: {format(new Date(), 'dd/MM/yyyy')}</p>
-          </div>
+        <img src={logoUrl} alt="Tradeezer" className="h-20 object-contain mb-6" />
+        <div className="w-full border-b border-slate-200 pb-4 text-center">
+          <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-wide">
+            Orçamento Comercial
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Tradeezer - Sua comunicação com o mundo</p>
         </div>
       </div>
 
-      {/* Client & Service Section */}
-      <div className="grid grid-cols-2 gap-8 mb-8">
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Para</h3>
-          <p className="font-bold text-slate-800 text-lg mb-2 uppercase">{clientName}</p>
-          <p className="text-sm text-slate-600">Status: {status}</p>
+      {/* Client & Reference Info */}
+      <div className="grid grid-cols-2 gap-8 mb-10">
+        <div className="bg-slate-50 p-5 rounded-lg border border-slate-100">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+            Dados do Cliente
+          </h3>
+          <p className="font-bold text-slate-800 text-lg mb-1">{clientName}</p>
+          <div className="space-y-1 text-sm text-slate-600 mt-2">
+            <p>
+              <span className="font-medium">Email:</span> {clientEmail}
+            </p>
+            <p>
+              <span className="font-medium">Telefone:</span> {clientPhone}
+            </p>
+          </div>
         </div>
 
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
-            Detalhes do Serviço
+        <div className="bg-slate-50 p-5 rounded-lg border border-slate-100">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+            Referência
           </h3>
           <div className="space-y-2 text-sm text-slate-600">
-            <p>
-              <span className="font-medium text-slate-700">Categoria:</span> {serviceType}
+            <p className="flex justify-between">
+              <span className="font-medium text-slate-700">Código:</span>
+              <span className="font-bold text-slate-800">TRD-{ref.replace('TRD-', '')}</span>
             </p>
-            <p>
-              <span className="font-medium text-slate-700">Idiomas:</span> {sourceLang} &rarr;{' '}
-              {targetLang}
+            <p className="flex justify-between">
+              <span className="font-medium text-slate-700">Data:</span>
+              <span>{format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
             </p>
-            <p>
-              <span className="font-medium text-slate-700">Tipo de Documento:</span> {docType}
-            </p>
-            <p>
-              <span className="font-medium text-slate-700">Qtd. Documentos:</span> {docCount}
-            </p>
-            <p>
-              <span className="font-medium text-slate-700">Forma de Pagamento:</span>{' '}
-              {paymentMethod}
-            </p>
+            {project?.dueDate && (
+              <p className="flex justify-between">
+                <span className="font-medium text-slate-700">Prazo Estimado:</span>
+                <span>{format(new Date(project.dueDate), 'dd/MM/yyyy')}</span>
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Timeline Box */}
-      <div className="bg-slate-50 rounded-xl p-6 grid grid-cols-2 gap-8 mb-10 border border-slate-100">
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-            Data de Entrada
-          </h3>
-          <p className="font-bold text-slate-800 text-base">
-            {entryDate ? format(new Date(entryDate), 'dd/MM/yyyy') : '-'}
-          </p>
-        </div>
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-            Prazo Estimado
-          </h3>
-          <p className="font-bold text-slate-800 text-base">
-            {dueDate ? format(new Date(dueDate), 'dd/MM/yyyy') : '-'}
-          </p>
-        </div>
-      </div>
-
-      {/* Project Items Table */}
+      {/* Items Table */}
       <div className="mb-10">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
-          Itens do Projeto
+          Serviços Orçados
         </h3>
-        <Table>
-          <TableHeader>
-            <TableRow className="border-b border-slate-200 hover:bg-transparent">
-              <TableHead className="font-bold text-slate-500 h-10 px-0">Item / Descrição</TableHead>
-              <TableHead className="text-center font-bold text-slate-500 h-10">
-                Qtd. Laudas
-              </TableHead>
-              <TableHead className="text-right font-bold text-slate-500 h-10">
-                Valor Unitário
-              </TableHead>
-              <TableHead className="text-right font-bold text-slate-500 h-10 px-0">Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {printItems.length > 0 ? (
-              printItems.map((item: any, idx: number) => {
-                const itemTotal =
-                  item.total ||
-                  item.valor_total ||
-                  (item.laudas || item.quantidade || 0) *
-                    (item.valorLauda || item.valor_unitario || 0)
-                return (
-                  <TableRow
-                    key={item.id || idx}
-                    className="border-b border-slate-100 hover:bg-transparent"
-                  >
-                    <TableCell className="py-4 font-bold text-slate-800 px-0">
-                      {item.description || item.descricao}
-                    </TableCell>
-                    <TableCell className="py-4 text-center text-slate-600">
-                      {item.laudas || item.quantidade || 0}
-                    </TableCell>
-                    <TableCell className="py-4 text-right text-slate-600">
-                      {formatCurrency(item.valorLauda || item.valor_unitario || 0)}
-                    </TableCell>
-                    <TableCell className="py-4 text-right font-bold text-slate-800 px-0">
-                      {formatCurrency(itemTotal)}
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            ) : (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="text-center py-6 text-slate-500 px-0">
-                  Nenhum item adicionado ao orçamento
-                </TableCell>
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader className="bg-slate-50">
+              <TableRow className="hover:bg-slate-50">
+                <TableHead className="font-bold text-slate-700 py-3">
+                  Descrição do Serviço
+                </TableHead>
+                <TableHead className="text-center font-bold text-slate-700 py-3">Qtd.</TableHead>
+                <TableHead className="text-right font-bold text-slate-700 py-3">
+                  Valor Unit.
+                </TableHead>
+                <TableHead className="text-right font-bold text-slate-700 py-3">Subtotal</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {printItems.length > 0 ? (
+                printItems.map((item: any, idx: number) => {
+                  const qtd = Number(item.laudas || item.quantidade || 0)
+                  const vUnit = Number(item.valorLauda || item.valor_unitario || 0)
+                  const itemTotal = Number(
+                    item.subtotal || item.total || item.valor_total || qtd * vUnit,
+                  )
 
-        {printItems.length > 0 && (
-          <div className="flex justify-end mt-6">
-            <div className="flex items-center gap-6 bg-slate-50 px-6 py-4 rounded-xl border border-slate-100">
-              <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
-                Total
-              </span>
-              <span className="text-2xl font-bold text-emerald-600">{formatCurrency(total)}</span>
-            </div>
-          </div>
-        )}
+                  return (
+                    <TableRow
+                      key={item.id || idx}
+                      className="hover:bg-transparent border-b border-slate-100 last:border-0"
+                    >
+                      <TableCell className="py-4 font-medium text-slate-700">
+                        {item.description || item.descricao}
+                      </TableCell>
+                      <TableCell className="py-4 text-center text-slate-600">{qtd}</TableCell>
+                      <TableCell className="py-4 text-right text-slate-600">
+                        {formatCurrency(vUnit)}
+                      </TableCell>
+                      <TableCell className="py-4 text-right font-bold text-slate-800">
+                        {formatCurrency(itemTotal)}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              ) : (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={4} className="text-center py-8 text-slate-500">
+                    Nenhum item adicionado ao orçamento
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      {/* Additional Services Grid */}
-      <div>
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-100 pb-3">
-          Serviços Adicionais e Logística
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
-          {additionalServices.map((service, index) => (
-            <div key={index} className="flex items-center gap-3">
-              {service.active ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" strokeWidth={2} />
-              ) : (
-                <XCircle className="w-5 h-5 text-slate-200 shrink-0" strokeWidth={1.5} />
-              )}
-              <span
-                className={`text-sm ${service.active ? 'text-slate-800 font-medium' : 'text-slate-400'}`}
-              >
-                {service.label}
-              </span>
-            </div>
-          ))}
+      {/* Totals Section */}
+      <div className="flex justify-end mb-12">
+        <div className="w-72 bg-emerald-50 rounded-xl p-5 border border-emerald-100">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-bold text-emerald-800 uppercase tracking-widest">
+              Valor Total
+            </span>
+            <span className="text-2xl font-black text-emerald-600">{formatCurrency(total)}</span>
+          </div>
         </div>
+      </div>
+
+      {/* Footer Footer */}
+      <div className="absolute bottom-10 left-10 right-10 border-t border-slate-200 pt-6 text-center">
+        <p className="text-xs text-slate-500 mb-1">
+          Este orçamento é válido por 15 dias a partir da data de emissão.
+        </p>
+        <p className="text-xs text-slate-400">Tradeezer Traduções e Serviços Administrativos</p>
       </div>
     </div>
   )

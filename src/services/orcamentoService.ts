@@ -1,8 +1,5 @@
-// ============================================
-// SERVIÇO DE ORÇAMENTO (SEM TRAVAMENTOS)
-// ============================================
-
 import { toast } from 'sonner'
+import * as htmlToImage from 'html-to-image'
 
 interface OrcamentoItem {
   id: string
@@ -10,7 +7,8 @@ interface OrcamentoItem {
   quantidade: number
   valor_unitario: number
   subtotal: number
-  created_at: string
+  created_at?: string
+  created?: string
 }
 
 interface Orcamento {
@@ -19,12 +17,10 @@ interface Orcamento {
   cliente_email: string
   cliente_telefone: string
   itens: OrcamentoItem[]
-  created_at: string
+  created_at?: string
+  created?: string
 }
 
-// ============================================
-// 1. DEDUPLICAÇÃO (Remove itens duplicados)
-// ============================================
 const deduplicateItems = (items: OrcamentoItem[]): OrcamentoItem[] => {
   const seen = new Set<string>()
   return items.filter((item) => {
@@ -35,54 +31,43 @@ const deduplicateItems = (items: OrcamentoItem[]): OrcamentoItem[] => {
   })
 }
 
-// ============================================
-// 2. ORDENAÇÃO (Ordena por data de criação)
-// ============================================
 const sortItems = (items: OrcamentoItem[]): OrcamentoItem[] => {
-  return [...items].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-  )
+  return [...items].sort((a, b) => {
+    const dateA = a.created_at || a.created || ''
+    const dateB = b.created_at || b.created || ''
+    if (dateA && dateB) return new Date(dateA).getTime() - new Date(dateB).getTime()
+    return a.id.localeCompare(b.id)
+  })
 }
 
-// ============================================
-// 3. VALIDAÇÃO (Verifica integridade dos dados)
-// ============================================
 const validateOrcamento = (orcamento: Orcamento): boolean => {
   if (!orcamento.id) {
     toast.error('Orçamento inválido: ID ausente')
     return false
   }
-
   if (!orcamento.cliente_nome || orcamento.cliente_nome.trim() === '') {
     toast.error('Orçamento inválido: Nome do cliente ausente')
     return false
   }
-
   if (!Array.isArray(orcamento.itens) || orcamento.itens.length === 0) {
     toast.error('Orçamento inválido: Nenhum item adicionado')
     return false
   }
-
   const validItems = orcamento.itens.every(
-    (item) => item.descricao && item.quantidade > 0 && item.valor_unitario > 0 && item.subtotal > 0,
+    (item) =>
+      item.descricao && item.quantidade > 0 && item.valor_unitario >= 0 && item.subtotal >= 0,
   )
-
   if (!validItems) {
     toast.error('Orçamento inválido: Alguns itens têm dados incompletos')
     return false
   }
-
   return true
 }
 
-// ============================================
-// 4. CÁLCULO DE TOTAIS (Sem loops infinitos)
-// ============================================
 const calculateTotals = (items: OrcamentoItem[]) => {
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0)
-  const impostos = subtotal * 0.15 // 15% de impostos (ajuste conforme necessário)
+  const impostos = subtotal * 0.15
   const total = subtotal + impostos
-
   return {
     subtotal: subtotal.toFixed(2),
     impostos: impostos.toFixed(2),
@@ -90,86 +75,51 @@ const calculateTotals = (items: OrcamentoItem[]) => {
   }
 }
 
-// ============================================
-// 5. GERAÇÃO DE PDF (Sem travamentos)
-// ============================================
-const handleGeneratePDF = async (orcamento: Orcamento) => {
+const handleGenerateJPG = async (orcamento: Orcamento, elementId = 'orcamento-preview') => {
   try {
-    // PASSO 1: Validar dados
-    if (!validateOrcamento(orcamento)) {
+    if (!validateOrcamento(orcamento)) return
+
+    const element = document.getElementById(elementId)
+    if (!element) {
+      toast.error('Visualização do orçamento não encontrada na tela. Abra o modal de geração.')
       return
     }
 
-    // PASSO 2: Deduplica itens
-    const dedupedItems = deduplicateItems(orcamento.itens)
+    const toastId = toast.loading('Gerando imagem do orçamento...')
 
-    // PASSO 3: Ordena itens
-    const sortedItems = sortItems(dedupedItems)
-
-    // PASSO 4: Calcula totais
-    const totals = calculateTotals(sortedItems)
-
-    // PASSO 5: Prepara dados para PDF
-    const pdfData = {
-      orcamento_id: orcamento.id,
-      cliente_nome: orcamento.cliente_nome,
-      cliente_email: orcamento.cliente_email,
-      cliente_telefone: orcamento.cliente_telefone,
-      itens: sortedItems,
-      subtotal: totals.subtotal,
-      impostos: totals.impostos,
-      total: totals.total,
-      data_geracao: new Date().toLocaleDateString('pt-BR'),
-    }
-
-    // PASSO 6: Chama Edge Function para gerar PDF
-    const response = await fetch('/api/generate-pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pdfData),
+    const dataUrl = await htmlToImage.toJpeg(element, {
+      quality: 0.95,
+      backgroundColor: '#ffffff',
+      pixelRatio: 2,
     })
 
-    if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status}`)
-    }
-
-    const { pdf_url } = await response.json()
-
-    // PASSO 7: Download do PDF
     const link = document.createElement('a')
-    link.href = pdf_url
-    link.download = `orcamento_${orcamento.id}.pdf`
+    link.download = `Orcamento_${orcamento.id}.jpg`
+    link.href = dataUrl
     link.click()
 
-    toast.success('PDF gerado com sucesso!')
+    toast.dismiss(toastId)
+    toast.success('JPG gerado com sucesso!')
   } catch (error) {
-    console.error('Erro ao gerar PDF:', error)
-    toast.error('Erro ao gerar PDF. Tente novamente.')
+    console.error('Erro ao gerar JPG:', error)
+    toast.error('Erro ao gerar imagem. Tente novamente.')
   }
 }
 
-// ============================================
-// 6. ENVIO DE EMAIL (Sem travamentos)
-// ============================================
+const handleGeneratePDF = handleGenerateJPG // Alias para compatibilidade
+
 const handleSendEmail = async (orcamento: Orcamento) => {
   try {
-    // PASSO 1: Validar dados
-    if (!validateOrcamento(orcamento)) {
-      return
-    }
-
-    // PASSO 2: Verificar email
+    if (!validateOrcamento(orcamento)) return
     if (!orcamento.cliente_email || !orcamento.cliente_email.includes('@')) {
       toast.error('Email do cliente inválido')
       return
     }
 
-    // PASSO 3: Deduplica e ordena itens
     const dedupedItems = deduplicateItems(orcamento.itens)
     const sortedItems = sortItems(dedupedItems)
     const totals = calculateTotals(sortedItems)
 
-    // PASSO 4: Prepara dados para email
     const emailData = {
       cliente_email: orcamento.cliente_email,
       cliente_nome: orcamento.cliente_nome,
@@ -180,7 +130,6 @@ const handleSendEmail = async (orcamento: Orcamento) => {
       total: totals.total,
     }
 
-    // PASSO 5: Chama Edge Function para enviar email
     const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -198,10 +147,8 @@ const handleSendEmail = async (orcamento: Orcamento) => {
   }
 }
 
-// ============================================
-// 7. EXPORTAR FUNÇÕES
-// ============================================
 export {
+  handleGenerateJPG,
   handleGeneratePDF,
   handleSendEmail,
   deduplicateItems,

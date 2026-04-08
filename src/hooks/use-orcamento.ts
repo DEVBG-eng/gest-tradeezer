@@ -38,13 +38,20 @@ export function useOrcamentoData() {
   const [isCreating, setIsCreating] = useState(false)
 
   const loadData = useCallback(async () => {
-    if (!user) return
+    if (!user) {
+      setOrcamento(null)
+      setItems([])
+      return
+    }
     try {
       setError(null)
       const activeOrcamento = await orcamentoService.getLatestOrcamentoByUser(user.id)
 
       if (activeOrcamento) {
         const parsed = orcamentoSchema.parse(activeOrcamento)
+        // Clear items while loading to avoid stale data leakage
+        if (orcamento?.id !== parsed.id) setItems([])
+
         setOrcamento(parsed)
         setIsCreating(false)
 
