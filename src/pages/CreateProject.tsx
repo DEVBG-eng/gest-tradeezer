@@ -1099,9 +1099,7 @@ export default function CreateProject() {
                         <TableHeader>
                           <TableRow className="bg-muted/50">
                             <TableHead>Descrição</TableHead>
-                            <TableHead className="w-[120px]">
-                              Laudas|Quantidade de Documentos
-                            </TableHead>
+                            <TableHead className="w-[120px]">Itens&nbsp;</TableHead>
                             <TableHead className="w-[140px]">Valor (R$)</TableHead>
                             <TableHead className="w-[120px] text-right">Total</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
