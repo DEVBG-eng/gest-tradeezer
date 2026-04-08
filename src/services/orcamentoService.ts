@@ -1,5 +1,6 @@
 import { toast } from 'sonner'
 import * as htmlToImage from 'html-to-image'
+import pb from '@/lib/pocketbase/client'
 
 interface OrcamentoItem {
   id: string
@@ -147,7 +148,45 @@ const handleSendEmail = async (orcamento: Orcamento) => {
   }
 }
 
+const getLatestOrcamentoByUser = async (userId: string) => {
+  try {
+    const record = await pb.collection('orcamentos').getFirstListItem(`user_id = "${userId}"`, {
+      sort: '-created',
+    })
+    return record as unknown as Orcamento
+  } catch (error: any) {
+    if (error.status === 404) return null
+    throw error
+  }
+}
+
+const getItemsByOrcamento = async (orcamentoId: string) => {
+  try {
+    const records = await pb.collection('orcamento_itens').getFullList({
+      filter: `orcamento_id = "${orcamentoId}"`,
+      sort: 'created',
+    })
+    return records as unknown as OrcamentoItem[]
+  } catch (error: any) {
+    return []
+  }
+}
+
+export const orcamentoService = {
+  getLatestOrcamentoByUser,
+  getItemsByOrcamento,
+  handleGenerateJPG,
+  handleGeneratePDF,
+  handleSendEmail,
+  deduplicateItems,
+  sortItems,
+  validateOrcamento,
+  calculateTotals,
+}
+
 export {
+  getLatestOrcamentoByUser,
+  getItemsByOrcamento,
   handleGenerateJPG,
   handleGeneratePDF,
   handleSendEmail,
