@@ -114,6 +114,28 @@ export function EditProjectDialog({
   const [documentType, setDocumentType] = useState(project?.documentType || '')
   const [documents, setDocuments] = useState(project?.documents?.toString() || '1')
   const [observations, setObservations] = useState(project?.observations || '')
+  const [paymentMethod, setPaymentMethod] = useState(() => {
+    if (!project?.paymentMethod) return ''
+    if (
+      ['Link Cartão de Crédito', 'Boleto Bancário', 'Pix à Vista', 'Dinheiro'].includes(
+        project.paymentMethod,
+      )
+    ) {
+      return project.paymentMethod
+    }
+    return 'Outro'
+  })
+  const [customPaymentMethod, setCustomPaymentMethod] = useState(() => {
+    if (!project?.paymentMethod) return ''
+    if (
+      !['Link Cartão de Crédito', 'Boleto Bancário', 'Pix à Vista', 'Dinheiro'].includes(
+        project.paymentMethod,
+      )
+    ) {
+      return project.paymentMethod
+    }
+    return ''
+  })
   const [entryDate, setEntryDate] = useState<Date | undefined>(
     project?.entryDate ? parseISO(project.entryDate) : undefined,
   )
@@ -334,6 +356,7 @@ export function EditProjectDialog({
         entryDate: entryDate ? entryDate.toISOString() : project.entryDate,
         dueDate: deadline ? deadline.toISOString() : project.dueDate,
         observations,
+        paymentMethod: paymentMethod === 'Outro' ? customPaymentMethod : paymentMethod,
         digitalCopy: services.digital,
         physicalCopy: services.fisico,
         certidao: services.certidao,
@@ -392,6 +415,7 @@ export function EditProjectDialog({
     value: computedValue,
     entryDate,
     deadline,
+    paymentMethod: paymentMethod === 'Outro' ? customPaymentMethod : paymentMethod,
     services: [
       { label: 'Urgente', active: project.urgent || false },
       { label: 'Internacional', active: project.international || false },
@@ -649,6 +673,30 @@ export function EditProjectDialog({
                   {computedValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
               </div>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label>Forma de Pagamento</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Link Cartão de Crédito">Link Cartão de Crédito</SelectItem>
+                  <SelectItem value="Boleto Bancário">Boleto Bancário</SelectItem>
+                  <SelectItem value="Pix à Vista">Pix à Vista</SelectItem>
+                  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="Outro">Outro...</SelectItem>
+                </SelectContent>
+              </Select>
+              {paymentMethod === 'Outro' && (
+                <Input
+                  placeholder="Especifique a forma de pagamento"
+                  value={customPaymentMethod}
+                  onChange={(e) => setCustomPaymentMethod(e.target.value)}
+                  className="mt-2"
+                />
+              )}
             </div>
 
             <div className="space-y-2 md:col-span-2">

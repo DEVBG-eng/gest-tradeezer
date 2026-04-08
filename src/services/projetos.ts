@@ -45,6 +45,7 @@ export interface ProjetoRecord {
   procuracao?: boolean
   certidao_objeto_pe?: boolean
   observacoes?: string
+  forma_pagamento?: string
   pasta_url?: string
   created?: string
   updated?: string

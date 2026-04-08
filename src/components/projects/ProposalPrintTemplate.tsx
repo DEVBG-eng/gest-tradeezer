@@ -90,6 +90,10 @@ export function ProposalPrintTemplate({ project, items }: any) {
               <span className="font-medium text-slate-700">Qtd. Documentos:</span>{' '}
               {project?.qtd_documentos || '1'}
             </p>
+            <p>
+              <span className="font-medium text-slate-700">Forma de Pagamento:</span>{' '}
+              {project?.forma_pagamento || project?.paymentMethod || 'Não definida'}
+            </p>
           </div>
         </div>
       </div>

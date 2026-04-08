@@ -155,6 +155,8 @@ export default function CreateProject() {
   const [documentType, setDocumentType] = useState('')
   const [translationType, setTranslationType] = useState('')
   const [observations, setObservations] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('')
+  const [customPaymentMethod, setCustomPaymentMethod] = useState('')
   const [cloudFiles, setCloudFiles] = useState<CloudFile[]>([])
 
   const [items, setItems] = useState<ItemInput[]>([{ description: '', laudas: '', valorLauda: '' }])
@@ -204,6 +206,22 @@ export default function CreateProject() {
           setItems(items.map((i) => ({ ...i, valorLauda: formatted, _isDirty: true })))
         } else {
           setItems(items.map((i) => ({ ...i, valorLauda: '', _isDirty: true })))
+        }
+
+        if (c.forma_pagamento) {
+          if (
+            ['Link Cartão de Crédito', 'Boleto Bancário', 'Pix à Vista', 'Dinheiro'].includes(
+              c.forma_pagamento,
+            )
+          ) {
+            setPaymentMethod(c.forma_pagamento)
+          } else {
+            setPaymentMethod('Outro')
+            setCustomPaymentMethod(c.forma_pagamento)
+          }
+        } else {
+          setPaymentMethod('')
+          setCustomPaymentMethod('')
         }
 
         if (c.idiomas_frequentes) {
@@ -510,6 +528,7 @@ export default function CreateProject() {
       documentType,
       translationType,
       observations,
+      paymentMethod: paymentMethod === 'Outro' ? customPaymentMethod : paymentMethod,
       digitalCopy: services.digital,
       certidao: services.certidao,
       divorcio: services.divorcio,
@@ -562,7 +581,10 @@ export default function CreateProject() {
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {showProposal && createdProject && (
         <ProposalPrintTemplate
-          data={mapProjectToPrintData(createdProject)}
+          data={{
+            ...mapProjectToPrintData(createdProject),
+            paymentMethod: createdProject.paymentMethod,
+          }}
           autoPrint={true}
           onClose={handleCloseProposal}
         />
@@ -629,10 +651,14 @@ export default function CreateProject() {
                           setClientRef('')
                           setClientName('')
                           setClientType('PF')
+                          setPaymentMethod('')
+                          setCustomPaymentMethod('')
                         } else {
                           setClientRef('')
                           setClientName('')
                           setClientType('PJ')
+                          setPaymentMethod('')
+                          setCustomPaymentMethod('')
                         }
                       }}
                       className="flex flex-col sm:flex-row gap-4"
@@ -1299,6 +1325,44 @@ export default function CreateProject() {
                     <p className="text-sm text-muted-foreground">
                       Código único para identificação do projeto e sincronização em nuvem.
                     </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Forma de Pagamento</Label>
+                      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Link Cartão de Crédito">
+                            Link Cartão de Crédito
+                          </SelectItem>
+                          <SelectItem value="Boleto Bancário">Boleto Bancário</SelectItem>
+                          <SelectItem value="Pix à Vista">Pix à Vista</SelectItem>
+                          <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                          {paymentMethod &&
+                            ![
+                              'Link Cartão de Crédito',
+                              'Boleto Bancário',
+                              'Pix à Vista',
+                              'Dinheiro',
+                              'Outro',
+                            ].includes(paymentMethod) && (
+                              <SelectItem value={paymentMethod}>{paymentMethod}</SelectItem>
+                            )}
+                          <SelectItem value="Outro">Outro...</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {paymentMethod === 'Outro' && (
+                        <Input
+                          placeholder="Especifique a forma de pagamento"
+                          value={customPaymentMethod}
+                          onChange={(e) => setCustomPaymentMethod(e.target.value)}
+                          className="mt-2"
+                        />
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">

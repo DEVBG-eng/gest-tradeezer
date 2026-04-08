@@ -97,6 +97,7 @@ export interface Project {
   internationalShipping?: boolean
   freteJk?: boolean
   translationType?: string
+  paymentMethod?: string
   items?: ProjectItem[]
   created?: string
   updated?: string
@@ -144,6 +145,7 @@ const mapToProject = (record: ProjetoRecord): Project => ({
   shipping: record.frete,
   internationalShipping: record.dhl,
   freteJk: record.frete_jk,
+  paymentMethod: record.forma_pagamento,
   items: (record.expand?.ItensProjeto_via_projeto || []).map((i) => ({
     id: i.id as string,
     description: i.descricao,
@@ -187,6 +189,7 @@ const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
   if (project.shipping !== undefined) data.frete = project.shipping
   if (project.internationalShipping !== undefined) data.dhl = project.internationalShipping
   if (project.freteJk !== undefined) data.frete_jk = project.freteJk
+  if (project.paymentMethod !== undefined) data.forma_pagamento = project.paymentMethod
   return data
 }
 

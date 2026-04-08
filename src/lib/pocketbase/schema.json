@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-08T13:14:08.510Z",
+  "generatedAt": "2026-04-08T15:47:18.242Z",
   "collections": [
     {
       "name": "users",
@@ -273,6 +273,12 @@
         {
           "name": "certidao_objeto_pe",
           "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "forma_pagamento",
+          "type": "text",
           "required": false,
           "system": false
         }

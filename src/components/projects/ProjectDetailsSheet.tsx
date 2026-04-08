@@ -61,6 +61,28 @@ export function ProjectDetailsSheet({
   const [saving, setSaving] = useState(false)
   const [laudas, setLaudas] = useState(project?.laudas?.toString() || '0')
   const [rate, setRate] = useState((project?.valorLauda || 0).toFixed(2))
+  const [paymentMethod, setPaymentMethod] = useState(() => {
+    if (!project?.paymentMethod) return ''
+    if (
+      ['Link Cartão de Crédito', 'Boleto Bancário', 'Pix à Vista', 'Dinheiro'].includes(
+        project.paymentMethod,
+      )
+    ) {
+      return project.paymentMethod
+    }
+    return 'Outro'
+  })
+  const [customPaymentMethod, setCustomPaymentMethod] = useState(() => {
+    if (!project?.paymentMethod) return ''
+    if (
+      !['Link Cartão de Crédito', 'Boleto Bancário', 'Pix à Vista', 'Dinheiro'].includes(
+        project.paymentMethod,
+      )
+    ) {
+      return project.paymentMethod
+    }
+    return ''
+  })
   const [isPrinting, setIsPrinting] = useState(false)
 
   const [history, setHistory] = useState<ProjectHistory[]>([])
@@ -95,8 +117,20 @@ export function ProjectDetailsSheet({
     if (project) {
       setLaudas(project.laudas?.toString() || '0')
       setRate((project.valorLauda || 0).toFixed(2))
+      if (project.paymentMethod) {
+        if (
+          ['Link Cartão de Crédito', 'Boleto Bancário', 'Pix à Vista', 'Dinheiro'].includes(
+            project.paymentMethod,
+          )
+        ) {
+          setPaymentMethod(project.paymentMethod)
+        } else {
+          setPaymentMethod('Outro')
+          setCustomPaymentMethod(project.paymentMethod)
+        }
+      }
     }
-  }, [project?.laudas, project?.valorLauda])
+  }, [project?.laudas, project?.valorLauda, project?.paymentMethod])
 
   if (!project) return null
 
@@ -114,6 +148,7 @@ export function ProjectDetailsSheet({
       await updateProject(projectId, {
         laudas: parseFloat(laudas) || 0,
         valorLauda: parseFloat(rate) || 0,
+        paymentMethod: paymentMethod === 'Outro' ? customPaymentMethod : paymentMethod,
       })
       toast({ title: 'Orçamento Atualizado', description: `Os valores foram salvos.` })
     } catch (e) {
@@ -256,6 +291,30 @@ export function ProjectDetailsSheet({
                   <Label>Taxa por Lauda (R$)</Label>
                   <Input type="number" value={rate} onChange={(e) => setRate(e.target.value)} />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Forma de Pagamento</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Link Cartão de Crédito">Link Cartão de Crédito</SelectItem>
+                    <SelectItem value="Boleto Bancário">Boleto Bancário</SelectItem>
+                    <SelectItem value="Pix à Vista">Pix à Vista</SelectItem>
+                    <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="Outro">Outro...</SelectItem>
+                  </SelectContent>
+                </Select>
+                {paymentMethod === 'Outro' && (
+                  <Input
+                    placeholder="Especifique a forma de pagamento"
+                    value={customPaymentMethod}
+                    onChange={(e) => setCustomPaymentMethod(e.target.value)}
+                    className="mt-2"
+                  />
+                )}
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border flex justify-between items-center">
@@ -471,6 +530,7 @@ export function ProjectDetailsSheet({
         <ProposalPrintTemplate
           data={{
             ...mapProjectToPrintData(project),
+            paymentMethod: project.paymentMethod,
             urgent: project.urgent,
             international: project.international,
             digitalCopy: project.digitalCopy,
