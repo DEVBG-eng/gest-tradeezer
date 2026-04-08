@@ -17,58 +17,34 @@ export interface CreateOrcamentoItemDto {
 
 export const orcamentoService = {
   getLatestOrcamentoByUser: async (userId: string) => {
-    try {
-      const result = await pb.collection('orcamentos').getFullList({
-        filter: `user_id = "${userId}"`,
-        sort: '-created',
-        limit: 1,
-      })
-      return result[0] || null
-    } catch (error) {
-      throw error
-    }
+    const result = await pb.collection('orcamentos').getFullList({
+      filter: `user_id = "${userId}"`,
+      sort: '-created',
+      limit: 1,
+    })
+    return result[0] || null
   },
 
   createOrcamento: async (data: CreateOrcamentoDto) => {
-    try {
-      return await pb.collection('orcamentos').create(data)
-    } catch (error) {
-      throw error
-    }
+    return await pb.collection('orcamentos').create(data)
   },
 
   deleteOrcamento: async (id: string) => {
-    try {
-      return await pb.collection('orcamentos').delete(id)
-    } catch (error) {
-      throw error
-    }
+    return await pb.collection('orcamentos').delete(id)
   },
 
   getItemsByOrcamento: async (orcamentoId: string) => {
-    try {
-      return await pb.collection('orcamento_itens').getFullList({
-        filter: `orcamento_id = "${orcamentoId}"`,
-        sort: 'created',
-      })
-    } catch (error) {
-      throw error
-    }
+    return await pb.collection('orcamento_itens').getFullList({
+      filter: `orcamento_id = "${orcamentoId}"`,
+      sort: 'created',
+    })
   },
 
   createItem: async (data: CreateOrcamentoItemDto) => {
-    try {
-      return await pb.collection('orcamento_itens').create(data)
-    } catch (error) {
-      throw error
-    }
+    return await pb.collection('orcamento_itens').create(data)
   },
 
   deleteItem: async (id: string) => {
-    try {
-      return await pb.collection('orcamento_itens').delete(id)
-    } catch (error) {
-      throw error
-    }
+    return await pb.collection('orcamento_itens').delete(id)
   },
 }
