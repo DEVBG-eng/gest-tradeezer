@@ -108,7 +108,7 @@ export function AppSidebar() {
             </div>
           </div>
         )}
-        <SidebarMenu>
+        <SidebarMenu className="shadow-[0px_0px_6px_0px_#fefefe] opacity-[1]">
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={toggleSidebar}
