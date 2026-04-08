@@ -6,6 +6,7 @@ import Layout from './components/Layout'
 import Index from './pages/Index'
 import Projects from './pages/Projects'
 import CreateProject from './pages/CreateProject'
+import OrcamentoPage from './pages/Orcamentos'
 import Logistics from './pages/Logistics'
 import Notary from './pages/Notary'
 import Settings from './pages/Settings'
@@ -48,6 +49,7 @@ const App = () => (
                       <Route path="/projects/new" element={<CreateProject />} />
                       <Route path="/project-costs" element={<ProjectCosts />} />
                       <Route path="/clients" element={<Clients />} />
+                      <Route path="/orcamentos" element={<OrcamentoPage />} />
                       <Route path="/logistics" element={<Logistics />} />
                       <Route path="/notary" element={<Notary />} />
                       <Route path="/settings" element={<Settings />} />
