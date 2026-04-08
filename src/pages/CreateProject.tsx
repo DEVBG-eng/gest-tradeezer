@@ -66,6 +66,7 @@ import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 import { mapProjectToPrintData } from '@/lib/project-utils'
+import { EditableProposalPreview } from '@/components/projects/EditableProposalPreview'
 
 const SERVICES_OPTS = [
   { id: 'digital', label: 'Via Digital', key: 'digital' as const },
@@ -476,7 +477,9 @@ export default function CreateProject() {
     0,
   )
 
-  const handleSave = async (generatePdf: boolean) => {
+  const [previewData, setPreviewData] = useState<Project | null>(null)
+
+  const validateAndBuildData = () => {
     const errors: Record<string, string> = {}
     let isValid = true
 
@@ -492,7 +495,7 @@ export default function CreateProject() {
         description: 'Preencha os campos obrigatórios.',
         variant: 'destructive',
       })
-      return
+      return null
     }
 
     const projectItems = items.map((i) => ({
@@ -504,7 +507,7 @@ export default function CreateProject() {
         (Number(i.valorLauda.replace(/\./g, '').replace(',', '.')) || 0),
     }))
 
-    const newProjectData = {
+    return {
       id: reference,
       title: `Ordem de Serviço ${reference}`,
       client: clientName,
@@ -544,20 +547,19 @@ export default function CreateProject() {
       internationalShipping: services.dhl,
       freteJk: services.freteJk,
       items: projectItems,
-    }
+    } as unknown as Project
+  }
+
+  const handleSave = async () => {
+    const newProjectData = validateAndBuildData()
+    if (!newProjectData) return
 
     setSaving(true)
     setStepErrors({})
     try {
       await addProject(newProjectData as any)
-
-      if (generatePdf) {
-        setCreatedProject({ ...newProjectData, pbId: '' } as unknown as Project)
-        setShowProposal(true)
-      } else {
-        toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
-        navigate('/projects')
-      }
+      toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
+      navigate('/projects')
     } catch (e: any) {
       if (e?.message === 'Cód. Referência duplicado' || String(e).includes('duplicado')) {
         setStepErrors({
@@ -571,22 +573,26 @@ export default function CreateProject() {
     }
   }
 
-  const handleCloseProposal = useCallback(() => {
-    setShowProposal(false)
-    toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
-    navigate('/projects')
-  }, [navigate, reference, toast])
+  const handleOpenPreview = () => {
+    const data = validateAndBuildData()
+    if (data) setPreviewData(data)
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-      {showProposal && createdProject && (
-        <ProposalPrintTemplate
-          data={{
-            ...mapProjectToPrintData(createdProject),
-            paymentMethod: createdProject.paymentMethod,
+      {previewData && (
+        <EditableProposalPreview
+          initialData={previewData}
+          isOpen={true}
+          onClose={() => setPreviewData(null)}
+          onSave={async (finalData) => {
+            await addProject(finalData as any)
           }}
-          autoPrint={true}
-          onClose={handleCloseProposal}
+          onPrintClose={() => {
+            setPreviewData(null)
+            toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
+            navigate('/projects')
+          }}
         />
       )}
 
@@ -600,7 +606,7 @@ export default function CreateProject() {
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          if (currentStep === STEPS.length - 1) handleSave(false)
+          if (currentStep === STEPS.length - 1) handleSave()
           else handleNext()
         }}
       >
@@ -1515,10 +1521,10 @@ export default function CreateProject() {
                   <Button
                     variant="outline"
                     type="button"
-                    onClick={() => handleSave(true)}
+                    onClick={handleOpenPreview}
                     disabled={saving}
                   >
-                    Gerar Proposta
+                    Gerar Orçamento
                   </Button>
                   <Button type="submit" size="lg" className="min-w-[150px]" disabled={saving}>
                     {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
