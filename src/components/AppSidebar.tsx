@@ -9,6 +9,8 @@ import {
   FolderPlus,
   Users,
   CircleDollarSign,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import logoImg from '@/assets/design-sem-nome-ffec1.jpg'
 import { useAuth } from '@/hooks/use-auth'
@@ -23,6 +25,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
@@ -40,11 +43,12 @@ const navItems = [
 export function AppSidebar() {
   const location = useLocation()
   const { user, signOut } = useAuth()
+  const { state, toggleSidebar } = useSidebar()
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b px-4 py-3 h-[60px] flex flex-col justify-center">
-        <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b px-4 py-3 h-[60px] flex flex-col justify-center group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:items-center">
+        <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80 w-full">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white overflow-hidden shadow-sm p-0.5">
             <img
               src={logoImg}
@@ -52,7 +56,7 @@ export function AppSidebar() {
               className="h-full w-full object-contain font-normal text-left text-[0.37px] opacity-[1] shadow-[0px_0px_6px_0px_#00bd7c] bg-[#805b5b]"
             />
           </div>
-          <div className="flex flex-col flex-1 truncate">
+          <div className="flex flex-col flex-1 truncate group-data-[collapsible=icon]:hidden">
             <span className="truncate font-bold text-base leading-tight text-foreground">
               Tradeezer
             </span>
@@ -65,7 +69,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase text-muted-foreground">
+          <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase text-muted-foreground group-data-[collapsible=icon]:hidden">
             Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -90,15 +94,15 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4">
+      <SidebarFooter className="border-t p-2">
         {user && (
-          <div className="flex items-center gap-3 mb-4 px-2">
-            <Avatar className="h-8 w-8">
+          <div className="flex items-center gap-3 mb-2 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+            <Avatar className="h-8 w-8 shrink-0">
               <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                 {user.email?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col overflow-hidden">
+            <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
               <span className="truncate text-sm font-medium">{user.name || 'Usuário'}</span>
               <span className="truncate text-xs text-muted-foreground">{user.email}</span>
             </div>
@@ -107,7 +111,22 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
+              onClick={toggleSidebar}
+              tooltip={state === 'expanded' ? 'Recolher Menu' : 'Expandir Menu'}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {state === 'expanded' ? (
+                <ChevronLeft className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              <span>{state === 'expanded' ? 'Recolher' : 'Expandir'}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
               onClick={signOut}
+              tooltip="Sair"
               className="text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
             >
               <LogOut className="h-4 w-4" />
