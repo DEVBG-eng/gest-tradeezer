@@ -36,7 +36,6 @@ import { ptBR } from 'date-fns/locale'
 import useProjectStore from '@/stores/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
 import { ProposalPrintTemplate } from './ProposalPrintTemplate'
-import { mapProjectToPrintData } from '@/lib/project-utils'
 import { getProjectHistory, ProjectHistory } from '@/services/history'
 import { useRealtime } from '@/hooks/use-realtime'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -330,8 +329,18 @@ export function ProjectDetailsSheet({
               </div>
 
               <div className="flex gap-2 justify-end pt-4">
-                <Button variant="outline" className="gap-2" onClick={() => setIsPrinting(true)}>
-                  <Download size={16} /> Baixar Orçamento
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => setIsPrinting(true)}
+                  disabled={isPrinting}
+                >
+                  {isPrinting ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Download size={16} />
+                  )}
+                  Baixar Orçamento (JPG)
                 </Button>
                 <Button onClick={handleSaveQuote} disabled={saving}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar Orçamento
@@ -527,25 +536,41 @@ export function ProjectDetailsSheet({
       </Sheet>
 
       {isPrinting && (
-        <ProposalPrintTemplate
-          data={{
-            ...mapProjectToPrintData(project),
-            paymentMethod: project.paymentMethod,
-            urgent: project.urgent,
-            international: project.international,
-            digitalCopy: project.digitalCopy,
-            physicalCopy: project.physicalCopy,
-            hagueApostille: project.hagueApostille,
-            digitalApostille: project.digitalApostille,
-            physicalApostille: project.physicalApostille,
-            notarization: project.notarization,
-            digitalAuthentication: project.digitalAuthentication,
-            shipping: project.shipping,
-            internationalShipping: project.internationalShipping,
-          }}
-          autoPrint={true}
-          onClose={() => setIsPrinting(false)}
-        />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-xl flex flex-col items-center gap-6 shadow-2xl animate-in zoom-in-95">
+            <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
+            <div className="text-center">
+              <p className="text-lg font-bold text-slate-800">Gerando Imagem...</p>
+              <p className="text-sm text-slate-500">Por favor, aguarde um momento.</p>
+            </div>
+          </div>
+          <div
+            className="absolute pointer-events-none overflow-hidden"
+            style={{ width: '800px', left: '-9999px', top: '-9999px' }}
+          >
+            <ProposalPrintTemplate
+              project={project}
+              items={
+                project.items?.length
+                  ? project.items
+                  : project.laudas || project.valorLauda
+                    ? [
+                        {
+                          description: `Tradução ${project.translationType || 'Documental'} - ${
+                            project.sourceLang || 'pt'
+                          } para ${project.targetLang || 'en'}`,
+                          laudas: project.laudas,
+                          valorLauda: project.valorLauda,
+                          total: (project.laudas || 0) * (project.valorLauda || 0),
+                        },
+                      ]
+                    : []
+              }
+              autoGenerateJPG={true}
+              onClose={() => setIsPrinting(false)}
+            />
+          </div>
+        </div>
       )}
     </>
   )

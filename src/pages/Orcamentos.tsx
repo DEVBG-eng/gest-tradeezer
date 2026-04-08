@@ -13,8 +13,18 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { FileText, Mail, Plus, Trash2, AlertCircle, FilePlus } from 'lucide-react'
+import {
+  FileText,
+  Mail,
+  Plus,
+  Trash2,
+  AlertCircle,
+  FilePlus,
+  Download,
+  Loader2,
+} from 'lucide-react'
 import { useOrcamentoData } from '@/hooks/use-orcamento'
+import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/components/ui/use-toast'
 import { orcamentoService } from '@/services/orcamentoService'
@@ -97,14 +107,10 @@ export default function OrcamentoPage() {
     }
   }
 
-  const handleGeneratePDF = async () => {
-    try {
-      // Mock logic for PDF generation
-      if (Math.random() > 0.8) throw new Error('Simulated PDF error')
-      toast({ description: 'PDF gerado com sucesso!' })
-    } catch (err) {
-      toast({ variant: 'destructive', description: 'Erro ao gerar PDF. Tente novamente.' })
-    }
+  const [isGeneratingJPG, setIsGeneratingJPG] = useState(false)
+
+  const handleGenerateJPG = async () => {
+    setIsGeneratingJPG(true)
   }
 
   const handleSendEmail = async () => {
@@ -223,12 +229,42 @@ export default function OrcamentoPage() {
               <TooltipContent>Email do cliente não preenchido</TooltipContent>
             )}
           </Tooltip>
-          <Button className="h-11" onClick={handleGeneratePDF}>
-            <FileText className="w-4 h-4 mr-2" />
-            Gerar PDF
+          <Button className="h-11" onClick={handleGenerateJPG} disabled={isGeneratingJPG}>
+            {isGeneratingJPG ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Baixar Orçamento (JPG)
           </Button>
         </div>
       </div>
+
+      {isGeneratingJPG && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-xl flex flex-col items-center gap-6 shadow-2xl animate-in zoom-in-95">
+            <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
+            <div className="text-center">
+              <p className="text-lg font-bold text-slate-800">Gerando Imagem...</p>
+              <p className="text-sm text-slate-500">Por favor, aguarde um momento.</p>
+            </div>
+          </div>
+          <div
+            className="absolute pointer-events-none overflow-hidden"
+            style={{ width: '800px', left: '-9999px', top: '-9999px' }}
+          >
+            <ProposalPrintTemplate
+              orcamento={orcamento}
+              items={items}
+              autoGenerateJPG={true}
+              onClose={() => {
+                setIsGeneratingJPG(false)
+                toast({ description: 'Orçamento gerado com sucesso!' })
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <Card className="shadow-sm p-6 bg-card border">
         <CardHeader className="p-0 pb-4">
