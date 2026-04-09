@@ -148,6 +148,34 @@ const handleSendEmail = async (orcamento: Orcamento) => {
   }
 }
 
+const getOrcamentosByUser = async (userId: string, search: string = '') => {
+  let filter = `user_id = "${userId}"`
+  if (search) {
+    filter += ` && (cliente_nome ~ "${search}" || id ~ "${search}")`
+  }
+  const records = await pb.collection('orcamentos').getFullList({
+    filter,
+    sort: '-created',
+  })
+  return records as unknown as Orcamento[]
+}
+
+const getOrcamentoById = async (id: string) => {
+  return (await pb.collection('orcamentos').getOne(id)) as unknown as Orcamento
+}
+
+const createOrcamento = async (data: Partial<Orcamento>) => {
+  return (await pb.collection('orcamentos').create(data)) as unknown as Orcamento
+}
+
+const createItem = async (data: Partial<OrcamentoItem>) => {
+  return (await pb.collection('orcamento_itens').create(data)) as unknown as OrcamentoItem
+}
+
+const deleteItem = async (itemId: string) => {
+  return await pb.collection('orcamento_itens').delete(itemId)
+}
+
 const getLatestOrcamentoByUser = async (userId: string) => {
   try {
     const record = await pb.collection('orcamentos').getFirstListItem(`user_id = "${userId}"`, {
@@ -173,6 +201,11 @@ const getItemsByOrcamento = async (orcamentoId: string) => {
 }
 
 export const orcamentoService = {
+  getOrcamentosByUser,
+  getOrcamentoById,
+  createOrcamento,
+  createItem,
+  deleteItem,
   getLatestOrcamentoByUser,
   getItemsByOrcamento,
   handleGenerateJPG,
@@ -185,6 +218,11 @@ export const orcamentoService = {
 }
 
 export {
+  getOrcamentosByUser,
+  getOrcamentoById,
+  createOrcamento,
+  createItem,
+  deleteItem,
   getLatestOrcamentoByUser,
   getItemsByOrcamento,
   handleGenerateJPG,

@@ -29,13 +29,13 @@ const orcamentoItemSchema = z
 export type Orcamento = z.infer<typeof orcamentoSchema>
 export type OrcamentoItem = z.infer<typeof orcamentoItemSchema>
 
-export function useOrcamentoData() {
+export function useOrcamentoData(id?: string) {
   const { user } = useAuth()
   const [orcamento, setOrcamento] = useState<Orcamento | null>(null)
   const [items, setItems] = useState<OrcamentoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isCreating, setIsCreating] = useState(false)
+  const [isCreating, setIsCreating] = useState(id === 'new')
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -45,7 +45,15 @@ export function useOrcamentoData() {
     }
     try {
       setError(null)
-      const activeOrcamento = await orcamentoService.getLatestOrcamentoByUser(user.id)
+      let activeOrcamento: Orcamento | null = null
+
+      if (id && id !== 'new') {
+        activeOrcamento = await orcamentoService.getOrcamentoById(id)
+      } else if (id === 'new') {
+        activeOrcamento = null
+      } else {
+        activeOrcamento = await orcamentoService.getLatestOrcamentoByUser(user.id)
+      }
 
       if (activeOrcamento) {
         const parsed = orcamentoSchema.parse(activeOrcamento)

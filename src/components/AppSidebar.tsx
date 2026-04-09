@@ -11,6 +11,7 @@ import {
   CircleDollarSign,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from 'lucide-react'
 import logoImg from '@/assets/design-sem-nome-ffec1.jpg'
 import { useAuth } from '@/hooks/use-auth'
@@ -35,6 +36,7 @@ const navItems = [
   { title: 'Novo Projeto', url: '/projects/new', icon: FolderPlus },
   { title: 'Custos de Projeto', url: '/project-costs', icon: CircleDollarSign },
   { title: 'Clientes', url: '/clients', icon: Users },
+  { title: 'Orçamentos', url: '/orcamentos', icon: FileText },
   { title: 'Logística', url: '/logistics', icon: Truck },
   { title: 'Cartório', url: '/notary', icon: FileSignature },
   { title: 'Configurações', url: '/settings', icon: Settings },
