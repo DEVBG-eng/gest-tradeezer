@@ -14,10 +14,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import { FileText, Plus, Search, ChevronRight } from 'lucide-react'
+import { FileText, Plus, Search, ChevronRight, Download } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { orcamentoService } from '@/services/orcamentoService'
 import { useRealtime } from '@/hooks/use-realtime'
+import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 
 export default function OrcamentosList() {
   const { user } = useAuth()
@@ -25,6 +26,8 @@ export default function OrcamentosList() {
   const [orcamentos, setOrcamentos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [printingOrcamento, setPrintingOrcamento] = useState<any>(null)
+  const [printingItems, setPrintingItems] = useState<any[]>([])
 
   const load = React.useCallback(async () => {
     if (!user) return
@@ -53,6 +56,17 @@ export default function OrcamentosList() {
     },
     !!user,
   )
+
+  const handleDownload = async (e: React.MouseEvent, orcamento: any) => {
+    e.stopPropagation()
+    try {
+      const items = await orcamentoService.getItemsByOrcamento(orcamento.id)
+      setPrintingItems(items)
+      setPrintingOrcamento(orcamento)
+    } catch (err) {
+      console.error('Failed to load items for download', err)
+    }
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
@@ -120,10 +134,11 @@ export default function OrcamentosList() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>
+                    <TableHead>Referência</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
-                    <TableHead className="w-[80px]"></TableHead>
+                    <TableHead className="w-[120px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -136,12 +151,24 @@ export default function OrcamentosList() {
                       <TableCell className="font-medium whitespace-nowrap text-muted-foreground">
                         {format(new Date(orcamento.created), "dd 'de' MMM, yyyy", { locale: ptBR })}
                       </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {orcamento.cod_referencia || '-'}
+                      </TableCell>
                       <TableCell className="font-semibold text-foreground">
                         {orcamento.cliente_nome}
                       </TableCell>
                       <TableCell>{orcamento.cliente_email || '-'}</TableCell>
                       <TableCell>{orcamento.cliente_telefone || '-'}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => handleDownload(e, orcamento)}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Baixar
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -158,6 +185,31 @@ export default function OrcamentosList() {
           )}
         </CardContent>
       </Card>
+
+      {printingOrcamento && (
+        <>
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white p-8 rounded-xl flex flex-col items-center gap-6 shadow-2xl animate-in zoom-in-95">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="text-center">
+                <p className="text-lg font-bold text-slate-800">Gerando Imagem...</p>
+                <p className="text-sm text-slate-500">Por favor, aguarde um momento.</p>
+              </div>
+            </div>
+          </div>
+          <div
+            className="absolute pointer-events-none overflow-hidden"
+            style={{ width: '800px', left: '-9999px', top: '-9999px' }}
+          >
+            <ProposalPrintTemplate
+              orcamento={printingOrcamento}
+              items={printingItems}
+              autoGenerateJPG={true}
+              onClose={() => setPrintingOrcamento(null)}
+            />
+          </div>
+        </>
+      )}
     </div>
   )
 }

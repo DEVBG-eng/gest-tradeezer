@@ -17,6 +17,7 @@ interface Orcamento {
   cliente_nome: string
   cliente_email: string
   cliente_telefone: string
+  cod_referencia?: string
   itens: OrcamentoItem[]
   created_at?: string
   created?: string

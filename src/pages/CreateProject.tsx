@@ -67,6 +67,8 @@ import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 import { mapProjectToPrintData } from '@/lib/project-utils'
 import { EditableProposalPreview } from '@/components/projects/EditableProposalPreview'
+import pb from '@/lib/pocketbase/client'
+import { orcamentoService } from '@/services/orcamentoService'
 
 const SERVICES_OPTS = [
   { id: 'digital', label: 'Via Digital', key: 'digital' as const },
@@ -479,6 +481,41 @@ export default function CreateProject() {
 
   const [previewData, setPreviewData] = useState<Project | null>(null)
 
+  const generateAutoOrcamento = async (projectData: any) => {
+    const currentUser = pb.authStore.record
+    if (!currentUser) return
+    try {
+      const clientEmail =
+        clientMode === 'registered'
+          ? clients.find((c) => c.id === clientRef)?.email || 'nao@informado.com'
+          : 'nao@informado.com'
+      const clientPhone =
+        clientMode === 'registered' ? clients.find((c) => c.id === clientRef)?.telefone || '' : ''
+
+      const orcamento = await orcamentoService.createOrcamento({
+        user_id: currentUser.id,
+        cliente_nome: projectData.client,
+        cliente_email: clientEmail,
+        cliente_telefone: clientPhone,
+        cod_referencia: projectData.id,
+      } as any)
+
+      if (projectData.items && projectData.items.length > 0) {
+        for (const item of projectData.items) {
+          await orcamentoService.createItem({
+            orcamento_id: orcamento.id,
+            descricao: item.description,
+            quantidade: item.laudas || 1,
+            valor_unitario: item.valorLauda || 0,
+            subtotal: (item.laudas || 1) * (item.valorLauda || 0),
+          })
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao gerar orçamento automático', e)
+    }
+  }
+
   const validateAndBuildData = () => {
     const errors: Record<string, string> = {}
     let isValid = true
@@ -558,6 +595,7 @@ export default function CreateProject() {
     setStepErrors({})
     try {
       await addProject(newProjectData as any)
+      await generateAutoOrcamento(newProjectData)
       toast({ title: 'Projeto Criado com Sucesso!', description: `Referência: ${reference}` })
       navigate('/projects')
     } catch (e: any) {
@@ -587,6 +625,7 @@ export default function CreateProject() {
           onClose={() => setPreviewData(null)}
           onSave={async (finalData) => {
             await addProject(finalData as any)
+            await generateAutoOrcamento(finalData)
           }}
           onPrintClose={() => {
             setPreviewData(null)

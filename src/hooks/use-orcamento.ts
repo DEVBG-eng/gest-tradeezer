@@ -11,6 +11,7 @@ const orcamentoSchema = z
     cliente_nome: z.string(),
     cliente_email: z.string().email(),
     cliente_telefone: z.string().optional().default(''),
+    cod_referencia: z.string().optional().default(''),
     created: z.string(),
   })
   .passthrough()
