@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-08T16:02:45.628Z",
+  "generatedAt": "2026-04-27T13:34:54.131Z",
   "collections": [
     {
       "name": "users",
@@ -826,6 +826,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "cod_referencia",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE INDEX idx_orcamentos_user_id ON orcamentos (user_id)"]

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import {
@@ -21,6 +21,15 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -32,15 +41,6 @@ import { LANGUAGES } from '@/components/LanguageCombobox'
 import { cn } from '@/lib/utils'
 import { getCustoProjetoByProjeto } from '@/services/projetos'
 import { ProjectCostDialog } from './ProjectCostDialog'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination'
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
   Orçamento: 'bg-slate-400 hover:bg-slate-500 text-white',
@@ -53,68 +53,111 @@ const STATUS_COLORS: Record<ProjectStatus, string> = {
   'Atrasado/Bloqueado': 'bg-rose-500 hover:bg-rose-600 text-white',
   Cancelado: 'bg-zinc-500 hover:bg-zinc-600 text-white',
   'Não Aprovado': 'bg-red-500 hover:bg-red-600 text-white',
-  Entregue: 'bg-teal-500 hover:bg-teal-600 text-white',
-}
-
-const STATUS_PRIORITY: Record<string, number> = {
-  Aprovado: 1,
-  Aguardando: 2,
-  'Em Andamento': 3,
-  Concluído: 4,
-  Orçamento: 5,
 }
 
 interface ProjectGridProps {
   onSelectProject: (id: string) => void
   onEditProject: (id: string) => void
   onDeleteProject: (id: string) => void
-  referenceFilter?: string
 }
 
-export function ProjectGrid({
-  onSelectProject,
-  onEditProject,
-  onDeleteProject,
-  referenceFilter,
-}: ProjectGridProps) {
-  const { projects, updateProjectStatus, loading } = useProjectStore()
-  const [searchParams] = useSearchParams()
+export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }: ProjectGridProps) {
+  const { projects, updateProjectStatus, loading, currentPage, totalPages, totalItems } =
+    useProjectStore()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [costDialogOpenForProject, setCostDialogOpenForProject] = useState<Project | null>(null)
-  const [pendingStatus, setPendingStatus] = useState<ProjectStatus | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const ITEMS_PER_PAGE = 15
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchParams, referenceFilter, projects])
+  const handlePageChange = (page: number) => {
+    searchParams.set('page', page.toString())
+    setSearchParams(searchParams)
+  }
+
+  const renderPageNumbers = () => {
+    const pages = []
+    const maxVisible = 5
+
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+    let end = Math.min(totalPages, start + maxVisible - 1)
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1)
+    }
+
+    if (start > 1) {
+      pages.push(
+        <PaginationItem key="1">
+          <PaginationLink
+            href="#"
+            onClick={(e) => {
+              e.preventDefault()
+              handlePageChange(1)
+            }}
+          >
+            1
+          </PaginationLink>
+        </PaginationItem>,
+      )
+      if (start > 2) {
+        pages.push(
+          <PaginationItem key="ellipsis-start">
+            <PaginationEllipsis />
+          </PaginationItem>,
+        )
+      }
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(
+        <PaginationItem key={i}>
+          <PaginationLink
+            href="#"
+            isActive={currentPage === i}
+            onClick={(e) => {
+              e.preventDefault()
+              if (currentPage !== i) handlePageChange(i)
+            }}
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>,
+      )
+    }
+
+    if (end < totalPages) {
+      if (end < totalPages - 1) {
+        pages.push(
+          <PaginationItem key="ellipsis-end">
+            <PaginationEllipsis />
+          </PaginationItem>,
+        )
+      }
+      pages.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink
+            href="#"
+            onClick={(e) => {
+              e.preventDefault()
+              handlePageChange(totalPages)
+            }}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>,
+      )
+    }
+
+    return pages
+  }
+  const [pendingStatus, setPendingStatus] = useState<ProjectStatus | null>(null)
 
   const getLanguageLabel = (code?: string) => {
     if (!code) return '-'
     return LANGUAGES.find((l) => l.value === code)?.label || code
   }
 
-  const filteredProjects = projects.filter((p) => {
-    const statusParams = searchParams.getAll('status')
-    const shippingParam = searchParams.get('shipping') === 'true'
-
-    if (statusParams.length > 0 && !statusParams.includes(p.status)) return false
-    if (shippingParam && !(p.shipping || p.internationalShipping)) return false
-    if (referenceFilter && !p.id.toLowerCase().includes(referenceFilter.toLowerCase())) return false
-
-    return true
-  })
-
-  const sortedProjects = [...filteredProjects].sort((a, b) => {
-    const priorityA = STATUS_PRIORITY[a.status] || 99
-    const priorityB = STATUS_PRIORITY[b.status] || 99
-
-    if (priorityA !== priorityB) {
-      return priorityA - priorityB
-    }
-
-    return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' })
-  })
+  // Filtering is now handled server-side via the store
+  const filteredProjects = projects
 
   const handleStatusChange = async (project: Project, status: ProjectStatus) => {
     if (status === 'Concluído') {
@@ -128,26 +171,6 @@ export function ProjectGrid({
     updateProjectStatus(project.id, status)
   }
 
-  const totalPages = Math.ceil(sortedProjects.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginatedProjects = sortedProjects.slice(startIndex, startIndex + ITEMS_PER_PAGE)
-
-  const getPageNumbers = () => {
-    const pages = []
-    const maxVisiblePages = 5
-    let start = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
-    let end = Math.min(totalPages, start + maxVisiblePages - 1)
-
-    if (end - start + 1 < maxVisiblePages) {
-      start = Math.max(1, end - maxVisiblePages + 1)
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i)
-    }
-    return pages
-  }
-
   return (
     <div className="rounded-md border bg-card overflow-hidden h-full flex flex-col">
       <Table>
@@ -156,12 +179,10 @@ export function ProjectGrid({
             <TableHead className="w-[140px] font-semibold text-foreground">
               Cód. de Referência
             </TableHead>
-            <TableHead className="font-semibold text-foreground">Cliente</TableHead>
             <TableHead className="font-semibold text-foreground">Categoria de serviço</TableHead>
             <TableHead className="font-semibold text-foreground">Idiomas</TableHead>
             <TableHead className="font-semibold text-foreground">Tipo de documento</TableHead>
             <TableHead className="font-semibold text-foreground">Quantidades</TableHead>
-            <TableHead className="font-semibold text-foreground">Data de entrada</TableHead>
             <TableHead className="font-semibold text-foreground">Data de entrega</TableHead>
             <TableHead className="text-right font-semibold text-foreground">Valor final</TableHead>
             <TableHead className="w-[160px] font-semibold text-foreground">Status</TableHead>
@@ -173,22 +194,22 @@ export function ProjectGrid({
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={11} className="h-32 text-center text-muted-foreground">
+              <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" /> Carregando projetos...
                 </div>
               </TableCell>
             </TableRow>
-          ) : paginatedProjects.length === 0 ? (
+          ) : filteredProjects.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={11} className="h-32 text-center text-muted-foreground">
+              <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                 {projects.length === 0
                   ? 'Nenhum projeto encontrado.'
                   : 'Nenhum projeto encontrado com os filtros selecionados'}
               </TableCell>
             </TableRow>
           ) : (
-            paginatedProjects.map((project) => (
+            filteredProjects.map((project) => (
               <TableRow key={project.id} className="group hover:bg-muted/50">
                 <TableCell className="font-medium">
                   <span
@@ -198,7 +219,6 @@ export function ProjectGrid({
                     {project.id}
                   </span>
                 </TableCell>
-                <TableCell>{project.client || '-'}</TableCell>
                 <TableCell>{project.translationType || '-'}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1.5 text-sm">
@@ -214,9 +234,6 @@ export function ProjectGrid({
                     <ChevronRight className="h-3 w-3 shrink-0" />
                     <span className="font-medium text-foreground">{project.laudas}</span> laudas
                   </div>
-                </TableCell>
-                <TableCell>
-                  {project.entryDate ? format(parseISO(project.entryDate), 'dd/MM/yyyy') : '-'}
                 </TableCell>
                 <TableCell>
                   {project.dueDate ? format(parseISO(project.dueDate), 'dd/MM/yyyy') : '-'}
@@ -318,35 +335,39 @@ export function ProjectGrid({
         </TableBody>
       </Table>
 
-      {totalPages > 1 && (
-        <div className="p-4 border-t mt-auto">
-          <Pagination>
+      {totalPages > 0 && (
+        <div
+          className={cn(
+            'flex items-center justify-between px-4 py-4 border-t bg-muted/20 mt-auto transition-opacity',
+            loading && 'opacity-50 pointer-events-none',
+          )}
+        >
+          <div className="text-sm text-muted-foreground hidden sm:block flex-1">
+            Página {currentPage} de {totalPages} ({totalItems} projeto{totalItems !== 1 && 's'})
+          </div>
+          <Pagination className="flex-1 sm:justify-end">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className={
-                    currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-                  }
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage > 1) handlePageChange(currentPage - 1)
+                  }}
+                  className={cn(currentPage <= 1 && 'pointer-events-none opacity-50')}
                 />
               </PaginationItem>
-              {getPageNumbers().map((pageNum) => (
-                <PaginationItem key={pageNum}>
-                  <PaginationLink
-                    isActive={currentPage === pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className="cursor-pointer"
-                  >
-                    {pageNum}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
+
+              {renderPageNumbers()}
+
               <PaginationItem>
                 <PaginationNext
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className={
-                    currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-                  }
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage < totalPages) handlePageChange(currentPage + 1)
+                  }}
+                  className={cn(currentPage >= totalPages && 'pointer-events-none opacity-50')}
                 />
               </PaginationItem>
             </PaginationContent>

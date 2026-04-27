@@ -9,6 +9,7 @@ import React, {
 import {
   ProjetoRecord,
   getProjetos,
+  getProjetosPaginated,
   createProjeto,
   updateProjeto,
   deleteProjeto,
@@ -29,7 +30,6 @@ export type ProjectStatus =
   | 'Em Revisão'
   | 'Cartório'
   | 'Concluído'
-  | 'Entregue'
   | 'Atrasado/Bloqueado'
   | 'Cancelado'
   | 'Não Aprovado'
@@ -42,7 +42,6 @@ export const ALL_STATUSES: ProjectStatus[] = [
   'Em Revisão',
   'Cartório',
   'Concluído',
-  'Entregue',
   'Atrasado/Bloqueado',
   'Cancelado',
   'Não Aprovado',
@@ -95,22 +94,21 @@ export interface Project {
   digitalAuthentication?: boolean
   shipping?: boolean
   internationalShipping?: boolean
-  freteJk?: boolean
   translationType?: string
-  paymentMethod?: string
   items?: ProjectItem[]
-  created?: string
-  updated?: string
 }
 
 interface ProjectStoreContext {
   projects: Project[]
   loading: boolean
+  totalPages: number
+  currentPage: number
+  totalItems: number
+  fetchProjects: (page: number, filters: { statuses: string[]; shipping: boolean }) => Promise<void>
   addProject: (project: Omit<Project, 'pbId'>) => Promise<void>
   updateProjectStatus: (id: string, status: ProjectStatus) => Promise<void>
   updateProject: (id: string, data: Partial<Project>) => Promise<void>
   deleteProject: (id: string) => Promise<void>
-  setSearchQuery: (query: string) => void
 }
 
 const StoreContext = createContext<ProjectStoreContext | null>(null)
@@ -144,8 +142,6 @@ const mapToProject = (record: ProjetoRecord): Project => ({
   digitalAuthentication: record.autenticacao_digital,
   shipping: record.frete,
   internationalShipping: record.dhl,
-  freteJk: record.frete_jk,
-  paymentMethod: record.forma_pagamento,
   items: (record.expand?.ItensProjeto_via_projeto || []).map((i) => ({
     id: i.id as string,
     description: i.descricao,
@@ -153,8 +149,6 @@ const mapToProject = (record: ProjetoRecord): Project => ({
     valorLauda: i.valor_lauda,
     total: i.valor_total,
   })),
-  created: record.created,
-  updated: record.updated,
 })
 
 const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
@@ -188,66 +182,55 @@ const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
     data.autenticacao_digital = project.digitalAuthentication
   if (project.shipping !== undefined) data.frete = project.shipping
   if (project.internationalShipping !== undefined) data.dhl = project.internationalShipping
-  if (project.freteJk !== undefined) data.frete_jk = project.freteJk
-  if (project.paymentMethod !== undefined) data.forma_pagamento = project.paymentMethod
   return data
 }
 
-const STATUS_PRIORITY: Record<string, number> = {
-  Aprovado: 1,
-  Aguardando: 2,
-  'Em Andamento': 3,
-  Concluído: 4,
-  Orçamento: 5,
-  'Em Revisão': 6,
-  Cartório: 7,
-  Entregue: 8,
-  'Atrasado/Bloqueado': 9,
-  Cancelado: 10,
-  'Não Aprovado': 11,
-}
-
 export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
-  const [allProjects, setAllProjects] = useState<Project[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [totalPages, setTotalPages] = useState(1)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+
+  const fetchParams = useRef({ page: 1, filters: { statuses: [] as string[], shipping: false } })
+
   const { toast } = useToast()
   const { user } = useAuth()
 
-  const projects = React.useMemo(() => {
-    let result = allProjects
-    if (searchQuery) {
-      const lowerQ = searchQuery.toLowerCase()
-      result = allProjects.filter(
-        (p) =>
-          (p.client && p.client.toLowerCase().includes(lowerQ)) ||
-          (p.id && p.id.toLowerCase().includes(lowerQ)) ||
-          (p.translationType && p.translationType.toLowerCase().includes(lowerQ)),
-      )
-    }
-
-    return [...result].sort((a, b) => {
-      const pA = STATUS_PRIORITY[a.status] || 99
-      const pB = STATUS_PRIORITY[b.status] || 99
-      if (pA !== pB) return pA - pB
-
-      const refA = a.id || ''
-      const refB = b.id || ''
-      return refA.localeCompare(refB)
-    })
-  }, [allProjects, searchQuery])
-
   const loadData = useCallback(async () => {
     if (!user) return
+    setLoading(true)
     try {
-      const records = await getProjetos()
-      setAllProjects(records.map((r) => mapToProject(r)))
+      const { page, filters } = fetchParams.current
+      const filterParts = []
+      if (filters.statuses.length > 0) {
+        const statusFilter = filters.statuses.map((s) => `status="${s}"`).join(' || ')
+        filterParts.push(`(${statusFilter})`)
+      }
+      if (filters.shipping) {
+        filterParts.push(`(frete=true || dhl=true)`)
+      }
+      const filterStr = filterParts.join(' && ')
+
+      const result = await getProjetosPaginated(page, 10, filterStr)
+      setProjects(result.items.map((r) => mapToProject(r)))
+      setTotalPages(result.totalPages)
+      setCurrentPage(result.page)
+      setTotalItems(result.totalItems)
     } catch (e) {
       console.error(e)
     } finally {
       setLoading(false)
     }
   }, [user])
+
+  const fetchProjects = useCallback(
+    async (page: number, filters: { statuses: string[]; shipping: boolean }) => {
+      fetchParams.current = { page, filters }
+      await loadData()
+    },
+    [loadData],
+  )
 
   useEffect(() => {
     loadData()
@@ -268,7 +251,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     !!user,
   )
 
-  const getPbId = (id: string) => allProjects.find((p) => p.id === id)?.pbId
+  const getPbId = (id: string) => projects.find((p) => p.id === id)?.pbId
 
   const addProject = async (project: Omit<Project, 'pbId'>) => {
     try {
@@ -311,7 +294,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const updateProjectStatus = async (id: string, status: ProjectStatus) => {
     const pbId = getPbId(id)
     if (!pbId) return
-    setAllProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
     try {
       await updateProjeto(pbId, { status })
     } catch (e) {
@@ -328,7 +311,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       await updateProjeto(pbId, mapToPB(data))
 
       if (data.items) {
-        const currentProject = allProjects.find((p) => p.id === id)
+        const currentProject = projects.find((p) => p.id === id)
         const currentIds = (currentProject?.items || [])
           .map((i) => i.id)
           .filter(Boolean) as string[]
@@ -385,7 +368,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const deleteProject = async (id: string) => {
     const pbId = getPbId(id)
     if (!pbId) return
-    setAllProjects((prev) => prev.filter((p) => p.id !== id))
+    setProjects((prev) => prev.filter((p) => p.id !== id))
     try {
       await deleteProjeto(pbId)
     } catch (e) {
@@ -400,11 +383,14 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       value={{
         projects,
         loading,
+        totalPages,
+        currentPage,
+        totalItems,
+        fetchProjects,
         addProject,
         updateProjectStatus,
         updateProject,
         deleteProject,
-        setSearchQuery,
       }}
     >
       {children}

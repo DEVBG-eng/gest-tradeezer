@@ -17,14 +17,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, FilterX, Search } from 'lucide-react'
+import { Loader2, FilterX } from 'lucide-react'
 import { mapProjectToPrintData } from '@/lib/project-utils'
-import pb from '@/lib/pocketbase/client'
 import { ProjectStatusFilter } from '@/components/projects/ProjectStatusFilter'
-import { Input } from '@/components/ui/input'
 
 export default function Projects() {
-  const { projects, deleteProject, setSearchQuery } = useProjectStore()
+  const { projects, deleteProject, fetchProjects } = useProjectStore()
   const { toast } = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -32,46 +30,15 @@ export default function Projects() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [refSearch, setRefSearch] = useState('')
 
-  const hasFilters =
-    searchParams.getAll('status').length > 0 || searchParams.has('shipping') || refSearch !== ''
+  const hasFilters = searchParams.getAll('status').length > 0 || searchParams.has('shipping')
 
   useEffect(() => {
-    setSearchQuery(refSearch)
-  }, [refSearch, setSearchQuery])
-
-  useEffect(() => {
-    return () => setSearchQuery('')
-  }, [setSearchQuery])
-
-  useEffect(() => {
-    const projectId = searchParams.get('projectId')
-    if (!projectId) return
-
-    const verifyAndOpen = async () => {
-      try {
-        await pb.collection('Projetos').getOne(projectId)
-        setSelectedId(projectId)
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Projeto não encontrado',
-          description: 'O projeto que você tentou acessar não existe ou foi removido.',
-        })
-      } finally {
-        setSearchParams(
-          (prev) => {
-            prev.delete('projectId')
-            return prev
-          },
-          { replace: true },
-        )
-      }
-    }
-
-    verifyAndOpen()
-  }, [searchParams, setSearchParams, toast])
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const statuses = searchParams.getAll('status')
+    const shipping = searchParams.get('shipping') === 'true'
+    fetchProjects(page, { statuses, shipping })
+  }, [searchParams, fetchProjects])
 
   useEffect(() => {
     const handlePrintEvent = (e: Event) => {
@@ -126,27 +93,14 @@ export default function Projects() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Quadro de Projetos</h1>
+          <p className="text-muted-foreground mt-1">
+            Gerencie e acompanhe todos os projetos de forma centralizada e visual.
+          </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por cliente, ref. ou serviço..."
-              value={refSearch}
-              onChange={(e) => setRefSearch(e.target.value)}
-              className="pl-9 w-[300px] lg:w-[350px] h-10"
-            />
-          </div>
+        <div className="flex items-center gap-2 shrink-0">
           <ProjectStatusFilter />
           {hasFilters && (
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSearchParams({})
-                setRefSearch('')
-              }}
-              className="gap-2 shrink-0"
-            >
+            <Button variant="ghost" onClick={() => setSearchParams({})} className="gap-2 shrink-0">
               <FilterX className="h-4 w-4" />
               Limpar Todos
             </Button>
@@ -159,7 +113,6 @@ export default function Projects() {
           onSelectProject={setSelectedId}
           onEditProject={setEditingId}
           onDeleteProject={setDeletingId}
-          referenceFilter=""
         />
       </div>
 

@@ -38,14 +38,7 @@ export interface ProjetoRecord {
   autenticacao_digital?: boolean
   frete?: boolean
   dhl?: boolean
-  frete_jk?: boolean
-  certidao?: boolean
-  divorcio?: boolean
-  declaracao?: boolean
-  procuracao?: boolean
-  certidao_objeto_pe?: boolean
   observacoes?: string
-  forma_pagamento?: string
   pasta_url?: string
   created?: string
   updated?: string
@@ -58,6 +51,13 @@ export const getProjetos = () =>
   pb
     .collection('Projetos')
     .getFullList<ProjetoRecord>({ sort: '-created', expand: 'ItensProjeto_via_projeto' })
+
+export const getProjetosPaginated = (page: number, perPage: number, filterStr?: string) =>
+  pb.collection('Projetos').getList<ProjetoRecord>(page, perPage, {
+    sort: '-created',
+    expand: 'ItensProjeto_via_projeto',
+    filter: filterStr || undefined,
+  })
 
 export const getNextProjectReference = async (): Promise<string> => {
   try {
