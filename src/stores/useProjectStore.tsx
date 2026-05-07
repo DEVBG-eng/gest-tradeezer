@@ -36,7 +36,6 @@ export type ProjectStatus =
   | 'Não Aprovado'
 
 export const ALL_STATUSES: ProjectStatus[] = [
-  'Orçamento',
   'Aprovado',
   'Aguardando',
   'Em Andamento',
@@ -207,6 +206,8 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       if (filters.statuses.length > 0) {
         const statusFilter = filters.statuses.map((s) => `status="${s}"`).join(' || ')
         filterParts.push(`(${statusFilter})`)
+      } else {
+        filterParts.push(`status != 'Orçamento'`)
       }
       if (filters.shipping) {
         filterParts.push(`(frete=true || dhl=true)`)
