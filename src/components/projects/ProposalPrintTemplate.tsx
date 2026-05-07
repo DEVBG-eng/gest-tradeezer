@@ -74,6 +74,9 @@ export function ProposalPrintTemplate({
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 overflow-auto print:static print:bg-white print:overflow-visible flex flex-col">
       <div className="bg-white p-4 flex justify-end gap-2 print:hidden sticky top-0 border-b z-10 shadow-sm shrink-0">
+        <Button onClick={() => window.print()} className="gap-2">
+          <Printer className="w-4 h-4" /> Gerar PDF
+        </Button>
         {onClose && (
           <Button variant="outline" onClick={onClose}>
             <X className="w-4 h-4 mr-2" /> Fechar
@@ -172,7 +175,7 @@ export function ProposalPrintTemplate({
               <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
                 9. Forma de pagamento
               </h3>
-              <p className="text-slate-800 font-medium">{data.paymentMethod || 'Não definida'}</p>
+              <p className="text-slate-800 font-medium">{data.paymentMethod || 'Não informado'}</p>
             </div>
 
             <div className="md:col-span-2">
@@ -180,7 +183,7 @@ export function ProposalPrintTemplate({
                 10. Observações do projeto
               </h3>
               <p className="text-slate-800 font-medium whitespace-pre-wrap bg-white p-4 rounded-md border border-slate-100">
-                {data.observations || 'Nenhuma observação informada.'}
+                {data.observations || 'N/A'}
               </p>
             </div>
           </div>
