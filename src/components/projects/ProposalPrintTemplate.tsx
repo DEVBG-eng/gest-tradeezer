@@ -64,7 +64,7 @@ export function ProposalPrintTemplate({
     0
 
   const formatLang = (lang?: string) => {
-    if (!lang) return '-'
+    if (!lang) return ''
     if (lang === 'pt') return 'Português (BR)'
     if (lang === 'en') return 'Inglês'
     if (lang === 'es') return 'Espanhol'
@@ -103,7 +103,7 @@ export function ProposalPrintTemplate({
                   ? data.referenceCode.startsWith('TRD')
                     ? data.referenceCode
                     : `TRD-${data.referenceCode}`
-                  : '----'}
+                  : 'Não informado'}
               </p>
             </div>
 
@@ -112,7 +112,7 @@ export function ProposalPrintTemplate({
                 2. Nome do Cliente
               </h3>
               <p className="font-medium text-slate-800 text-base">
-                {data.client || 'NÃO INFORMADO'}
+                {data.client || 'Não informado'}
               </p>
             </div>
 
@@ -121,7 +121,7 @@ export function ProposalPrintTemplate({
                 3. Data de Entrada
               </h3>
               <p className="text-slate-800 font-medium">
-                {data.entryDate ? format(new Date(data.entryDate), 'dd/MM/yyyy') : '-'}
+                {data.entryDate ? format(new Date(data.entryDate), 'dd/MM/yyyy') : 'Não informada'}
               </p>
             </div>
 
@@ -130,7 +130,7 @@ export function ProposalPrintTemplate({
                 4. Data de Entrega
               </h3>
               <p className="text-slate-800 font-medium">
-                {data.deadline ? format(new Date(data.deadline), 'dd/MM/yyyy') : '-'}
+                {data.deadline ? format(new Date(data.deadline), 'dd/MM/yyyy') : 'Não informada'}
               </p>
             </div>
 
@@ -138,21 +138,27 @@ export function ProposalPrintTemplate({
               <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
                 5. Idioma de Origem
               </h3>
-              <p className="text-slate-800 font-medium">{formatLang(data.sourceLang)}</p>
+              <p className="text-slate-800 font-medium">
+                {formatLang(data.sourceLang) || 'Não informado'}
+              </p>
             </div>
 
             <div>
               <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
                 6. Idioma de Destino
               </h3>
-              <p className="text-slate-800 font-medium">{formatLang(data.targetLang)}</p>
+              <p className="text-slate-800 font-medium">
+                {formatLang(data.targetLang) || 'Não informado'}
+              </p>
             </div>
 
             <div>
               <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
                 7. Tipo de Tradução
               </h3>
-              <p className="text-slate-800 font-medium">{data.translationType || '-'}</p>
+              <p className="text-slate-800 font-medium">
+                {data.translationType || 'Não informado'}
+              </p>
             </div>
 
             <div>
@@ -181,7 +187,11 @@ export function ProposalPrintTemplate({
         </div>
 
         {/* Project Items Table (Optional breakdown) */}
-        {data.items && data.items.length > 0 && (
+        {!data.items || data.items.length === 0 ? (
+          <div className="mb-10 text-sm text-slate-500 italic">
+            Nenhum detalhamento de item informado.
+          </div>
+        ) : (
           <div className="mb-10">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
               Detalhamento de Itens
@@ -204,12 +214,11 @@ export function ProposalPrintTemplate({
                 </TableHeader>
                 <TableBody>
                   {data.items.map((item: any, idx: number) => {
+                    const qtd = item.laudas || item.quantidade || item.qtd_laudas || 0
+                    const valorUnit =
+                      item.valorLauda || item.valor_unitario || item.valor_lauda || 0
                     const itemTotal =
-                      item.total ||
-                      item.valor_total ||
-                      (item.quantidade || 0) * (item.valor_unitario || 0) ||
-                      (item.laudas || 0) * (item.valorLauda || 0) ||
-                      0
+                      item.total || item.valor_total || item.subtotal || qtd * valorUnit || 0
                     return (
                       <TableRow
                         key={idx}
@@ -218,11 +227,9 @@ export function ProposalPrintTemplate({
                         <TableCell className="py-3 font-medium text-slate-800">
                           {item.description || item.descricao || '-'}
                         </TableCell>
-                        <TableCell className="py-3 text-center text-slate-600">
-                          {item.laudas || item.quantidade || 0}
-                        </TableCell>
+                        <TableCell className="py-3 text-center text-slate-600">{qtd}</TableCell>
                         <TableCell className="py-3 text-right text-slate-600">
-                          {formatCurrency(item.valorLauda || item.valor_unitario || 0)}
+                          {formatCurrency(valorUnit)}
                         </TableCell>
                         <TableCell className="py-3 text-right font-bold text-slate-800">
                           {formatCurrency(itemTotal)}

@@ -87,6 +87,7 @@ export function ProjectDetailsSheet({
 
   const [history, setHistory] = useState<ProjectHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [projectItems, setProjectItems] = useState<any[]>([])
 
   const loadHistory = useCallback(async () => {
     if (!projectId) return
@@ -104,6 +105,10 @@ export function ProjectDetailsSheet({
   useEffect(() => {
     if (projectId) {
       loadHistory()
+      pb.collection('ItensProjeto')
+        .getFullList({ filter: `projeto = '${projectId}'` })
+        .then((res) => setProjectItems(res))
+        .catch(console.error)
     }
   }, [projectId, loadHistory])
 
@@ -530,6 +535,12 @@ export function ProjectDetailsSheet({
         <ProposalPrintTemplate
           data={{
             ...mapProjectToPrintData(project),
+            entryDate: project.entryDate ? new Date(project.entryDate) : undefined,
+            deadline: project.dueDate ? new Date(project.dueDate) : undefined,
+            sourceLang: project.sourceLang,
+            targetLang: project.targetLang,
+            translationType: project.translationType,
+            observations: project.observations,
             paymentMethod: project.paymentMethod,
             urgent: project.urgent,
             international: project.international,
@@ -542,6 +553,7 @@ export function ProjectDetailsSheet({
             digitalAuthentication: project.digitalAuthentication,
             shipping: project.shipping,
             internationalShipping: project.internationalShipping,
+            items: projectItems,
           }}
           autoPrint={true}
           onClose={() => setIsPrinting(false)}

@@ -583,7 +583,14 @@ export default function CreateProject() {
         <ProposalPrintTemplate
           data={{
             ...mapProjectToPrintData(createdProject),
+            entryDate: createdProject.entryDate ? new Date(createdProject.entryDate) : undefined,
+            deadline: createdProject.dueDate ? new Date(createdProject.dueDate) : undefined,
+            sourceLang: createdProject.sourceLang,
+            targetLang: createdProject.targetLang,
+            translationType: createdProject.translationType,
+            observations: createdProject.observations,
             paymentMethod: createdProject.paymentMethod,
+            items: createdProject.items,
           }}
           autoPrint={true}
           onClose={handleCloseProposal}

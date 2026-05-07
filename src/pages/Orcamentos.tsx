@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { FileText, Mail, Plus, Trash2, AlertCircle, FilePlus } from 'lucide-react'
 import { useOrcamentoData } from '@/hooks/use-orcamento'
+import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/components/ui/use-toast'
 import { orcamentoService } from '@/services/orcamentoService'
@@ -35,6 +36,7 @@ export default function OrcamentoPage() {
   } = useOrcamentoData()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPrinting, setIsPrinting] = useState(false)
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
@@ -97,14 +99,8 @@ export default function OrcamentoPage() {
     }
   }
 
-  const handleGeneratePDF = async () => {
-    try {
-      // Mock logic for PDF generation
-      if (Math.random() > 0.8) throw new Error('Simulated PDF error')
-      toast({ description: 'PDF gerado com sucesso!' })
-    } catch (err) {
-      toast({ variant: 'destructive', description: 'Erro ao gerar PDF. Tente novamente.' })
-    }
+  const handleGeneratePDF = () => {
+    setIsPrinting(true)
   }
 
   const handleSendEmail = async () => {
@@ -398,6 +394,31 @@ export default function OrcamentoPage() {
           </>
         )}
       </div>
+
+      {isPrinting && orcamento && (
+        <ProposalPrintTemplate
+          data={{
+            referenceCode: orcamento.cod_referencia || orcamento.id,
+            client: orcamento.cliente_nome,
+            entryDate: orcamento.created ? new Date(orcamento.created) : undefined,
+            deadline: undefined,
+            sourceLang: '',
+            targetLang: '',
+            translationType: 'Orçamento Avulso',
+            value: totals.total,
+            paymentMethod: '',
+            observations: '',
+            items: items.map((item) => ({
+              description: item.descricao,
+              quantidade: item.quantidade,
+              valor_unitario: item.valor_unitario,
+              total: item.subtotal,
+            })),
+          }}
+          autoPrint={true}
+          onClose={() => setIsPrinting(false)}
+        />
+      )}
     </div>
   )
 }

@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Loader2, FilterX } from 'lucide-react'
 import { mapProjectToPrintData } from '@/lib/project-utils'
 import { ProjectStatusFilter } from '@/components/projects/ProjectStatusFilter'
+import pb from '@/lib/pocketbase/client'
 
 export default function Projects() {
   const { projects, deleteProject, fetchProjects } = useProjectStore()
@@ -30,6 +31,7 @@ export default function Projects() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [printingItems, setPrintingItems] = useState<any[]>([])
 
   const hasFilters = searchParams.getAll('status').length > 0 || searchParams.has('shipping')
 
@@ -39,6 +41,17 @@ export default function Projects() {
     const shipping = searchParams.get('shipping') === 'true'
     fetchProjects(page, { statuses, shipping })
   }, [searchParams, fetchProjects])
+
+  useEffect(() => {
+    if (printingId) {
+      pb.collection('ItensProjeto')
+        .getFullList({ filter: `projeto = '${printingId}'` })
+        .then((res) => setPrintingItems(res))
+        .catch(console.error)
+    } else {
+      setPrintingItems([])
+    }
+  }, [printingId])
 
   useEffect(() => {
     const handlePrintEvent = (e: Event) => {
@@ -122,7 +135,17 @@ export default function Projects() {
 
       {printingProject && (
         <ProposalPrintTemplate
-          data={mapProjectToPrintData(printingProject)}
+          data={{
+            ...mapProjectToPrintData(printingProject),
+            entryDate: printingProject.entryDate ? new Date(printingProject.entryDate) : undefined,
+            deadline: printingProject.dueDate ? new Date(printingProject.dueDate) : undefined,
+            sourceLang: printingProject.sourceLang,
+            targetLang: printingProject.targetLang,
+            translationType: printingProject.translationType,
+            observations: printingProject.observations,
+            paymentMethod: printingProject.paymentMethod,
+            items: printingItems,
+          }}
           autoPrint={true}
           onClose={() => setPrintingId(null)}
         />
