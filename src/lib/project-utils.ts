@@ -38,5 +38,6 @@ export const mapProjectToPrintData = (project: Project): PrintProjectData => {
     ],
     observations: project.observations || '',
     items: project.items || [],
+    paymentMethod: project.paymentMethod || '',
   }
 }
