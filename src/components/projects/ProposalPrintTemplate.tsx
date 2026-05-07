@@ -79,15 +79,10 @@ export function ProposalPrintTemplate({
             <X className="w-4 h-4 mr-2" /> Fechar
           </Button>
         )}
-        <Button onClick={() => window.print()}>
-          <Printer className="w-4 h-4 mr-2" /> Imprimir
-        </Button>
       </div>
       <div className="bg-white p-8 max-w-4xl mx-auto w-full text-slate-800 font-sans shadow-md border border-slate-200 print:shadow-none print:border-none print:p-0 my-8 print:my-0 flex-1">
         {/* Header */}
         <div className="flex flex-col items-center mb-10">
-          <img src={logoUrl} alt="Tradeezer" className="h-24 object-contain mb-8" />
-
           <div className="w-full flex justify-between items-end border-b border-slate-200 pb-4">
             <h1 className="text-2xl font-medium text-slate-800">Orçamento Comercial</h1>
             <div className="text-right text-sm text-slate-500">
