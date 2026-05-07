@@ -73,6 +73,14 @@ export function ProposalPrintTemplate({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 overflow-auto print:static print:bg-white print:overflow-visible flex flex-col">
+      <style>
+        {`
+          @media print {
+            @page { margin: 1cm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        `}
+      </style>
       <div className="bg-white p-4 flex justify-end gap-2 print:hidden sticky top-0 border-b z-10 shadow-sm shrink-0">
         <Button onClick={() => window.print()} className="gap-2">
           <Printer className="w-4 h-4" /> Gerar PDF
@@ -87,7 +95,10 @@ export function ProposalPrintTemplate({
         {/* Header */}
         <div className="flex flex-col items-center mb-10">
           <div className="w-full flex justify-between items-end border-b border-slate-200 pb-4">
-            <h1 className="text-2xl font-medium text-slate-800">Orçamento Comercial</h1>
+            <div className="flex items-center gap-4">
+              {logoUrl && <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />}
+              <h1 className="text-2xl font-medium text-slate-800">Orçamento Comercial</h1>
+            </div>
             <div className="text-right text-sm text-slate-500">
               <p>Data: {format(new Date(), 'dd/MM/yyyy')}</p>
             </div>

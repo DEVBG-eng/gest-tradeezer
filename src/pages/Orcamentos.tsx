@@ -221,7 +221,7 @@ export default function OrcamentoPage() {
           </Tooltip>
           <Button className="h-11" onClick={handleGeneratePDF}>
             <FileText className="w-4 h-4 mr-2" />
-            Gerar PDF
+            Gerar Proposta
           </Button>
         </div>
       </div>

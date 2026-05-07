@@ -20,6 +20,7 @@ import { NotificationStoreProvider } from './stores/useNotificationStore'
 import { ClientStoreProvider } from './stores/useClientStore'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 import { GlobalCostDialogHandler } from './components/projects/GlobalCostDialogHandler'
+import { GlobalPrintDialogHandler } from './components/projects/GlobalPrintDialogHandler'
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
@@ -39,6 +40,7 @@ const App = () => (
                 <Toaster />
                 <Sonner />
                 <GlobalCostDialogHandler />
+                <GlobalPrintDialogHandler />
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route element={<ProtectedRoutes />}>

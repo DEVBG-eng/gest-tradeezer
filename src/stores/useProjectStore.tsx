@@ -96,6 +96,7 @@ export interface Project {
   internationalShipping?: boolean
   translationType?: string
   items?: ProjectItem[]
+  paymentMethod?: string
 }
 
 interface ProjectStoreContext {
@@ -142,6 +143,7 @@ const mapToProject = (record: ProjetoRecord): Project => ({
   digitalAuthentication: record.autenticacao_digital,
   shipping: record.frete,
   internationalShipping: record.dhl,
+  paymentMethod: record.forma_pagamento,
   items: (record.expand?.ItensProjeto_via_projeto || []).map((i) => ({
     id: i.id as string,
     description: i.descricao,
@@ -182,6 +184,7 @@ const mapToPB = (project: Partial<Project>): Partial<ProjetoRecord> => {
     data.autenticacao_digital = project.digitalAuthentication
   if (project.shipping !== undefined) data.frete = project.shipping
   if (project.internationalShipping !== undefined) data.dhl = project.internationalShipping
+  if (project.paymentMethod !== undefined) data.forma_pagamento = project.paymentMethod
   return data
 }
 

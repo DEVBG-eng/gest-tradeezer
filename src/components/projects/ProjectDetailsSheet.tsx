@@ -535,25 +535,7 @@ export function ProjectDetailsSheet({
         <ProposalPrintTemplate
           data={{
             ...mapProjectToPrintData(project),
-            entryDate: project.entryDate ? new Date(project.entryDate) : undefined,
-            deadline: project.dueDate ? new Date(project.dueDate) : undefined,
-            sourceLang: project.sourceLang,
-            targetLang: project.targetLang,
-            translationType: project.translationType,
-            observations: project.observations,
-            paymentMethod: project.paymentMethod,
-            urgent: project.urgent,
-            international: project.international,
-            digitalCopy: project.digitalCopy,
-            physicalCopy: project.physicalCopy,
-            hagueApostille: project.hagueApostille,
-            digitalApostille: project.digitalApostille,
-            physicalApostille: project.physicalApostille,
-            notarization: project.notarization,
-            digitalAuthentication: project.digitalAuthentication,
-            shipping: project.shipping,
-            internationalShipping: project.internationalShipping,
-            items: projectItems,
+            items: projectItems.length > 0 ? projectItems : project.items,
           }}
           autoPrint={true}
           onClose={() => setIsPrinting(false)}
