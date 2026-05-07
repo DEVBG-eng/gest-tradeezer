@@ -112,7 +112,7 @@ export function ProposalPrintTemplate({
 
             <div>
               <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                2. Nome do Cliente
+                2. Cliente
               </h3>
               <p className="font-medium text-slate-800 text-base">
                 {data.client || 'NÃO INFORMADO'}
@@ -121,64 +121,60 @@ export function ProposalPrintTemplate({
 
             <div>
               <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                3. Data de Entrada
+                3. Status
               </h3>
-              <p className="text-slate-800 font-medium">
-                {data.entryDate ? format(new Date(data.entryDate), 'dd/MM/yyyy') : '-'}
-              </p>
+              <p className="text-slate-800 font-medium">{data.status || '-'}</p>
             </div>
 
             <div>
               <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                4. Data de Entrega
-              </h3>
-              <p className="text-slate-800 font-medium">
-                {data.deadline ? format(new Date(data.deadline), 'dd/MM/yyyy') : '-'}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                5. Idioma de Origem
-              </h3>
-              <p className="text-slate-800 font-medium">{formatLang(data.sourceLang)}</p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                6. Idioma de Destino
-              </h3>
-              <p className="text-slate-800 font-medium">{formatLang(data.targetLang)}</p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                7. Tipo de Tradução
+                4. Tipo de Tradução
               </h3>
               <p className="text-slate-800 font-medium">{data.translationType || '-'}</p>
             </div>
 
             <div>
               <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                8. Valor total
+                5. Idiomas (Origem / Destino)
+              </h3>
+              <p className="text-slate-800 font-medium">
+                {formatLang(data.sourceLang)} / {formatLang(data.targetLang)}
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
+                6. Tipo de Documento
+              </h3>
+              <p className="text-slate-800 font-medium">{data.documentType || '-'}</p>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
+                7. Quantidade (Documentos)
+              </h3>
+              <p className="text-slate-800 font-medium">{data.documents || 0}</p>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
+                8. Laudas (Páginas)
+              </h3>
+              <p className="text-slate-800 font-medium">{data.laudas || 0}</p>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
+                9. Taxa / Valor Unitário
+              </h3>
+              <p className="text-slate-800 font-medium">{formatCurrency(data.rate || 0)}</p>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
+                10. Valor Total
               </h3>
               <p className="font-bold text-emerald-600 text-lg">{formatCurrency(total)}</p>
-            </div>
-
-            <div className="md:col-span-2">
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                9. Forma de pagamento
-              </h3>
-              <p className="text-slate-800 font-medium">{data.paymentMethod || 'Não definida'}</p>
-            </div>
-
-            <div className="md:col-span-2">
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                10. Observações do projeto
-              </h3>
-              <p className="text-slate-800 font-medium whitespace-pre-wrap bg-white p-4 rounded-md border border-slate-100">
-                {data.observations || 'Nenhuma observação informada.'}
-              </p>
             </div>
           </div>
         </div>
