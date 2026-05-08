@@ -1,26 +1,22 @@
-import { useEffect } from 'react'
 import { format } from 'date-fns'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { formatCurrency } from '@/lib/utils'
-import logoUrl from '@/assets/image-ab962.png'
-import { CheckCircle2, Download, Printer, X } from 'lucide-react'
+import { Download, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export interface PrintProjectData {
   referenceCode: string
   client: string
+  clientCnpj?: string
+  clientAddress?: string
+  clientContact?: string
   email?: string
   phone?: string
   value?: number
   entryDate?: Date
   deadline?: Date
+  serviceType?: string
+  sourceLang?: string
+  targetLang?: string
   services?: { label: string; active: boolean }[]
   observations?: string
   items?: any[]
@@ -42,7 +38,8 @@ export function ProposalPrintTemplate({
           item.total ||
           item.valor_total ||
           (item.quantidade || 0) * (item.valor_unitario || 0) ||
-          (item.laudas || 0) * (item.valorLauda || 0)),
+          (item.laudas || 0) * (item.valorLauda || 0) ||
+          (item.qtd_laudas || 0) * (item.valor_lauda || 0)),
       0,
     ) ||
     data.value ||
@@ -51,7 +48,17 @@ export function ProposalPrintTemplate({
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 overflow-auto print:relative print:block print:w-full print:h-auto print:bg-white print:overflow-visible print:m-0 print:p-0">
       <div className="bg-white p-4 flex justify-end gap-2 print:hidden sticky top-0 border-b z-10 shadow-sm shrink-0">
-        <Button variant="default" onClick={() => window.print()}>
+        <Button
+          variant="default"
+          onClick={() => {
+            const originalTitle = document.title
+            document.title = `Orcamento_${data.referenceCode}`
+            setTimeout(() => {
+              window.print()
+              document.title = originalTitle
+            }, 100)
+          }}
+        >
           <Download className="w-4 h-4 mr-2" /> Baixar Proposta
         </Button>
         {onClose && (
@@ -60,162 +67,188 @@ export function ProposalPrintTemplate({
           </Button>
         )}
       </div>
-      <div className="bg-white p-8 max-w-4xl mx-auto w-full text-slate-800 font-sans shadow-md border border-slate-200 print:shadow-none print:border-none print:p-0 my-8 print:my-0 print:block print:w-full print:max-w-full">
+
+      <div className="bg-white p-10 max-w-4xl mx-auto w-full text-slate-900 font-sans shadow-md border border-slate-200 print:shadow-none print:border-none print:p-0 my-8 print:my-0 print:block print:w-full print:max-w-full">
         {/* Header */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-full flex justify-between items-end border-b border-slate-200 pb-4">
-            <h1 className="text-2xl font-medium text-slate-800">Orçamento Comercial</h1>
-            <div className="text-right text-sm text-slate-500">
-              <p>Data: {format(new Date(), 'dd/MM/yyyy')}</p>
-            </div>
-          </div>
+        <div className="flex flex-col items-start mb-8 border-b-2 border-slate-900 pb-6">
+          <h1 className="text-3xl font-bold tracking-tight uppercase">Tradeezer</h1>
+          <h2 className="text-xl font-medium text-slate-600 mt-1 uppercase tracking-wide">
+            Orçamento Comercial
+          </h2>
         </div>
 
-        {/* Client & Budget Info */}
-        <div className="mb-10 bg-slate-50/50 p-6 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start gap-6">
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
+          {/* Client Info */}
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+            <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
               Dados do Cliente
             </h3>
-            <p className="font-bold text-slate-800 text-lg mb-1">
-              {data.client || 'NÃO INFORMADO'}
-            </p>
-            {data.email && <p className="text-slate-600 text-sm mb-1">{data.email}</p>}
-            {data.phone && <p className="text-slate-600 text-sm">{data.phone}</p>}
+            <div className="space-y-1">
+              <p>
+                <span className="font-semibold">Cliente:</span> {data.client || 'Não informado'}
+              </p>
+              {data.clientCnpj && (
+                <p>
+                  <span className="font-semibold">CNPJ/CPF:</span> {data.clientCnpj}
+                </p>
+              )}
+              {data.clientContact && (
+                <p>
+                  <span className="font-semibold">Contato:</span> {data.clientContact}
+                </p>
+              )}
+              {data.email && (
+                <p>
+                  <span className="font-semibold">E-mail:</span> {data.email}
+                </p>
+              )}
+              {data.phone && (
+                <p>
+                  <span className="font-semibold">Telefone:</span> {data.phone}
+                </p>
+              )}
+              {data.clientAddress && (
+                <p>
+                  <span className="font-semibold">Endereço:</span> {data.clientAddress}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="text-left md:text-right">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-              Detalhes do Orçamento
+          {/* Project Info */}
+          <div>
+            <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
+              Detalhes do Projeto
             </h3>
-            <p className="font-bold text-slate-800 text-base mb-1">
-              Ref:{' '}
-              {data.referenceCode
-                ? data.referenceCode.startsWith('TRD')
+            <div className="space-y-1">
+              <p>
+                <span className="font-semibold">Ref:</span>{' '}
+                {data.referenceCode.startsWith('TRD')
                   ? data.referenceCode
-                  : `TRD-${data.referenceCode}`
-                : '----'}
-            </p>
-            <p className="text-slate-600 text-sm mb-1">
-              Data:{' '}
-              {data.entryDate
-                ? format(data.entryDate, 'dd/MM/yyyy')
-                : format(new Date(), 'dd/MM/yyyy')}
-            </p>
-            <div className="mt-4 bg-white px-4 py-2 rounded-lg border border-slate-200 inline-block">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                Valor Total
+                  : `TRD-${data.referenceCode}`}
               </p>
-              <p className="font-bold text-emerald-600 text-xl">{formatCurrency(total)}</p>
+              <p>
+                <span className="font-semibold">Data de Solicitação:</span>{' '}
+                {data.entryDate
+                  ? format(data.entryDate, 'dd/MM/yyyy')
+                  : format(new Date(), 'dd/MM/yyyy')}
+              </p>
+              {data.deadline && (
+                <p>
+                  <span className="font-semibold">Data de Entrega:</span>{' '}
+                  {format(data.deadline, 'dd/MM/yyyy')}
+                </p>
+              )}
+              {data.serviceType && (
+                <p>
+                  <span className="font-semibold">Tipo de Serviço:</span> {data.serviceType}
+                </p>
+              )}
+              {(data.sourceLang || data.targetLang) && (
+                <p>
+                  <span className="font-semibold">Idiomas:</span> {data.sourceLang || '-'} &rarr;{' '}
+                  {data.targetLang || '-'}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Project Items Table (Optional breakdown) */}
+        {/* Items Table */}
         {data.items && data.items.length > 0 && (
-          <div className="mb-10 print:break-inside-auto">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
+          <div className="mb-8">
+            <h3 className="font-bold uppercase tracking-wider mb-3 border-b border-slate-200 pb-1 text-sm">
               Detalhamento de Itens
             </h3>
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader className="bg-slate-50">
-                  <TableRow className="hover:bg-slate-50 border-b border-slate-200">
-                    <TableHead className="font-bold text-slate-600 h-10">Descrição</TableHead>
-                    <TableHead className="text-center font-bold text-slate-600 h-10">
-                      Laudas/Qtd
-                    </TableHead>
-                    <TableHead className="text-right font-bold text-slate-600 h-10">
-                      Valor Unitário
-                    </TableHead>
-                    <TableHead className="text-right font-bold text-slate-600 h-10">
-                      Total
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.items.map((item: any, idx: number) => {
-                    const itemTotal =
-                      item.subtotal ||
-                      item.total ||
-                      item.valor_total ||
-                      (item.quantidade || 0) * (item.valor_unitario || 0) ||
-                      (item.laudas || 0) * (item.valorLauda || 0) ||
-                      0
-                    return (
-                      <TableRow
-                        key={idx}
-                        className="border-b border-slate-100 hover:bg-slate-50/50 print:break-inside-avoid"
-                      >
-                        <TableCell className="py-3 font-medium text-slate-800">
-                          {item.description || item.descricao || '-'}
-                        </TableCell>
-                        <TableCell className="py-3 text-center text-slate-600">
-                          {item.laudas || item.quantidade || 0}
-                        </TableCell>
-                        <TableCell className="py-3 text-right text-slate-600">
-                          {formatCurrency(item.valorLauda || item.valor_unitario || 0)}
-                        </TableCell>
-                        <TableCell className="py-3 text-right font-bold text-slate-800">
-                          {formatCurrency(itemTotal)}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b-2 border-slate-800">
+                  <th className="py-2 text-left font-bold w-1/2">Descrição</th>
+                  <th className="py-2 text-center font-bold">Qtd</th>
+                  <th className="py-2 text-right font-bold">Valor Unitário</th>
+                  <th className="py-2 text-right font-bold">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {data.items.map((item: any, idx: number) => {
+                  const itemTotal =
+                    item.subtotal ||
+                    item.total ||
+                    item.valor_total ||
+                    (item.quantidade || 0) * (item.valor_unitario || 0) ||
+                    (item.laudas || 0) * (item.valorLauda || 0) ||
+                    (item.qtd_laudas || 0) * (item.valor_lauda || 0) ||
+                    0
+                  return (
+                    <tr key={idx} className="print:break-inside-avoid">
+                      <td className="py-3 text-left">
+                        {item.description || item.descricao || '-'}
+                      </td>
+                      <td className="py-3 text-center">
+                        {item.laudas || item.quantidade || item.qtd_laudas || 0}
+                      </td>
+                      <td className="py-3 text-right">
+                        {formatCurrency(
+                          item.valorLauda || item.valor_unitario || item.valor_lauda || 0,
+                        )}
+                      </td>
+                      <td className="py-3 text-right font-medium">{formatCurrency(itemTotal)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {/* Additional Services Grid */}
+        {/* Additional Services */}
         {data.services && data.services.some((s) => s.active) && (
-          <div className="mb-10 print:break-inside-avoid">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">
-              Serviços Adicionais e Logística Inclusos
+          <div className="mb-8 print:break-inside-avoid">
+            <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1 text-sm">
+              Serviços Adicionais Inclusos
             </h3>
-            <div className="flex flex-wrap gap-3">
+            <ul className="list-disc list-inside ml-4 text-sm space-y-1">
               {data.services
                 .filter((s) => s.active)
                 .map((service: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-100 print:border-slate-300"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
-                    <span className="text-xs text-slate-700 font-medium">{service.label}</span>
-                  </div>
+                  <li key={index}>{service.label}</li>
                 ))}
-            </div>
+            </ul>
           </div>
         )}
 
-        {/* Observations & Payment Method */}
-        {(data.observations || data.paymentMethod) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:break-inside-avoid mt-8">
-            {data.paymentMethod && (
-              <div className={!data.observations ? 'md:col-span-2' : ''}>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
-                  Forma de Pagamento
-                </h3>
-                <p className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed">
-                  {data.paymentMethod}
-                </p>
-              </div>
-            )}
-
+        {/* Observações e Forma de Pagamento */}
+        <div className="grid grid-cols-2 gap-8 mb-10 print:break-inside-avoid text-sm">
+          <div>
             {data.observations && (
-              <div className={!data.paymentMethod ? 'md:col-span-2' : ''}>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
+              <>
+                <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
                   Observações
                 </h3>
-                <p className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed">
-                  {data.observations}
-                </p>
-              </div>
+                <p className="whitespace-pre-wrap">{data.observations}</p>
+              </>
             )}
           </div>
-        )}
+          <div>
+            {data.paymentMethod && (
+              <>
+                <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
+                  Condições de Pagamento
+                </h3>
+                <p className="whitespace-pre-wrap">{data.paymentMethod}</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Total Footer */}
+        <div className="border-t-2 border-slate-900 pt-4 flex justify-between items-center print:break-inside-avoid">
+          <div className="text-sm text-slate-500 uppercase tracking-widest font-medium">
+            Valor Total do Orçamento
+          </div>
+          <div className="text-2xl font-bold">{formatCurrency(total)}</div>
+        </div>
       </div>
     </div>
   )

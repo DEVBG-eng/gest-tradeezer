@@ -401,17 +401,19 @@ export function EditProjectDialog({
       (Number(i.valorLauda.replace(/\./g, '').replace(',', '.')) || 0),
   }))
 
+  const clientObjForPrint = clientRef ? clients.find((c) => c.id === clientRef) : null
+
   const printData = {
     referenceCode,
-    client,
-    status,
-    translationType,
+    client: clientObjForPrint?.razao_social || clientObjForPrint?.nome || client,
+    clientCnpj: clientObjForPrint?.cnpj,
+    clientAddress: clientObjForPrint?.endereco,
+    clientContact: clientObjForPrint?.contato,
+    email: clientObjForPrint?.email,
+    phone: clientObjForPrint?.telefone,
+    serviceType: translationType,
     sourceLang,
     targetLang,
-    documentType,
-    documents: Number(documents) || 1,
-    laudas: computedLaudas,
-    rate: computedLaudas > 0 ? computedValue / computedLaudas : 0,
     value: computedValue,
     entryDate,
     deadline,

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import useProjectStore from '@/stores/useProjectStore'
+import useClientStore from '@/stores/useClientStore'
 import pb from '@/lib/pocketbase/client'
 import type { PrintProjectData } from '@/components/projects/ProposalPrintTemplate'
 
@@ -7,6 +8,7 @@ export function useProposalPrint() {
   const [projectId, setProjectId] = useState<string | null>(null)
   const [printData, setPrintData] = useState<PrintProjectData | null>(null)
   const { projects } = useProjectStore()
+  const { clients } = useClientStore()
 
   const handlePrintRequest = useCallback((id: string) => {
     setProjectId(id)
@@ -45,15 +47,30 @@ export function useProposalPrint() {
         { label: 'Urgente', active: !!project.urgente },
       ].filter((s) => s.active)
 
+      const clientObj = project.cliente_ref
+        ? clients.find((c) => c.id === project.cliente_ref)
+        : null
+
       setPrintData({
         referenceCode: project.cod_referencia || '',
-        client: project.cliente || '',
+        client: clientObj?.razao_social || clientObj?.nome || project.cliente || '',
+        clientCnpj: clientObj?.cnpj,
+        clientAddress: clientObj?.endereco,
+        clientContact: clientObj?.contato,
+        email: clientObj?.email,
+        phone: clientObj?.telefone,
         value: project.valor_total,
         entryDate: project.data_entrada ? new Date(project.data_entrada) : undefined,
         deadline: project.data_entrega ? new Date(project.data_entrega) : undefined,
+        serviceType: project.tipo_servico,
+        sourceLang: project.idioma_origem,
+        targetLang: project.idioma_destino,
         services,
         observations: project.observacoes,
-        items: project.expand?.['ItensProjeto(projeto)'] || [],
+        items:
+          project.expand?.['ItensProjeto_via_projeto'] ||
+          project.expand?.['ItensProjeto(projeto)'] ||
+          [],
         paymentMethod: project.forma_pagamento,
       })
       return
