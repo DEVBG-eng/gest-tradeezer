@@ -65,7 +65,6 @@ import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 import { mapProjectToPrintData } from '@/lib/project-utils'
-import { ScanBudgetDialog } from '@/components/projects/ScanBudgetDialog'
 
 const SERVICES_OPTS = [
   { id: 'digital', label: 'Via Digital', key: 'digital' as const },
@@ -126,7 +125,9 @@ export default function CreateProject() {
   const [currentStep, setCurrentStep] = useState(0)
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
-  const [reference, setReference] = useState('')
+  const [reference, setReference] = useState(
+    () => `TRD-${Math.floor(Math.random() * 90000) + 10000}`,
+  )
   const [clientMode, setClientMode] = useState<'registered' | 'manual'>('registered')
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
@@ -169,34 +170,6 @@ export default function CreateProject() {
 
   const [showProposal, setShowProposal] = useState(false)
   const [createdProject, setCreatedProject] = useState<Project | null>(null)
-
-  const handleImportBudget = (data: { orcamento: any; itens: any[] }) => {
-    const { orcamento, itens } = data
-    setClientMode('manual')
-    setClientName(orcamento.cliente_nome || '')
-    if (orcamento.cod_referencia) {
-      setReference(orcamento.cod_referencia)
-    }
-    setStatus('Aprovado')
-
-    if (itens && itens.length > 0) {
-      const formattedItems = itens.map((i: any) => ({
-        description: i.descricao,
-        laudas: i.quantidade.toString(),
-        valorLauda: i.valor_unitario.toLocaleString('pt-BR', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }),
-        _isDirty: true,
-      }))
-      setItems(formattedItems)
-    }
-
-    toast({
-      title: 'Orçamento Importado',
-      description: 'Os dados foram preenchidos com sucesso.',
-    })
-  }
 
   const sharepointBase =
     'https://gbtraducoes.sharepoint.com/sites/tradeezer/Documentos%20Compartilhados/Forms/AllItems.aspx?id=%2Fsites%2Ftradeezer%2FDocumentos%20Compartilhados%2FProjetos%2FProtocolos'
@@ -663,16 +636,6 @@ export default function CreateProject() {
             <div className="w-full mt-4">
               {currentStep === 0 && (
                 <div className="space-y-6 animate-fade-in">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-lg bg-card shadow-sm mb-6">
-                    <div>
-                      <h3 className="font-semibold text-base">Escanear Orçamento Comercial</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Faça upload do documento (PDF/Imagem) para preenchimento automático.
-                      </p>
-                    </div>
-                    <ScanBudgetDialog onImport={handleImportBudget} />
-                  </div>
-
                   <div className="space-y-4">
                     <Label className="text-base font-semibold">Modo de Inserção</Label>
                     <RadioGroup
