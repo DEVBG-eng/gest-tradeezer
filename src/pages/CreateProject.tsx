@@ -61,12 +61,11 @@ import useProjectStore, {
   ALL_STATUSES,
 } from '@/stores/useProjectStore'
 import useClientStore from '@/stores/useClientStore'
-import { getNextProjectReference } from '@/services/projetos'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
 import { mapProjectToPrintData } from '@/lib/project-utils'
-import { ImportBudgetDialog } from '@/components/projects/ImportBudgetDialog'
+import { ScanBudgetDialog } from '@/components/projects/ScanBudgetDialog'
 
 const SERVICES_OPTS = [
   { id: 'digital', label: 'Via Digital', key: 'digital' as const },
@@ -129,18 +128,6 @@ export default function CreateProject() {
   const [saving, setSaving] = useState(false)
   const [reference, setReference] = useState('')
   const [clientMode, setClientMode] = useState<'registered' | 'manual'>('registered')
-
-  useEffect(() => {
-    let mounted = true
-    getNextProjectReference().then((ref) => {
-      if (mounted && !reference) {
-        setReference(ref)
-      }
-    })
-    return () => {
-      mounted = false
-    }
-  }, [reference])
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
   const [clientRef, setClientRef] = useState<string>('')
@@ -678,12 +665,12 @@ export default function CreateProject() {
                 <div className="space-y-6 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-lg bg-card shadow-sm mb-6">
                     <div>
-                      <h3 className="font-semibold text-base">Importação Comercial</h3>
+                      <h3 className="font-semibold text-base">Escanear Orçamento Comercial</h3>
                       <p className="text-sm text-muted-foreground">
-                        Preencha o projeto rapidamente com os dados de um orçamento aprovado.
+                        Faça upload do documento (PDF/Imagem) para preenchimento automático.
                       </p>
                     </div>
-                    <ImportBudgetDialog onImport={handleImportBudget} />
+                    <ScanBudgetDialog onImport={handleImportBudget} />
                   </div>
 
                   <div className="space-y-4">
