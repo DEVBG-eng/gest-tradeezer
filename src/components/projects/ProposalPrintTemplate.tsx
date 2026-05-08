@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { format } from 'date-fns'
 import { formatCurrency } from '@/lib/utils'
 import { Download, X } from 'lucide-react'
@@ -15,6 +16,7 @@ export interface PrintProjectData {
   entryDate?: Date
   deadline?: Date
   serviceType?: string
+  translationType?: string
   sourceLang?: string
   targetLang?: string
   services?: { label: string; active: boolean }[]
@@ -26,10 +28,24 @@ export interface PrintProjectData {
 export function ProposalPrintTemplate({
   data,
   onClose,
+  autoPrint,
 }: {
   data: PrintProjectData
   onClose?: () => void
+  autoPrint?: boolean
 }) {
+  useEffect(() => {
+    if (autoPrint) {
+      const timer = setTimeout(() => {
+        const originalTitle = document.title
+        document.title = `Orcamento_${data.referenceCode}`
+        window.print()
+        document.title = originalTitle
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [autoPrint, data.referenceCode])
+
   const total = data.items?.length
     ? data.items.reduce(
         (acc: number, item: any) =>
@@ -37,16 +53,26 @@ export function ProposalPrintTemplate({
           (item.subtotal ??
             item.total ??
             item.valor_total ??
-            ((item.quantidade || 0) * (item.valor_unitario || 0) ||
-              (item.laudas || 0) * (item.valorLauda || 0) ||
-              (item.qtd_laudas || 0) * (item.valor_lauda || 0) ||
+            ((item.quantidade || item.laudas || item.qtd_laudas || 0) *
+              (item.valor_unitario || item.valorLauda || item.valor_lauda || 0) ||
               0)),
         0,
       )
     : data.value || 0
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-50 overflow-auto print:relative print:block print:w-full print:h-auto print:bg-white print:overflow-visible print:m-0 print:p-0">
+    <div className="fixed inset-0 z-50 bg-slate-100 overflow-auto print:absolute print:inset-0 print:bg-white print:m-0 print:p-0 print:z-[9999]">
+      {/* Esconde todos os elementos de UI não pertinentes durante a impressão */}
+      <style>
+        {`
+          @media print {
+            body { background: white !important; }
+            nav, header, aside, .sidebar { display: none !important; }
+            #root { overflow: visible !important; }
+            @page { size: A4; margin: 20mm; }
+          }
+        `}
+      </style>
       <div className="bg-white p-4 flex justify-end gap-2 print:hidden sticky top-0 border-b z-10 shadow-sm shrink-0">
         <Button
           variant="default"
@@ -68,132 +94,109 @@ export function ProposalPrintTemplate({
         )}
       </div>
 
-      <div className="bg-white p-10 max-w-4xl mx-auto w-full text-slate-900 font-sans shadow-md border border-slate-200 print:shadow-none print:border-none print:p-0 my-8 print:my-0 print:block print:w-full print:max-w-full">
-        {/* Header */}
-        <div className="flex flex-col items-start mb-8 border-b-2 border-slate-900 pb-6">
-          <h1 className="text-3xl font-bold tracking-tight uppercase">Tradeezer</h1>
-          <h2 className="text-xl font-medium text-slate-600 mt-1 uppercase tracking-wide">
-            Orçamento Comercial
-          </h2>
+      <div className="bg-white p-12 max-w-[210mm] min-h-[297mm] mx-auto w-full text-slate-900 font-sans shadow-md print:shadow-none print:border-none print:p-0 my-8 print:my-0 print:block print:w-full print:min-h-0 print:max-w-none">
+        {/* Header Documento */}
+        <div className="flex justify-between items-end mb-10 border-b-2 border-slate-800 pb-6">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight uppercase text-black">Tradeezer</h1>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">
+              Proposta Comercial
+            </p>
+          </div>
+          <div className="text-right text-sm">
+            <p className="font-semibold text-black">
+              Ref:{' '}
+              {data.referenceCode?.startsWith('TRD')
+                ? data.referenceCode
+                : `TRD-${data.referenceCode}`}
+            </p>
+            <p className="text-slate-600">
+              Data:{' '}
+              {data.entryDate
+                ? format(data.entryDate, 'dd/MM/yyyy')
+                : format(new Date(), 'dd/MM/yyyy')}
+            </p>
+          </div>
         </div>
 
-        {/* Info Grid */}
-        <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
-          {/* Client Info */}
+        {/* Informações Cliente e Projeto */}
+        <div className="grid grid-cols-2 gap-12 mb-10 text-sm">
           <div>
-            <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
-              Dados do Cliente
+            <h3 className="font-bold uppercase tracking-wider text-black mb-3 border-b border-slate-200 pb-1 text-xs">
+              Para
             </h3>
-            <div className="space-y-1">
-              <p>
-                <span className="font-semibold">Cliente:</span> {data.client || 'Não informado'}
+            <div className="space-y-1.5 text-slate-700">
+              <p className="text-base font-semibold text-black">
+                {data.client || 'Cliente não informado'}
               </p>
-              {data.clientCnpj && (
-                <p>
-                  <span className="font-semibold">CNPJ/CPF:</span> {data.clientCnpj}
-                </p>
-              )}
-              {data.clientContact && (
-                <p>
-                  <span className="font-semibold">Contato:</span> {data.clientContact}
-                </p>
-              )}
-              {data.email && (
-                <p>
-                  <span className="font-semibold">E-mail:</span> {data.email}
-                </p>
-              )}
-              {data.phone && (
-                <p>
-                  <span className="font-semibold">Telefone:</span> {data.phone}
-                </p>
-              )}
-              {data.clientAddress && (
-                <p>
-                  <span className="font-semibold">Endereço:</span> {data.clientAddress}
-                </p>
-              )}
+              {data.clientCnpj && <p>CNPJ/CPF: {data.clientCnpj}</p>}
+              {data.clientContact && <p>A/C: {data.clientContact}</p>}
+              {data.email && <p>Email: {data.email}</p>}
+              {data.phone && <p>Telefone: {data.phone}</p>}
+              {data.clientAddress && <p>Endereço: {data.clientAddress}</p>}
             </div>
           </div>
 
-          {/* Project Info */}
           <div>
-            <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
+            <h3 className="font-bold uppercase tracking-wider text-black mb-3 border-b border-slate-200 pb-1 text-xs">
               Detalhes do Projeto
             </h3>
-            <div className="space-y-1">
-              <p>
-                <span className="font-semibold">Ref:</span>{' '}
-                {data.referenceCode.startsWith('TRD')
-                  ? data.referenceCode
-                  : `TRD-${data.referenceCode}`}
-              </p>
-              <p>
-                <span className="font-semibold">Data de Solicitação:</span>{' '}
-                {data.entryDate
-                  ? format(data.entryDate, 'dd/MM/yyyy')
-                  : format(new Date(), 'dd/MM/yyyy')}
-              </p>
-              {data.deadline && (
-                <p>
-                  <span className="font-semibold">Data de Entrega:</span>{' '}
-                  {format(data.deadline, 'dd/MM/yyyy')}
-                </p>
-              )}
+            <div className="space-y-1.5 text-slate-700">
               {data.serviceType && (
                 <p>
-                  <span className="font-semibold">Tipo de Serviço:</span> {data.serviceType}
+                  <span className="font-medium text-black">Serviço:</span> {data.serviceType}
+                </p>
+              )}
+              {data.translationType && !data.serviceType && (
+                <p>
+                  <span className="font-medium text-black">Tipo:</span> {data.translationType}
                 </p>
               )}
               {(data.sourceLang || data.targetLang) && (
                 <p>
-                  <span className="font-semibold">Idiomas:</span> {data.sourceLang || '-'} &rarr;{' '}
-                  {data.targetLang || '-'}
+                  <span className="font-medium text-black">Idiomas:</span> {data.sourceLang || '-'}{' '}
+                  &rarr; {data.targetLang || '-'}
+                </p>
+              )}
+              {data.deadline && (
+                <p>
+                  <span className="font-medium text-black">Previsão de Entrega:</span>{' '}
+                  {format(data.deadline, 'dd/MM/yyyy')}
                 </p>
               )}
             </div>
           </div>
         </div>
 
-        {/* Items Table */}
-        {data.items && data.items.length > 0 && (
-          <div className="mb-8 print:break-inside-avoid">
-            <h3 className="font-bold uppercase tracking-wider mb-3 border-b border-slate-200 pb-1 text-sm">
-              Discriminação dos Serviços
+        {/* Breakdown de Itens */}
+        {data.items && data.items.length > 0 ? (
+          <div className="mb-10 print:break-inside-auto">
+            <h3 className="font-bold uppercase tracking-wider text-black mb-4 border-b border-slate-200 pb-1 text-xs">
+              Discriminação de Serviços
             </h3>
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse print:break-inside-auto">
               <thead>
-                <tr className="border-b border-slate-300">
-                  <th className="py-2 text-left font-semibold w-1/2">Descrição</th>
-                  <th className="py-2 text-center font-semibold">Quantidade</th>
-                  <th className="py-2 text-right font-semibold">Valor Unitário</th>
-                  <th className="py-2 text-right font-semibold">Total</th>
+                <tr className="border-b-2 border-slate-800 text-black">
+                  <th className="py-2.5 text-left font-semibold w-[50%]">Descrição</th>
+                  <th className="py-2.5 text-center font-semibold w-[15%]">Qtd</th>
+                  <th className="py-2.5 text-right font-semibold w-[15%]">Valor Unit.</th>
+                  <th className="py-2.5 text-right font-semibold w-[20%]">Subtotal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {data.items.map((item: any, idx: number) => {
+                  const qtd = item.laudas ?? item.quantidade ?? item.qtd_laudas ?? 1
+                  const valorUnit = item.valorLauda ?? item.valor_unitario ?? item.valor_lauda ?? 0
                   const itemTotal =
-                    item.subtotal ??
-                    item.total ??
-                    item.valor_total ??
-                    ((item.quantidade || 0) * (item.valor_unitario || 0) ||
-                      (item.laudas || 0) * (item.valorLauda || 0) ||
-                      (item.qtd_laudas || 0) * (item.valor_lauda || 0) ||
-                      0)
+                    item.subtotal ?? item.total ?? item.valor_total ?? qtd * valorUnit
                   return (
                     <tr key={idx} className="print:break-inside-avoid text-slate-700">
-                      <td className="py-3 text-left">
+                      <td className="py-3 text-left pr-4">
                         {item.description || item.descricao || '-'}
                       </td>
-                      <td className="py-3 text-center">
-                        {item.laudas ?? item.quantidade ?? item.qtd_laudas ?? 0}
-                      </td>
-                      <td className="py-3 text-right">
-                        {formatCurrency(
-                          item.valorLauda ?? item.valor_unitario ?? item.valor_lauda ?? 0,
-                        )}
-                      </td>
-                      <td className="py-3 text-right font-medium text-slate-900">
+                      <td className="py-3 text-center">{qtd}</td>
+                      <td className="py-3 text-right">{formatCurrency(valorUnit)}</td>
+                      <td className="py-3 text-right font-medium text-black">
                         {formatCurrency(itemTotal)}
                       </td>
                     </tr>
@@ -202,54 +205,74 @@ export function ProposalPrintTemplate({
               </tbody>
             </table>
           </div>
+        ) : (
+          <div className="mb-10">
+            <h3 className="font-bold uppercase tracking-wider text-black mb-4 border-b border-slate-200 pb-1 text-xs">
+              Discriminação de Serviços
+            </h3>
+            <p className="text-sm text-slate-500 italic">
+              Serviços cobrados de forma global (ver total abaixo).
+            </p>
+          </div>
         )}
 
-        {/* Additional Services */}
+        {/* Serviços Adicionais */}
         {data.services && data.services.some((s) => s.active) && (
-          <div className="mb-8 print:break-inside-avoid">
-            <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1 text-sm">
+          <div className="mb-10 print:break-inside-avoid">
+            <h3 className="font-bold uppercase tracking-wider text-black mb-3 border-b border-slate-200 pb-1 text-xs">
               Serviços Adicionais Inclusos
             </h3>
-            <ul className="list-disc list-inside ml-4 text-sm space-y-1">
+            <ul className="list-none text-sm space-y-1.5 text-slate-700 columns-2">
               {data.services
                 .filter((s) => s.active)
                 .map((service: any, index: number) => (
-                  <li key={index}>{service.label}</li>
+                  <li
+                    key={index}
+                    className="flex items-center before:content-['•'] before:mr-2 before:text-slate-400"
+                  >
+                    {service.label}
+                  </li>
                 ))}
             </ul>
           </div>
         )}
 
-        {/* Observações e Forma de Pagamento */}
-        <div className="grid grid-cols-2 gap-8 mb-10 print:break-inside-avoid text-sm">
+        {/* Condições e Observações */}
+        <div className="grid grid-cols-2 gap-12 mb-12 print:break-inside-avoid text-sm">
           <div>
             {data.observations && (
               <>
-                <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
+                <h3 className="font-bold uppercase tracking-wider text-black mb-3 border-b border-slate-200 pb-1 text-xs">
                   Observações
                 </h3>
-                <p className="whitespace-pre-wrap">{data.observations}</p>
+                <p className="whitespace-pre-wrap text-slate-700 leading-relaxed">
+                  {data.observations}
+                </p>
               </>
             )}
           </div>
           <div>
             {data.paymentMethod && (
               <>
-                <h3 className="font-bold uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
+                <h3 className="font-bold uppercase tracking-wider text-black mb-3 border-b border-slate-200 pb-1 text-xs">
                   Condições de Pagamento
                 </h3>
-                <p className="whitespace-pre-wrap">{data.paymentMethod}</p>
+                <p className="whitespace-pre-wrap text-slate-700 leading-relaxed">
+                  {data.paymentMethod}
+                </p>
               </>
             )}
           </div>
         </div>
 
-        {/* Total Footer */}
-        <div className="border-t-2 border-slate-900 pt-4 flex justify-between items-center print:break-inside-avoid">
-          <div className="text-sm text-slate-500 uppercase tracking-widest font-medium">
-            Valor Total do Orçamento
+        {/* Grand Total */}
+        <div className="flex justify-end print:break-inside-avoid">
+          <div className="w-1/2 border-t-2 border-slate-800 pt-4 flex justify-between items-end">
+            <div className="text-xs text-slate-500 uppercase tracking-widest font-semibold">
+              Valor Total
+            </div>
+            <div className="text-3xl font-bold text-black">{formatCurrency(total)}</div>
           </div>
-          <div className="text-2xl font-bold">{formatCurrency(total)}</div>
         </div>
       </div>
     </div>
