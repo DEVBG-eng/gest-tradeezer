@@ -1,32 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { ProposalPrintTemplate } from './ProposalPrintTemplate'
-import useProjectStore from '@/stores/useProjectStore'
-import { mapProjectToPrintData } from '@/lib/project-utils'
+import { useProposalPrint } from '@/hooks/use-proposal-print'
 
 export function GlobalPrintDialogHandler() {
-  const [projectId, setProjectId] = useState<string | null>(null)
-  const { projects } = useProjectStore()
+  const { projectId, printData, closePrint, handlePrintRequest } = useProposalPrint()
 
   useEffect(() => {
     const handlePrint = (e: Event) => {
       const customEvent = e as CustomEvent<string>
-      setProjectId(customEvent.detail)
+      handlePrintRequest(customEvent.detail)
     }
 
     window.addEventListener('print-project', handlePrint)
     return () => window.removeEventListener('print-project', handlePrint)
-  }, [])
+  }, [handlePrintRequest])
 
-  if (!projectId) return null
+  if (!projectId || !printData) return null
 
-  const project = projects.find((p) => p.id === projectId)
-  if (!project) return null
-
-  return (
-    <ProposalPrintTemplate
-      data={mapProjectToPrintData(project)}
-      autoPrint={true}
-      onClose={() => setProjectId(null)}
-    />
-  )
+  return <ProposalPrintTemplate data={printData} onClose={closePrint} />
 }

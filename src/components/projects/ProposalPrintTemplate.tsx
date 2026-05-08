@@ -35,21 +35,11 @@ export interface PrintProjectData {
 
 export function ProposalPrintTemplate({
   data,
-  autoPrint,
   onClose,
 }: {
   data: PrintProjectData
-  autoPrint?: boolean
   onClose?: () => void
 }) {
-  useEffect(() => {
-    if (autoPrint) {
-      setTimeout(() => {
-        window.print()
-      }, 500)
-    }
-  }, [autoPrint])
-
   const total =
     data.items?.reduce(
       (acc: number, item: any) =>
@@ -72,7 +62,7 @@ export function ProposalPrintTemplate({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-50 overflow-auto print:static print:bg-white print:overflow-visible flex flex-col">
+    <div className="fixed inset-0 z-50 bg-slate-50 overflow-auto print:relative print:block print:w-full print:h-auto print:bg-white print:overflow-visible print:m-0 print:p-0">
       <div className="bg-white p-4 flex justify-end gap-2 print:hidden sticky top-0 border-b z-10 shadow-sm shrink-0">
         <Button variant="default" onClick={() => window.print()}>
           <Download className="w-4 h-4 mr-2" /> Baixar Proposta
@@ -83,7 +73,7 @@ export function ProposalPrintTemplate({
           </Button>
         )}
       </div>
-      <div className="bg-white p-8 max-w-4xl mx-auto w-full text-slate-800 font-sans shadow-md border border-slate-200 print:shadow-none print:border-none print:p-0 my-8 print:my-0 flex-1">
+      <div className="bg-white p-8 max-w-4xl mx-auto w-full text-slate-800 font-sans shadow-md border border-slate-200 print:shadow-none print:border-none print:p-0 my-8 print:my-0 print:block print:w-full print:max-w-full">
         {/* Header */}
         <div className="flex flex-col items-center mb-10">
           <div className="w-full flex justify-between items-end border-b border-slate-200 pb-4">
@@ -181,7 +171,7 @@ export function ProposalPrintTemplate({
 
         {/* Project Items Table (Optional breakdown) */}
         {data.items && data.items.length > 0 && (
-          <div className="mb-10">
+          <div className="mb-10 print:break-inside-auto">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
               Detalhamento de Itens
             </h3>
@@ -212,7 +202,7 @@ export function ProposalPrintTemplate({
                     return (
                       <TableRow
                         key={idx}
-                        className="border-b border-slate-100 hover:bg-slate-50/50"
+                        className="border-b border-slate-100 hover:bg-slate-50/50 print:break-inside-avoid"
                       >
                         <TableCell className="py-3 font-medium text-slate-800">
                           {item.description || item.descricao || '-'}
@@ -237,7 +227,7 @@ export function ProposalPrintTemplate({
 
         {/* Additional Services Grid */}
         {data.services && data.services.some((s) => s.active) && (
-          <div>
+          <div className="mb-10 print:break-inside-avoid">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">
               Serviços Adicionais e Logística Inclusos
             </h3>
@@ -247,13 +237,40 @@ export function ProposalPrintTemplate({
                 .map((service: any, index: number) => (
                   <div
                     key={index}
-                    className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-100"
+                    className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-100 print:border-slate-300"
                   >
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
                     <span className="text-xs text-slate-700 font-medium">{service.label}</span>
                   </div>
                 ))}
             </div>
+          </div>
+        )}
+
+        {/* Observations & Payment Method */}
+        {(data.observations || data.paymentMethod) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:break-inside-avoid mt-8">
+            {data.paymentMethod && (
+              <div className={!data.observations ? 'md:col-span-2' : ''}>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
+                  Forma de Pagamento
+                </h3>
+                <p className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed">
+                  {data.paymentMethod}
+                </p>
+              </div>
+            )}
+
+            {data.observations && (
+              <div className={!data.paymentMethod ? 'md:col-span-2' : ''}>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
+                  Observações
+                </h3>
+                <p className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed">
+                  {data.observations}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
