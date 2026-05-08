@@ -16,14 +16,8 @@ import { Button } from '@/components/ui/button'
 export interface PrintProjectData {
   referenceCode: string
   client: string
-  status?: string
-  translationType?: string
-  sourceLang?: string
-  targetLang?: string
-  documentType?: string
-  documents?: number
-  laudas?: number
-  rate?: number
+  email?: string
+  phone?: string
   value?: number
   entryDate?: Date
   deadline?: Date
@@ -44,7 +38,8 @@ export function ProposalPrintTemplate({
     data.items?.reduce(
       (acc: number, item: any) =>
         acc +
-        (item.total ||
+        (item.subtotal ||
+          item.total ||
           item.valor_total ||
           (item.quantidade || 0) * (item.valor_unitario || 0) ||
           (item.laudas || 0) * (item.valorLauda || 0)),
@@ -52,14 +47,6 @@ export function ProposalPrintTemplate({
     ) ||
     data.value ||
     0
-
-  const formatLang = (lang?: string) => {
-    if (!lang) return '-'
-    if (lang === 'pt') return 'Português (BR)'
-    if (lang === 'en') return 'Inglês'
-    if (lang === 'es') return 'Espanhol'
-    return lang
-  }
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 overflow-auto print:relative print:block print:w-full print:h-auto print:bg-white print:overflow-visible print:m-0 print:p-0">
@@ -84,87 +71,42 @@ export function ProposalPrintTemplate({
           </div>
         </div>
 
-        {/* Project Details Sequenced as requested */}
-        <div className="mb-10 bg-slate-50/50 p-6 rounded-xl border border-slate-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 text-sm">
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                1. Código de Referência
-              </h3>
-              <p className="font-bold text-slate-800 text-base">
-                {data.referenceCode
-                  ? data.referenceCode.startsWith('TRD')
-                    ? data.referenceCode
-                    : `TRD-${data.referenceCode}`
-                  : '----'}
+        {/* Client & Budget Info */}
+        <div className="mb-10 bg-slate-50/50 p-6 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start gap-6">
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+              Dados do Cliente
+            </h3>
+            <p className="font-bold text-slate-800 text-lg mb-1">
+              {data.client || 'NÃO INFORMADO'}
+            </p>
+            {data.email && <p className="text-slate-600 text-sm mb-1">{data.email}</p>}
+            {data.phone && <p className="text-slate-600 text-sm">{data.phone}</p>}
+          </div>
+
+          <div className="text-left md:text-right">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+              Detalhes do Orçamento
+            </h3>
+            <p className="font-bold text-slate-800 text-base mb-1">
+              Ref:{' '}
+              {data.referenceCode
+                ? data.referenceCode.startsWith('TRD')
+                  ? data.referenceCode
+                  : `TRD-${data.referenceCode}`
+                : '----'}
+            </p>
+            <p className="text-slate-600 text-sm mb-1">
+              Data:{' '}
+              {data.entryDate
+                ? format(data.entryDate, 'dd/MM/yyyy')
+                : format(new Date(), 'dd/MM/yyyy')}
+            </p>
+            <div className="mt-4 bg-white px-4 py-2 rounded-lg border border-slate-200 inline-block">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                Valor Total
               </p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                2. Cliente
-              </h3>
-              <p className="font-medium text-slate-800 text-base">
-                {data.client || 'NÃO INFORMADO'}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                3. Status
-              </h3>
-              <p className="text-slate-800 font-medium">{data.status || '-'}</p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                4. Tipo de Tradução
-              </h3>
-              <p className="text-slate-800 font-medium">{data.translationType || '-'}</p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                5. Idiomas (Origem / Destino)
-              </h3>
-              <p className="text-slate-800 font-medium">
-                {formatLang(data.sourceLang)} / {formatLang(data.targetLang)}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                6. Tipo de Documento
-              </h3>
-              <p className="text-slate-800 font-medium">{data.documentType || '-'}</p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                7. Quantidade (Documentos)
-              </h3>
-              <p className="text-slate-800 font-medium">{data.documents || 0}</p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                8. Laudas (Páginas)
-              </h3>
-              <p className="text-slate-800 font-medium">{data.laudas || 0}</p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                9. Taxa / Valor Unitário
-              </h3>
-              <p className="text-slate-800 font-medium">{formatCurrency(data.rate || 0)}</p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-1.5">
-                10. Valor Total
-              </h3>
-              <p className="font-bold text-emerald-600 text-lg">{formatCurrency(total)}</p>
+              <p className="font-bold text-emerald-600 text-xl">{formatCurrency(total)}</p>
             </div>
           </div>
         </div>
@@ -194,6 +136,7 @@ export function ProposalPrintTemplate({
                 <TableBody>
                   {data.items.map((item: any, idx: number) => {
                     const itemTotal =
+                      item.subtotal ||
                       item.total ||
                       item.valor_total ||
                       (item.quantidade || 0) * (item.valor_unitario || 0) ||
