@@ -30,20 +30,20 @@ export function ProposalPrintTemplate({
   data: PrintProjectData
   onClose?: () => void
 }) {
-  const total =
-    data.items?.reduce(
-      (acc: number, item: any) =>
-        acc +
-        (item.subtotal ||
-          item.total ||
-          item.valor_total ||
-          (item.quantidade || 0) * (item.valor_unitario || 0) ||
-          (item.laudas || 0) * (item.valorLauda || 0) ||
-          (item.qtd_laudas || 0) * (item.valor_lauda || 0)),
-      0,
-    ) ||
-    data.value ||
-    0
+  const total = data.items?.length
+    ? data.items.reduce(
+        (acc: number, item: any) =>
+          acc +
+          (item.subtotal ??
+            item.total ??
+            item.valor_total ??
+            ((item.quantidade || 0) * (item.valor_unitario || 0) ||
+              (item.laudas || 0) * (item.valorLauda || 0) ||
+              (item.qtd_laudas || 0) * (item.valor_lauda || 0) ||
+              0)),
+        0,
+      )
+    : data.value || 0
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 overflow-auto print:relative print:block print:w-full print:h-auto print:bg-white print:overflow-visible print:m-0 print:p-0">
@@ -157,43 +157,45 @@ export function ProposalPrintTemplate({
 
         {/* Items Table */}
         {data.items && data.items.length > 0 && (
-          <div className="mb-8">
+          <div className="mb-8 print:break-inside-avoid">
             <h3 className="font-bold uppercase tracking-wider mb-3 border-b border-slate-200 pb-1 text-sm">
-              Detalhamento de Itens
+              Discriminação dos Serviços
             </h3>
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b-2 border-slate-800">
-                  <th className="py-2 text-left font-bold w-1/2">Descrição</th>
-                  <th className="py-2 text-center font-bold">Qtd</th>
-                  <th className="py-2 text-right font-bold">Valor Unitário</th>
-                  <th className="py-2 text-right font-bold">Subtotal</th>
+                <tr className="border-b border-slate-300">
+                  <th className="py-2 text-left font-semibold w-1/2">Descrição</th>
+                  <th className="py-2 text-center font-semibold">Quantidade</th>
+                  <th className="py-2 text-right font-semibold">Valor Unitário</th>
+                  <th className="py-2 text-right font-semibold">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-100">
                 {data.items.map((item: any, idx: number) => {
                   const itemTotal =
-                    item.subtotal ||
-                    item.total ||
-                    item.valor_total ||
-                    (item.quantidade || 0) * (item.valor_unitario || 0) ||
-                    (item.laudas || 0) * (item.valorLauda || 0) ||
-                    (item.qtd_laudas || 0) * (item.valor_lauda || 0) ||
-                    0
+                    item.subtotal ??
+                    item.total ??
+                    item.valor_total ??
+                    ((item.quantidade || 0) * (item.valor_unitario || 0) ||
+                      (item.laudas || 0) * (item.valorLauda || 0) ||
+                      (item.qtd_laudas || 0) * (item.valor_lauda || 0) ||
+                      0)
                   return (
-                    <tr key={idx} className="print:break-inside-avoid">
+                    <tr key={idx} className="print:break-inside-avoid text-slate-700">
                       <td className="py-3 text-left">
                         {item.description || item.descricao || '-'}
                       </td>
                       <td className="py-3 text-center">
-                        {item.laudas || item.quantidade || item.qtd_laudas || 0}
+                        {item.laudas ?? item.quantidade ?? item.qtd_laudas ?? 0}
                       </td>
                       <td className="py-3 text-right">
                         {formatCurrency(
-                          item.valorLauda || item.valor_unitario || item.valor_lauda || 0,
+                          item.valorLauda ?? item.valor_unitario ?? item.valor_lauda ?? 0,
                         )}
                       </td>
-                      <td className="py-3 text-right font-medium">{formatCurrency(itemTotal)}</td>
+                      <td className="py-3 text-right font-medium text-slate-900">
+                        {formatCurrency(itemTotal)}
+                      </td>
                     </tr>
                   )
                 })}
