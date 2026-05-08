@@ -40,6 +40,17 @@ export const orcamentoService = {
     })
   },
 
+  searchOrcamentos: async (query: string = '') => {
+    let filter = ''
+    if (query) {
+      filter = `cliente_nome ~ "${query}" || cod_referencia ~ "${query}"`
+    }
+    return await pb.collection('orcamentos').getList(1, 50, {
+      filter,
+      sort: '-created',
+    })
+  },
+
   createItem: async (data: CreateOrcamentoItemDto) => {
     return await pb.collection('orcamento_itens').create(data)
   },
