@@ -121,9 +121,7 @@ export default function CreateProject() {
   const [currentStep, setCurrentStep] = useState(0)
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
-  const [reference, setReference] = useState(
-    () => `TRD-${Math.floor(Math.random() * 90000) + 10000}`,
-  )
+  const [reference, setReference] = useState(() => `${Math.floor(Math.random() * 90000) + 10000}`)
   const [clientMode, setClientMode] = useState<'registered' | 'manual'>('registered')
   const [clientType, setClientType] = useState('PJ')
   const [clientName, setClientName] = useState('')
@@ -1259,7 +1257,7 @@ export default function CreateProject() {
                         setReference(e.target.value)
                         setStepErrors((p) => ({ ...p, reference: '' }))
                       }}
-                      placeholder="Ex: TRD-123456"
+                      placeholder="Ex: 123456"
                       className={cn(
                         'max-w-md font-mono font-bold',
                         stepErrors.reference
