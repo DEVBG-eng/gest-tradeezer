@@ -54,17 +54,12 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { useToast } from '@/hooks/use-toast'
-import useProjectStore, {
-  CloudFile,
-  ProjectStatus,
-  Project,
-  ALL_STATUSES,
-} from '@/stores/useProjectStore'
+import useProjectStore, { CloudFile, ProjectStatus, Project } from '@/stores/useProjectStore'
 import useClientStore from '@/stores/useClientStore'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
-import { mapProjectToPrintData } from '@/lib/project-utils'
+import { mapProjectToPrintData, PROJECT_STATUSES } from '@/lib/project-utils'
 
 const SERVICES_OPTS = [
   { id: 'digital', label: 'Via Digital', key: 'digital' as const },
@@ -819,7 +814,7 @@ export default function CreateProject() {
                         <SelectValue placeholder="Selecione o status" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ALL_STATUSES.map((s) => (
+                        {PROJECT_STATUSES.map((s) => (
                           <SelectItem key={s} value={s}>
                             {s}
                           </SelectItem>

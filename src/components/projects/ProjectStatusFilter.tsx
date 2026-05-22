@@ -14,7 +14,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import { ALL_STATUSES } from '@/stores/useProjectStore'
+import { PROJECT_STATUSES } from '@/lib/project-utils'
 
 export function ProjectStatusFilter() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -59,7 +59,7 @@ export function ProjectStatusFilter() {
                     {selectedStatuses.size} selecionados
                   </Badge>
                 ) : (
-                  ALL_STATUSES.filter((s) => selectedStatuses.has(s)).map((s) => (
+                  PROJECT_STATUSES.filter((s) => selectedStatuses.has(s)).map((s) => (
                     <Badge variant="secondary" key={s} className="rounded-sm px-1 font-normal">
                       {s}
                     </Badge>
@@ -76,7 +76,7 @@ export function ProjectStatusFilter() {
           <CommandList>
             <CommandEmpty>Nenhum status encontrado.</CommandEmpty>
             <CommandGroup>
-              {ALL_STATUSES.map((status) => {
+              {PROJECT_STATUSES.map((status) => {
                 const isSelected = selectedStatuses.has(status)
                 return (
                   <CommandItem

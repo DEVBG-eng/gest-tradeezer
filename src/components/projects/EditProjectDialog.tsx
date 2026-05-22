@@ -33,10 +33,11 @@ import {
 import { CalendarIcon, ChevronRight, Loader2, Download, Trash2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox } from '@/components/LanguageCombobox'
-import useProjectStore, { ProjectStatus, ALL_STATUSES } from '@/stores/useProjectStore'
+import useProjectStore, { ProjectStatus } from '@/stores/useProjectStore'
 import useClientStore from '@/stores/useClientStore'
 import { useToast } from '@/hooks/use-toast'
 import { ProposalPrintTemplate } from './ProposalPrintTemplate'
+import { PROJECT_STATUSES } from '@/lib/project-utils'
 
 const TRANSLATION_TYPES = [
   'Tradução Juramentada',
@@ -467,7 +468,7 @@ export function EditProjectDialog({
                   <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ALL_STATUSES.map((s) => (
+                  {PROJECT_STATUSES.map((s) => (
                     <SelectItem key={s} value={s}>
                       {s}
                     </SelectItem>

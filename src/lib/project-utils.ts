@@ -13,6 +13,21 @@ const SERVICES_OPTS = [
   { label: 'DHL (Exterior)', key: 'internationalShipping' as const },
 ]
 
+export const PROJECT_STATUSES = [
+  'Orçamento',
+  'Aprovado',
+  'Aguardando',
+  'Em Andamento',
+  'Em Revisão',
+  'Cartório',
+  'Concluído',
+  'Entregue',
+  'Atrasado/Bloqueado',
+  'Cancelado',
+  'Não Aprovado',
+  'Rascunho',
+] as const
+
 export const mapProjectToPrintData = (project: Project): PrintProjectData => {
   return {
     referenceCode: project.id,
