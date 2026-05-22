@@ -203,9 +203,11 @@ export function ProjectGrid({ onSelectProject, onEditProject, onDeleteProject }:
           ) : filteredProjects.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                {projects.length === 0
-                  ? 'Nenhum projeto encontrado.'
-                  : 'Nenhum projeto encontrado com os filtros selecionados'}
+                {searchParams.has('search')
+                  ? 'Nenhum projeto encontrado com este código.'
+                  : projects.length === 0
+                    ? 'Nenhum projeto encontrado.'
+                    : 'Nenhum projeto encontrado com os filtros selecionados.'}
               </TableCell>
             </TableRow>
           ) : (

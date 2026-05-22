@@ -105,7 +105,10 @@ interface ProjectStoreContext {
   totalPages: number
   currentPage: number
   totalItems: number
-  fetchProjects: (page: number, filters: { statuses: string[]; shipping: boolean }) => Promise<void>
+  fetchProjects: (
+    page: number,
+    filters: { statuses: string[]; shipping: boolean; search?: string },
+  ) => Promise<void>
   addProject: (project: Omit<Project, 'pbId'>) => Promise<void>
   updateProjectStatus: (id: string, status: ProjectStatus) => Promise<void>
   updateProject: (id: string, data: Partial<Project>) => Promise<void>
@@ -195,7 +198,10 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
 
-  const fetchParams = useRef({ page: 1, filters: { statuses: [] as string[], shipping: false } })
+  const fetchParams = useRef({
+    page: 1,
+    filters: { statuses: [] as string[], shipping: false, search: '' },
+  })
 
   const { toast } = useToast()
   const { user } = useAuth()
@@ -215,6 +221,9 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       if (filters.shipping) {
         filterParts.push(`(frete=true || dhl=true)`)
       }
+      if (filters.search) {
+        filterParts.push(`cod_referencia ~ "${filters.search.replace(/"/g, '\\"')}"`)
+      }
       const filterStr = filterParts.join(' && ')
 
       const result = await getProjetosPaginated(page, 10, filterStr)
@@ -230,8 +239,15 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   }, [user])
 
   const fetchProjects = useCallback(
-    async (page: number, filters: { statuses: string[]; shipping: boolean }) => {
-      fetchParams.current = { page, filters }
+    async (page: number, filters: { statuses: string[]; shipping: boolean; search?: string }) => {
+      fetchParams.current = {
+        page,
+        filters: {
+          statuses: filters.statuses,
+          shipping: filters.shipping,
+          search: filters.search || '',
+        },
+      }
       await loadData()
     },
     [loadData],

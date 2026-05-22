@@ -17,7 +17,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, FilterX } from 'lucide-react'
+import { Loader2, FilterX, Search, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { mapProjectToPrintData } from '@/lib/project-utils'
 import { ProjectStatusFilter } from '@/components/projects/ProjectStatusFilter'
 import pb from '@/lib/pocketbase/client'
@@ -32,15 +33,42 @@ export default function Projects() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [printingItems, setPrintingItems] = useState<any[]>([])
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
 
-  const hasFilters = searchParams.getAll('status').length > 0 || searchParams.has('shipping')
+  const hasFilters =
+    searchParams.getAll('status').length > 0 ||
+    searchParams.has('shipping') ||
+    searchParams.has('search')
 
   useEffect(() => {
     const page = parseInt(searchParams.get('page') || '1', 10)
     const statuses = searchParams.getAll('status')
     const shipping = searchParams.get('shipping') === 'true'
-    fetchProjects(page, { statuses, shipping })
+    const search = searchParams.get('search') || ''
+    fetchProjects(page, { statuses, shipping, search })
   }, [searchParams, fetchProjects])
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev)
+        if (searchInput) {
+          if (newParams.get('search') !== searchInput) {
+            newParams.set('search', searchInput)
+            newParams.set('page', '1')
+          }
+        } else {
+          if (newParams.has('search')) {
+            newParams.delete('search')
+            newParams.set('page', '1')
+          }
+        }
+        return newParams
+      })
+    }, 500)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchInput, setSearchParams])
 
   useEffect(() => {
     if (printingId) {
@@ -103,21 +131,47 @@ export default function Projects() {
 
   return (
     <div className="h-full flex flex-col space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Quadro de Projetos</h1>
           <p className="text-muted-foreground mt-1">
             Gerencie e acompanhe todos os projetos de forma centralizada e visual.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <ProjectStatusFilter />
-          {hasFilters && (
-            <Button variant="ghost" onClick={() => setSearchParams({})} className="gap-2 shrink-0">
-              <FilterX className="h-4 w-4" />
-              Limpar Todos
-            </Button>
-          )}
+        <div className="flex flex-col sm:flex-row items-center gap-2 shrink-0">
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Pesquisar por Código de Referência..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9 pr-8 w-full sm:w-[260px] lg:w-[320px]"
+            />
+            {searchInput && (
+              <button
+                onClick={() => setSearchInput('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <ProjectStatusFilter />
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearchInput('')
+                  setSearchParams({})
+                }}
+                className="gap-2 shrink-0"
+              >
+                <FilterX className="h-4 w-4" />
+                Limpar Todos
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
