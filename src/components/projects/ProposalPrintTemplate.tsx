@@ -97,30 +97,30 @@ export function ProposalPrintTemplate({
 
       <div className="bg-white p-12 max-w-[210mm] min-h-[297mm] mx-auto w-full text-slate-900 font-sans shadow-md print:shadow-none print:border-none print:p-0 my-8 print:my-0 print:block print:w-full print:min-h-0 print:max-w-none">
         {/* Header Documento */}
-        <div className="flex justify-between items-end mb-10 border-b-2 border-slate-800 pb-6">
-          <div>
-            <img
-              src={logoUrl}
-              alt="Tradeezer Logo"
-              className="h-20 w-auto object-contain text-center"
-            />
-            <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-2">
-              Proposta Comercial
-            </p>
+        <div className="mb-10 border-b-2 border-slate-800 pb-6">
+          <div className="flex justify-center mb-8">
+            <img src={logoUrl} alt="Tradeezer Logo" className="h-32 w-auto object-contain" />
           </div>
-          <div className="text-right text-sm">
-            <p className="font-semibold text-black">
-              Ref:{' '}
-              {data.referenceCode?.startsWith('TRD')
-                ? data.referenceCode
-                : `TRD-${data.referenceCode}`}
-            </p>
-            <p className="text-slate-600">
-              Data:{' '}
-              {data.entryDate
-                ? format(data.entryDate, 'dd/MM/yyyy')
-                : format(new Date(), 'dd/MM/yyyy')}
-            </p>
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-widest">
+                Proposta Comercial
+              </p>
+            </div>
+            <div className="text-right text-sm">
+              <p className="font-semibold text-black">
+                Ref:{' '}
+                {data.referenceCode?.startsWith('TRD')
+                  ? data.referenceCode
+                  : `TRD-${data.referenceCode}`}
+              </p>
+              <p className="text-slate-600">
+                Data:{' '}
+                {data.entryDate
+                  ? format(data.entryDate, 'dd/MM/yyyy')
+                  : format(new Date(), 'dd/MM/yyyy')}
+              </p>
+            </div>
           </div>
         </div>
 
