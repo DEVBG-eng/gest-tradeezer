@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { formatCurrency } from '@/lib/utils'
 import { Download, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import logoUrl from '@/assets/fundo-branco-azul-turquesa-vibrante-f595e.jpg'
 
 export interface PrintProjectData {
   referenceCode: string
@@ -98,8 +99,8 @@ export function ProposalPrintTemplate({
         {/* Header Documento */}
         <div className="flex justify-between items-end mb-10 border-b-2 border-slate-800 pb-6">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight uppercase text-black">Tradeezer</h1>
-            <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">
+            <img src={logoUrl} alt="Tradeezer Logo" className="h-20 w-auto object-contain" />
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-2">
               Proposta Comercial
             </p>
           </div>
