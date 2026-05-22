@@ -180,7 +180,7 @@ export function ProposalPrintTemplate({
 
       <div className="bg-white p-12 max-w-[210mm] min-h-[297mm] mx-auto w-full text-slate-900 font-sans shadow-md print:shadow-none print:border-none print:p-0 my-8 print:my-0 print:block print:w-full print:min-h-0 print:max-w-none">
         <div className="mb-10 border-b-2 border-slate-800 pb-6">
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-8 bg-[#fffafa]">
             <img src={logoUrl} alt="Tradeezer Logo" className="h-32 w-auto object-contain" />
           </div>
           <div className="flex justify-between items-end">
@@ -213,7 +213,7 @@ export function ProposalPrintTemplate({
         <div className="grid grid-cols-2 gap-12 mb-10 text-sm">
           <div>
             <h3 className="font-bold uppercase tracking-wider text-black mb-3 border-b border-slate-200 pb-1 text-xs">
-              Para
+              CLIENTE
             </h3>
             <div className="space-y-1.5 text-slate-700 flex flex-col">
               <EditableInput
