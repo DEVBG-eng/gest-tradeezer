@@ -107,7 +107,10 @@ export function EditProjectDialog({
   const project = projects.find((p) => p.id === projectId)
 
   const [saving, setSaving] = useState(false)
-  const [referenceCode, setReferenceCode] = useState(project?.id || '')
+  const [referenceCode, setReferenceCode] = useState(() => {
+    const code = project?.id || ''
+    return code.replace(/^TRD-/, '')
+  })
   const [client, setClient] = useState(project?.client || '')
   const [status, setStatus] = useState<ProjectStatus>(project?.status || 'Orçamento')
   const [translationType, setTranslationType] = useState(project?.translationType || '')
@@ -387,7 +390,7 @@ export function EditProjectDialog({
 
   const handlePrint = () => {
     const originalTitle = document.title
-    document.title = `Orcamento_${referenceCode}`
+    document.title = `Orcamento_${referenceCode.replace(/^TRD-/, '')}`
     setTimeout(() => {
       window.print()
       document.title = originalTitle

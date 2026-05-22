@@ -36,7 +36,7 @@ import { ptBR } from 'date-fns/locale'
 import useProjectStore from '@/stores/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
 import { ProposalPrintTemplate } from './ProposalPrintTemplate'
-import { mapProjectToPrintData } from '@/lib/project-utils'
+import { mapProjectToPrintData, PROJECT_STATUSES } from '@/lib/project-utils'
 import { getProjectHistory, ProjectHistory } from '@/services/history'
 import { useRealtime } from '@/hooks/use-realtime'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -212,7 +212,7 @@ export function ProjectDetailsSheet({
             <div className="flex flex-col gap-1">
               <SheetTitle className="text-xl">{project.title}</SheetTitle>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
-                <span className="font-mono text-sm">{project.id}</span>
+                <span className="font-mono text-sm">{project.id.replace(/^TRD-/, '')}</span>
                 <span className="text-muted-foreground text-sm">•</span>
                 <span className="text-sm text-muted-foreground truncate max-w-[200px]">
                   Cliente: {project.client}
@@ -223,18 +223,7 @@ export function ProjectDetailsSheet({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[
-                      'Orçamento',
-                      'Aprovado',
-                      'Aguardando',
-                      'Em Andamento',
-                      'Em Revisão',
-                      'Cartório',
-                      'Concluído',
-                      'Atrasado/Bloqueado',
-                      'Cancelado',
-                      'Não Aprovado',
-                    ].map((s) => (
+                    {PROJECT_STATUSES.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s}
                       </SelectItem>
@@ -357,7 +346,8 @@ export function ProjectDetailsSheet({
                     <div>
                       <p className="text-sm font-medium">Diretório SharePoint</p>
                       <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                        /Projetos/{(project as any).cod_referencia || project.id}
+                        /Projetos/
+                        {((project as any).cod_referencia || project.id).replace(/^TRD-/, '')}
                       </p>
                     </div>
                   </div>

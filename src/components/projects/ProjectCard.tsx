@@ -56,7 +56,9 @@ export function ProjectCard({ project, onDragStart, onClick }: Props) {
     >
       <CardContent className="p-3">
         <div className="flex justify-between items-start mb-2">
-          <span className="text-xs font-mono text-muted-foreground">{project.id}</span>
+          <span className="text-xs font-mono text-muted-foreground">
+            {project.id.replace(/^TRD-/, '')}
+          </span>
           <div className="flex gap-1.5 items-center bg-background/80 rounded-sm px-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
