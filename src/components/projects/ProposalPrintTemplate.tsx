@@ -99,7 +99,11 @@ export function ProposalPrintTemplate({
         {/* Header Documento */}
         <div className="flex justify-between items-end mb-10 border-b-2 border-slate-800 pb-6">
           <div>
-            <img src={logoUrl} alt="Tradeezer Logo" className="h-20 w-auto object-contain" />
+            <img
+              src={logoUrl}
+              alt="Tradeezer Logo"
+              className="h-20 w-auto object-contain text-center"
+            />
             <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-2">
               Proposta Comercial
             </p>
