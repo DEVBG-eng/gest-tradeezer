@@ -59,6 +59,7 @@ import useClientStore from '@/stores/useClientStore'
 import { cn } from '@/lib/utils'
 import { LanguageCombobox, LANGUAGES } from '@/components/LanguageCombobox'
 import { ProposalPrintTemplate } from '@/components/projects/ProposalPrintTemplate'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { mapProjectToPrintData, PROJECT_STATUSES } from '@/lib/project-utils'
 
 const SERVICES_OPTS = [
@@ -132,8 +133,8 @@ export default function CreateProject() {
   const [sourceLang, setSourceLang] = useState('pt')
   const [targetLang, setTargetLang] = useState('en')
 
-  const [startDate, setStartDate] = useState<Date>(new Date())
-  const [deadline, setDeadline] = useState<Date>()
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date())
+  const [deadline, setDeadline] = useState<Date | undefined>()
 
   const [docCount, setDocCount] = useState('0')
   const [documentType, setDocumentType] = useState('')
@@ -970,36 +971,14 @@ export default function CreateProject() {
                       <Label className={cn(stepErrors.startDate && 'text-destructive')}>
                         Data de Entrada <span className="text-destructive">*</span>
                       </Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              'w-full justify-start text-left font-normal',
-                              !startDate && 'text-muted-foreground',
-                              stepErrors.startDate && 'border-destructive',
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {startDate ? (
-                              format(startDate, 'dd/MM/yyyy')
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={startDate}
-                            onSelect={(d) => {
-                              if (d) setStartDate(d)
-                              setStepErrors((p) => ({ ...p, startDate: '' }))
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <DatePickerInput
+                        value={startDate}
+                        onChange={(d) => {
+                          setStartDate(d)
+                          setStepErrors((p) => ({ ...p, startDate: '' }))
+                        }}
+                        error={!!stepErrors.startDate}
+                      />
                       {stepErrors.startDate && (
                         <p className="text-sm font-medium text-destructive">
                           {stepErrors.startDate}
@@ -1010,36 +989,14 @@ export default function CreateProject() {
                       <Label className={cn(stepErrors.deadline && 'text-destructive')}>
                         Data de Entrega <span className="text-destructive">*</span>
                       </Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              'w-full justify-start text-left font-normal',
-                              !deadline && 'text-muted-foreground',
-                              stepErrors.deadline && 'border-destructive',
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {deadline ? (
-                              format(deadline, 'dd/MM/yyyy')
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={deadline}
-                            onSelect={(d) => {
-                              setDeadline(d)
-                              setStepErrors((p) => ({ ...p, deadline: '' }))
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <DatePickerInput
+                        value={deadline}
+                        onChange={(d) => {
+                          setDeadline(d)
+                          setStepErrors((p) => ({ ...p, deadline: '' }))
+                        }}
+                        error={!!stepErrors.deadline}
+                      />
                       {stepErrors.deadline && (
                         <p className="text-sm font-medium text-destructive">
                           {stepErrors.deadline}

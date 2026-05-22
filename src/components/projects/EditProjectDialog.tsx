@@ -38,6 +38,7 @@ import useClientStore from '@/stores/useClientStore'
 import { useToast } from '@/hooks/use-toast'
 import { ProposalPrintTemplate } from './ProposalPrintTemplate'
 import { PROJECT_STATUSES } from '@/lib/project-utils'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 
 const TRANSLATION_TYPES = [
   'Tradução Juramentada',
@@ -533,50 +534,13 @@ export function EditProjectDialog({
 
             <div className="space-y-2">
               <Label>Data de Entrada</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !entryDate && 'text-muted-foreground',
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {entryDate ? format(entryDate, 'dd/MM/yyyy') : 'Selecione'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={entryDate}
-                    onSelect={setEntryDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePickerInput value={entryDate} onChange={setEntryDate} />
             </div>
             <div className="space-y-2">
               <Label>
                 5. Data de Entrega <span className="text-destructive">*</span>
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !deadline && 'text-muted-foreground',
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {deadline ? format(deadline, 'dd/MM/yyyy') : 'Selecione'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={deadline} onSelect={setDeadline} initialFocus />
-                </PopoverContent>
-              </Popover>
+              <DatePickerInput value={deadline} onChange={setDeadline} />
             </div>
 
             <div className="space-y-4 md:col-span-2 pt-2">
